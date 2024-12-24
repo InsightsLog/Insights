@@ -1,35 +1,42 @@
-import React, { useState, Suspense } from 'react'
-import ErrorBoundary from './components/ErrorBoundary'
-import LoadingSpinner from './components/LoadingSpinner'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import PrivateRoute from './components/auth/PrivateRoute'
+import Login from './components/auth/Login'
+import Signup from './components/auth/Signup'
+import ForgotPassword from './components/auth/ForgotPassword'
+import Dashboard from './components/Dashboard'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
-import Dashboard from './components/Dashboard'
-import { mockTrades } from './data/mockData'
 
 function App() {
-  const [trades, setTrades] = useState(mockTrades)
-  const [currentView, setCurrentView] = useState('dashboard')
-
-  const handleAddTrade = (newTrade) => {
-    setTrades([...trades, { ...newTrade, id: Date.now() }])
-  }
-
   return (
-    <ErrorBoundary>
-      <Suspense fallback={<LoadingSpinner />}>
-        <div className="h-screen flex flex-col bg-gray-100">
-          <Navbar currentView={currentView} setCurrentView={setCurrentView} />
-          <div className="flex flex-1 overflow-hidden">
-            <Sidebar trades={trades} onAddTrade={handleAddTrade} />
-            <Dashboard 
-              trades={trades} 
-              setTrades={setTrades}
-              currentView={currentView} 
-            />
-          </div>
-        </div>
-      </Suspense>
-    </ErrorBoundary>
+    <Router>
+      <AuthProvider>
+        <Routes>
+          {/* Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+
+          {/* Protected Routes */}
+          <Route path="/" element={
+            <PrivateRoute>
+              <div className="h-screen flex flex-col bg-gray-100">
+                <Navbar />
+                <div className="flex flex-1 overflow-hidden">
+                  <Sidebar />
+                  <Dashboard />
+                </div>
+              </div>
+            </PrivateRoute>
+          } />
+
+          {/* Redirect any unknown routes to home */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
   )
 }
 
