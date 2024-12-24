@@ -1,0 +1,44 @@
+image: node:16
+
+stages:
+  - test
+  - build
+  - deploy
+
+cache:
+  paths:
+    - node_modules/
+
+test:
+  stage: test
+  script:
+    - npm install
+    - npm run lint
+    - npm run test
+  only:
+    - main
+    - merge_requests
+
+build:
+  stage: build
+  script:
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+  only:
+    - main
+
+deploy:
+  stage: deploy
+  script:
+    - npm install --global vercel
+    - vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+    - vercel build --prod --token=$VERCEL_TOKEN
+    - vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+  environment:
+    name: production
+    url: $VERCEL_DEPLOYMENT_URL
+  only:
+    - main
