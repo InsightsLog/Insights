@@ -1,18 +1,49 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { getUserTrades } from '../services/tradeService'
 import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import Analytics from './Analytics'
 import TradeHistory from './TradeHistory'
 
-function Dashboard({ trades, setTrades }) {
+function Dashboard() {
   const [currentView, setCurrentView] = useState('dashboard')
+  const [trades, setTrades] = useState([])
+  const [loading, setLoading] = useState(true)
   const { currentUser } = useAuth()
   const navigate = useNavigate()
 
-  const handleAddTrade = (newTrade) => {
-    setTrades(prevTrades => [...prevTrades, { ...newTrade, id: Date.now() }])
+  useEffect(() => {
+    const loadTrades = async () => {
+      try {
+        const userTrades = await getUserTrades(currentUser.uid)
+        setTrades(userTrades)
+      } catch (error) {
+        console.error('Error loading trades:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (currentUser) {
+      loadTrades()
+    }
+  }, [currentUser])
+
+  const handleAddTrade = async (newTrade) => {
+    try {
+      const addedTrade = await addTrade(currentUser.uid, newTrade)
+      setTrades(prevTrades => [addedTrade, ...prevTrades])
+    } catch (error) {
+      console.error('Error adding trade:', error)
+    }
+  }
+
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    </div>
   }
 
   return (
