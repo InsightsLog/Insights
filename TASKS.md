@@ -1,10 +1,10 @@
 # Tasks — Macro Calendar L0
 
 ## 0) Repo + tooling
-- [ ] T001 Add docs: SPEC.md, AGENTS.md, ROADMAP.md, TASKS.md, CHANGELOG.md
+- [x] T001 Add docs: SPEC.md, AGENTS.md, ROADMAP.md, TASKS.md, CHANGELOG.md
   - Test: verify files exist in repo root
 
-- [ ] T002 Add PR template + issue templates
+- [x] T002 Add PR template + issue templates
   - Test: GitHub shows templates when creating PR/issue
 
 ## 1) Supabase setup
