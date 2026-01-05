@@ -27,3 +27,7 @@ You are working in a production-bound repo. Follow these rules:
 - Lint passes
 - Build passes
 - Manual test steps written and verified
+
+## Backlog capture
+- When you identify an L1/L2 improvement during L0 work, append it to BACKLOG.md under the appropriate section.
+- Format: `- [ ] **Short title** — Description. Source: task ID or context.`

@@ -18,14 +18,22 @@
 - [X] T020 Build "/" route with basic table layout (static placeholder)
   - Test: page loads, shows placeholder rows
 
-- [ ] T021 Implement server query: releases in next 7 days joined with indicators
+- [X] T021 Implement server query: releases in next 7 days joined with indicators
   - Test: seed DB; page shows real rows ordered by release_at
 
-- [ ] T022 Add filters: country_code + category
+- [X] T022 Add filters: country_code + category
   - Test: selecting filters changes results
 
-- [ ] T023 Add search: indicator_name contains query (case-insensitive)
+- [X] T023 Add search: indicator_name contains query (case-insensitive)
   - Test: search term reduces results correctly
+
+- [X] T024 Fix table columns to match SPEC: show actual, forecast, previous, revised separately
+  - Test: released rows show actual value distinctly; revised column visible when data exists
+
+- [X] T025 Bug: Add `revised` to Supabase query in page.tsx
+  - The select clause is missing `revised,` so the column always shows "—"
+  - Fix: add `revised,` after `previous,` in the `.select()` call
+  - Test: seed a release with a revised value; verify it displays in the Revised column
 
 ## 3) Indicator detail
 - [ ] T030 Add "/indicator/[id]" page scaffold

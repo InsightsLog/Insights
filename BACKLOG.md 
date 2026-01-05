@@ -1,0 +1,24 @@
+# Backlog — Future Improvements
+
+Items discovered during L0 development that are out of scope but worth tracking.
+
+## L1 Candidates
+
+### Search & Filtering
+- [ ] **Sanitize SQL wildcards in search** — Search terms with `%` or `_` are SQL wildcards in `ilike`. If user searches `%`, it matches everything. Add input sanitization.
+  - Source: T023 implementation
+  
+- [ ] **Add GIN index for text search** — No index on `indicators.name`. For large datasets, add a GIN index with `pg_trgm` for faster text search.
+  - Source: T023 implementation
+
+### Performance
+<!-- Add performance-related items here -->
+
+### Security
+<!-- Add security-related items here -->
+
+### UX
+<!-- Add UX improvements here -->
+
+## L2+ Ideas
+<!-- Longer-term ideas that don't fit L1 -->
