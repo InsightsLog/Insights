@@ -1,4 +1,6 @@
-# Quality & Audit Tasks — Section 6 (add to TASKS.md)
+# Quality & Audit Tasks — Section 6 (L0 archive)
+
+> Historical audit items from L0. For active work, use [TASKS_L1.md](TASKS_L1.md).
 
 From AUDIT_REPORT.md — High-priority findings requiring agent attention:
 

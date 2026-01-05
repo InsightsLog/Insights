@@ -1,13 +1,14 @@
 # Insights — Macro Calendar
 
 ## Overview
-A public macroeconomic release calendar that displays upcoming economic indicator releases with search and filter capabilities. Users can view scheduled releases for the next 7-30 days, search by indicator name, filter by country and category, and explore historical release data.
+A public macroeconomic release calendar with authenticated watchlists. Users can view upcoming releases, search/filter by country and category, sign in with a magic link, save indicators to a watchlist, and explore historical data.
 
 ## Project Structure
 ```
 Insights/
-├── SPEC.md              # Product specification (L0 scope)
-├── TASKS.md             # Implementation task list
+├── SPEC.md              # Product specification (L1 scope)
+├── TASKS.md             # L0 task archive (see TASKS_L1.md for active work)
+├── TASKS_L1.md          # Implementation task list for current scope
 ├── CHANGELOG.md         # Release history
 ├── BACKLOG.md           # Future feature ideas (L1+)
 ├── AGENTS.md            # Agent coding rules
@@ -60,11 +61,13 @@ Insights/
    ```
    Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Features (L0)
-- **Calendar View:** Browse upcoming economic releases (next 7 days by default)
-- **Search & Filter:** Find indicators by name, country, or category
-- **Historical Data:** View past releases for each indicator
-- **CSV Upload:** Admin interface for bulk data imports
+## Features (L1)
+- **Magic-link auth:** Email-based sign-in with Supabase auth
+- **Watchlists:** Save indicators from calendar or detail pages
+- **Watchlist filter:** Toggle calendar to only saved indicators
+- **Watchlist page:** View all saved indicators with next release date
+- **Calendar & search:** Browse upcoming releases (next 7/30 days) with filters
+- **Admin CSV upload:** Secure import/upsert of indicators and releases
 
 ## Tech Stack
 - **Framework:** Next.js 15 (App Router)
