@@ -1,4 +1,6 @@
-# Tasks — Macro Calendar L0
+# Tasks — Macro Calendar L0 (Archive)
+
+> Current work is tracked in [TASKS_L1.md](TASKS_L1.md). This file remains for historical context of the L0 launch.
 
 ## 0) Repo + tooling
 - [X] T001 Add docs: SPEC.md, AGENTS.md, ROADMAP.md, TASKS.md, CHANGELOG.md

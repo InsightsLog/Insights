@@ -1,4 +1,5 @@
 # Comprehensive Project Audit Report
+> L0 audit snapshot (archived). Refer to [TASKS_L1.md](TASKS_L1.md) and [SPEC.md](SPEC.md) for current scope.
 **Insights: Macro Calendar L0**  
 **Date:** January 5, 2026  
 **Status:** Early-stage development (L0 implementation ~60% complete)

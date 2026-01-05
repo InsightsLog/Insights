@@ -1,16 +1,16 @@
-# Agent Rules (Copilot / ChatGPT)
+# Agent Rules
 
 You are working in a production-bound repo. Follow these rules:
 
 ## Scope
-- Implement ONLY L0 defined in SPEC.md.
-- If asked to do something outside L0, stop and propose an issue for L1 instead.
+- If asked to do something outside L1, stop and propose an issue for L2 instead.
 
 ## Workflow
 - Small changes only: one task per PR.
 - Before coding: restate acceptance criteria + test steps.
 - After coding: list files changed + how to test + risks/edge cases.
 - Update CHANGELOG.md for every user-visible change.
+- When you identify an L2 improvement during work, append it to BACKLOG.md under the appropriate section.
 
 ## Coding standards
 - TypeScript everywhere.
@@ -27,7 +27,3 @@ You are working in a production-bound repo. Follow these rules:
 - Lint passes
 - Build passes
 - Manual test steps written and verified
-
-## Backlog capture
-- When you identify an L1/L2 improvement during L0 work, append it to BACKLOG.md under the appropriate section.
-- Format: `- [ ] **Short title** — Description. Source: task ID or context.`

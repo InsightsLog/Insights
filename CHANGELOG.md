@@ -1,6 +1,14 @@
 # Changelog
 
 ## Unreleased
+- **Docs:** Updated to L1 scope (auth + watchlists)
+  - SPEC, ROADMAP, README, DEPLOY, RISKS, and templates aligned to L1
+  - L0 task/audit docs marked as archive; app README replaced with project-specific guide
+  - Backlog populated with L2 ideas surfaced during documentation pass
+- **Security:** RLS policies now included in migration file (T090)
+  - Row Level Security automatically enabled on fresh deployments
+  - Public read-only access enforced; anon key cannot INSERT/UPDATE/DELETE
+  - DEPLOY.md updated to document verification steps instead of manual SQL
 - **Added:** SEO metadata and dynamic page titles (T051)
   - Root layout includes Open Graph and Twitter card meta tags
   - Indicator detail pages have dynamic titles showing indicator name and country (e.g., "CPI (YoY) (US)")

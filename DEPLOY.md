@@ -5,8 +5,8 @@ This document provides step-by-step instructions for deploying the Macro Calenda
 ## Prerequisites
 
 - GitHub account with access to the repository
-- Vercel account (free tier is sufficient for L0)
-- Supabase project (free tier is sufficient for L0)
+- Vercel account (free tier is sufficient for L1 traffic expectations)
+- Supabase project (free tier is sufficient for L1 traffic expectations)
 - Node.js 18+ installed locally (for local testing before deployment)
 
 ## 1. Supabase Setup
@@ -33,17 +33,23 @@ This document provides step-by-step instructions for deploying the Macro Calenda
    - **Project URL** (e.g., `https://xxxxx.supabase.co`)
    - **anon/public key** (starts with `eyJ...`)
 
-### 1.4 Configure Row Level Security (RLS)
-For L0, we use public read access:
-1. In **SQL Editor**, run:
-```sql
--- Allow public read access to indicators and releases
-ALTER TABLE indicators ENABLE ROW LEVEL SECURITY;
-ALTER TABLE releases ENABLE ROW LEVEL SECURITY;
+### 1.4 Verify Row Level Security (RLS)
+RLS policies are included in the migration file (`001_create_tables.sql`) and are applied automatically.
 
-CREATE POLICY "Public read indicators" ON indicators FOR SELECT USING (true);
-CREATE POLICY "Public read releases" ON releases FOR SELECT USING (true);
-```
+To verify RLS is enabled:
+1. In Supabase **Table Editor**, click on `indicators` table
+2. Check that "RLS enabled" badge appears
+3. Repeat for `releases` table
+
+The policies configured:
+- **Public read access**: Anonymous users can SELECT from `indicators` and `releases`
+- **Write protection**: INSERT/UPDATE/DELETE blocked for anon key on public tables
+- **Per-user data**: `profiles` and `watchlist` enforce owner-only access (users can only see and modify their own rows)
+
+### 1.5 Configure Supabase Auth
+1. In Supabase **Authentication** → **Providers**, enable **Email** (magic link).
+2. In **Authentication** → **URL Configuration**, set **Site URL** to your Vercel domain and add a redirect for `/auth/callback`.
+3. In **Authentication** → **Policies**, confirm the default RLS policies apply to `auth.users` and that `profiles`/`watchlist` tables have per-user policies (see migrations).
 
 ## 2. Vercel Deployment
 
@@ -98,7 +104,7 @@ Vercel provides built-in monitoring:
 - **Error tracking**: Check Vercel logs for runtime errors
 
 For production, consider adding:
-- **Sentry** for error tracking (optional for L0)
+- **Sentry** for error tracking (optional but recommended)
 - **Supabase monitoring**: Check Dashboard → Reports for query performance
 
 ### 3.3 Enable Branch Previews
@@ -113,16 +119,16 @@ By default, Vercel creates preview deployments for all branches:
 To rotate your Supabase anon key:
 1. In Supabase dashboard, go to **Settings** → **API**
 2. **Warning**: Supabase does not support rotating the anon key without recreating the project
-3. For L0, the anon key is safe to expose (RLS enforces read-only access)
-4. For future admin features, use service role key stored in Vercel environment variables (not prefixed with `NEXT_PUBLIC_`)
+3. The anon key is safe to expose for public tables; RLS prevents writes and hides per-user data.
+4. Use the service role key for server-side operations only (never expose it with `NEXT_PUBLIC_`).
 
 ### 4.2 Database Credentials
 - **Never commit** database passwords or service role keys to git
 - Store sensitive credentials only in Vercel environment variables
 - Use separate Supabase projects for production and staging
 
-### 4.3 Admin Upload Secret (Future)
-When implementing `/admin/upload` (not in L0):
+### 4.3 Admin Upload Secret (interim)
+While admin access uses a shared secret (until role-based auth lands in L2):
 1. Generate a secure random string: `openssl rand -hex 32`
 2. Add to Vercel environment variables as `ADMIN_UPLOAD_SECRET`
 3. Rotate monthly and update Vercel settings
@@ -176,7 +182,7 @@ cp .env.example .env.local
 - **Monthly**: Review Supabase query performance (Dashboard → Reports)
 - **Quarterly**: Update dependencies (`npm outdated` in `macro-calendar/`)
 
-### Scaling Considerations (Post-L0)
+### Scaling Considerations (Post-L1)
 - Supabase free tier: 500MB database, 50MB file storage, 50,000 monthly active users
 - Vercel free tier: 100GB bandwidth, unlimited requests
 - For growth beyond free tier, upgrade plans in Supabase/Vercel dashboards
@@ -193,4 +199,4 @@ cp .env.example .env.local
 ---
 
 **Last Updated**: January 2026  
-**Version**: L0 (Macro Calendar launch)
+**Version**: L1 (Auth + watchlists)
