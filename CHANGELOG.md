@@ -28,7 +28,8 @@
 - **Added:** CI/CD pipeline via GitHub Actions (T062)
   - Runs lint, build, and security audit on every PR and push to main
   - Uses npm audit with high severity threshold
-  - Build job validates TypeScript compilation with placeholder env vars- **Improved:** Added Zod validation for all Supabase responses (T063)
+  - Build job validates TypeScript compilation with placeholder env vars
+- **Improved:** Added Zod validation for all Supabase responses (T063)
   - Validates structure of releases and filter options data at runtime
   - Catches malformed database responses with clear error messages
   - Replaced unsafe type casts with schema-based validation
