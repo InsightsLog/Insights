@@ -6,3 +6,4 @@
 - Added environment variable validation with zod (src/lib/env.ts)
 - Added Supabase client wrappers for server and client components
 - **Fixed:** Environment validation now runs at startup via next.config.ts import (fail-fast on missing env vars)
+- Added calendar page "/" with table layout showing placeholder release data (T020)

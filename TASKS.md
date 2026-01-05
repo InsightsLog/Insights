@@ -15,7 +15,7 @@
   - Test: app boots locally; env missing throws clear error
 
 ## 2) Calendar page
-- [ ] T020 Build "/" route with basic table layout (static placeholder)
+- [X] T020 Build "/" route with basic table layout (static placeholder)
   - Test: page loads, shows placeholder rows
 
 - [ ] T021 Implement server query: releases in next 7 days joined with indicators
