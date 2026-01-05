@@ -1,28 +1,35 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CalendarFilters } from "./components/CalendarFilters";
+import { z } from "zod";
 
+// Zod schemas for Supabase response validation
+const indicatorSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  country_code: z.string(),
+  category: z.string(),
+});
+
+const releaseWithIndicatorSchema = z.object({
+  id: z.string().uuid(),
+  release_at: z.string(),
+  period: z.string(),
+  actual: z.string().nullable(),
+  forecast: z.string().nullable(),
+  previous: z.string().nullable(),
+  revised: z.string().nullable(),
+  indicator: indicatorSchema.nullable(),
+});
+
+const filterOptionsSchema = z.object({
+  countries: z.array(z.string()),
+  categories: z.array(z.string()),
+});
 
 // Type for the joined release with indicator data
-type ReleaseWithIndicator = {
-  id: string;
-  release_at: string;
-  period: string;
-  actual: string | null;
-  forecast: string | null;
-  previous: string | null;
-  revised: string | null;
-  indicator: {
-    id: string;
-    name: string;
-    country_code: string;
-    category: string;
-  } | null;
-};
+type ReleaseWithIndicator = z.infer<typeof releaseWithIndicatorSchema>;
 
-type FilterOptions = {
-  countries: string[];
-  categories: string[];
-};
+type FilterOptions = z.infer<typeof filterOptionsSchema>;
 
 type DataResult<T> = 
   | { success: true; data: T }
@@ -60,7 +67,17 @@ async function getFilterOptions(): Promise<DataResult<FilterOptions>> {
     ),
   ];
 
-  return { success: true, data: { countries, categories } };
+  // Validate the response with Zod
+  try {
+    const validated = filterOptionsSchema.parse({ countries, categories });
+    return { success: true, data: validated };
+  } catch (zodError) {
+    console.error("Filter options validation failed:", zodError);
+    return {
+      success: false,
+      error: "Received invalid data format from database."
+    };
+  }
 }
 
 /**
@@ -109,6 +126,8 @@ async function getUpcomingReleases(filters: {
   }
   if (filters.search) {
     // Case-insensitive search on indicator name using ilike
+    // SQL injection safe: Supabase uses parameterized queries internally,
+    // treating the search string as a literal value, not executable SQL
     query = query.ilike("indicator.name", `%${filters.search}%`);
   }
 
@@ -122,11 +141,17 @@ async function getUpcomingReleases(filters: {
     };
   }
 
-  // Cast the data to our expected type
-  return {
-    success: true,
-    data: (data as unknown as ReleaseWithIndicator[]) ?? []
-  };
+  // Validate the response with Zod
+  try {
+    const validated = z.array(releaseWithIndicatorSchema).parse(data ?? []);
+    return { success: true, data: validated };
+  } catch (zodError) {
+    console.error("Release data validation failed:", zodError);
+    return {
+      success: false,
+      error: "Received invalid data format from database."
+    };
+  }
 }
 
 /**
@@ -136,6 +161,14 @@ function getReleaseStatus(actual: string | null): "released" | "scheduled" {
   return actual ? "released" : "scheduled";
 }
 
+/**
+ * Formats release time from ISO8601 string to human-readable format.
+ * 
+ * Timezone assumptions:
+ * - Input: ISO8601 timestamp from Supabase (stored in UTC)
+ * - Output: Formatted using en-US locale in the user's browser timezone
+ * - The Date constructor automatically converts UTC to local time
+ */
 function formatReleaseTime(isoString: string): string {
   const date = new Date(isoString);
   return date.toLocaleString("en-US", {
