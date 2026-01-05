@@ -30,7 +30,7 @@
 ---
 
 ## 0) User Accounts Setup
-- [ ] T100 Add Supabase Auth: profiles table + RLS policies
+- [X] T100 Add Supabase Auth: profiles table + RLS policies
   - Migration: profiles(id, email, display_name, created_at, updated_at)
   - RLS: users can only read/write their own profile
   - Trigger: auto-create profile on auth.users insert
