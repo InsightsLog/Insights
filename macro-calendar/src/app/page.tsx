@@ -1,5 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CalendarFilters } from "./components/CalendarFilters";
+const unusedLintTest = 123;
+
 
 // Type for the joined release with indicator data
 type ReleaseWithIndicator = {
