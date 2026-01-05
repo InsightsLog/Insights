@@ -36,27 +36,27 @@
   - Test: seed a release with a revised value; verify it displays in the Revised column
 
 ## 3) Indicator detail
-- [ ] T030 Add "/indicator/[id]" page scaffold
+- [X] T030 Add "/indicator/[id]" page scaffold
   - Test: page loads and shows indicator header
 
-- [ ] T031 Query historical releases for indicator (limit 200, desc)
+- [X] T031 Query historical releases for indicator (limit 200, desc)
   - Test: shows most recent releases first
 
 ## 4) Admin upload
-- [ ] T040 Add "/admin/upload" page (simple form)
+- [X] T040 Add "/admin/upload" page (simple form)
   - Test: page renders upload form
 
-- [ ] T041 Implement POST route handler to accept CSV, validate with zod, parse safely
+- [X] T041 Implement POST route handler to accept CSV, validate with zod, parse safely
   - Test: upload valid CSV inserts rows; invalid CSV returns readable error
 
-- [ ] T042 Protect admin upload with ADMIN_UPLOAD_SECRET
+- [X] T042 Protect admin upload with ADMIN_UPLOAD_SECRET
   - Test: wrong/absent secret blocks access
 
 ## 5) Polish + deploy
-- [ ] T050 Add empty states + loading states
+- [X] T050 Add empty states + loading states
   - Test: no results shows friendly message
 
-- [ ] T051 Add basic SEO/meta + favicon/title
+- [X] T051 Add basic SEO/meta + favicon/title
   - Test: page titles correct
 
 - [ ] T052 Vercel deploy checklist in README
