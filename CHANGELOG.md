@@ -25,3 +25,7 @@
   - Supabase query errors now return error states instead of silent empty arrays
   - User sees clear error message "Unable to load calendar data" when DB connection fails
   - Error message displayed in red alert banner instead of blank table
+- **Added:** CI/CD pipeline via GitHub Actions (T062)
+  - Runs lint, build, and security audit on every PR and push to main
+  - Uses npm audit with high severity threshold
+  - Build job validates TypeScript compilation with placeholder env vars

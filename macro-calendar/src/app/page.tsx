@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CalendarFilters } from "./components/CalendarFilters";
 
+
 // Type for the joined release with indicator data
 type ReleaseWithIndicator = {
   id: string;
