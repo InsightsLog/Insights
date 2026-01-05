@@ -1,17 +1,17 @@
 # Tasks — Macro Calendar L0
 
 ## 0) Repo + tooling
-- [ ] T001 Add docs: SPEC.md, AGENTS.md, ROADMAP.md, TASKS.md, CHANGELOG.md
+- [X] T001 Add docs: SPEC.md, AGENTS.md, ROADMAP.md, TASKS.md, CHANGELOG.md
   - Test: verify files exist in repo root
 
-- [ ] T002 Add PR template + issue templates
+- [X] T002 Add PR template + issue templates
   - Test: GitHub shows templates when creating PR/issue
 
 ## 1) Supabase setup
-- [ ] T010 Create Supabase tables (indicators, releases) + indexes
+- [X] T010 Create Supabase tables (indicators, releases) + indexes
   - Test: tables exist, indexes exist, simple insert works in SQL editor
 
-- [ ] T011 Add env loader (src/lib/env.ts) and Supabase client (server/client)
+- [X] T011 Add env loader (src/lib/env.ts) and Supabase client (server/client)
   - Test: app boots locally; env missing throws clear error
 
 ## 2) Calendar page
