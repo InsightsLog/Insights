@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- **Tests:** Added unit tests for CSV parser (T091)
+  - Extracted CSV parser into reusable module at `src/lib/csv-parser.ts`
+  - Added 30 unit tests covering: quoted fields, escaped quotes, empty fields, malformed rows
+  - Set up Vitest testing framework with `npm test` script
 - **Docs:** Updated to L1 scope (auth + watchlists)
   - SPEC, ROADMAP, README, DEPLOY, RISKS, and templates aligned to L1
   - L0 task/audit docs marked as archive; app README replaced with project-specific guide
