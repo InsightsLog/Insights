@@ -28,4 +28,15 @@
 - **Added:** CI/CD pipeline via GitHub Actions (T062)
   - Runs lint, build, and security audit on every PR and push to main
   - Uses npm audit with high severity threshold
-  - Build job validates TypeScript compilation with placeholder env vars
+  - Build job validates TypeScript compilation with placeholder env vars- **Improved:** Added Zod validation for all Supabase responses (T063)
+  - Validates structure of releases and filter options data at runtime
+  - Catches malformed database responses with clear error messages
+  - Replaced unsafe type casts with schema-based validation
+- **Improved:** Added inline code comments for security and clarity (T065)
+  - Documented that `ilike()` search is SQL injection safe via parameterized queries
+  - Explained timezone handling assumptions in `formatReleaseTime()` function
+- **Added:** Comprehensive deployment guide (DEPLOY.md) with Vercel and Supabase setup instructions (T064)
+  - Step-by-step deployment checklist for new developers
+  - Environment variable configuration guide
+  - Security best practices including secret rotation
+  - Monitoring tips and troubleshooting section

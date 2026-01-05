@@ -24,19 +24,19 @@ From AUDIT_REPORT.md — High-priority findings requiring agent attention:
   - Reference: AUDIT_REPORT.md §7, "CI/CD Pipeline"
   - Effort: 4-6 hours
 
-- [ ] T063 Add Zod validation for Supabase responses
+- [X] T063 Add Zod validation for Supabase responses
   - Fix: Validate all Supabase responses with Zod schemas (not just type casts)
   - Test: Malformed response caught at runtime with clear error
   - Files: src/app/page.tsx (getUpcomingReleases, getFilterOptions)
   - Effort: 4-6 hours
 
-- [ ] T064 Create DEPLOY.md with Vercel checklist
+- [X] T064 Create DEPLOY.md with Vercel checklist
   - Add: Step-by-step deployment instructions
   - Add: Env var setup, secret rotation, monitoring tips
   - Test: New developer can deploy following instructions
   - Effort: 2-3 hours
 
-- [ ] T065 Add inline comments for security & timezone clarity
+- [X] T065 Add inline comments for security & timezone clarity
   - Fix: Comment on ilike() calls explaining parameterized query safety
   - Fix: Document timezone assumptions in formatReleaseTime()
   - Reference: AUDIT_REPORT.md §2, code quality issues
