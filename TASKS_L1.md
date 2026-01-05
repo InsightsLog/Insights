@@ -13,7 +13,7 @@
   - Framework: Vitest or Jest
   - Test: `npm test` passes
 
-- [ ] T092 Batch admin upload queries
+- [X] T092 Batch admin upload queries
   - Refactor [route.ts#L215-L305](macro-calendar/src/app/api/admin/upload/route.ts) to use batch inserts
   - Current: N+1 queries (2-4 DB calls per CSV row)
   - Target: 2-3 total queries regardless of row count

@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- **Performance:** Batched admin upload queries for improved performance (T092)
+  - CSV upload now uses batch queries instead of N+1 queries per row
+  - Target: 2-3 total queries for indicators + releases regardless of row count
+  - Indicators are batch-fetched, then batch-inserted/updated
+  - Releases are batch-fetched (chunked at 50), then batch-inserted/updated
 - **Tests:** Added unit tests for CSV parser (T091)
   - Extracted CSV parser into reusable module at `src/lib/csv-parser.ts`
   - Added 30 unit tests covering: quoted fields, escaped quotes, empty fields, malformed rows
