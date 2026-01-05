@@ -167,7 +167,7 @@ function getReleaseStatus(actual: string | null): "released" | "scheduled" {
  * Timezone assumptions:
  * - Input: ISO8601 timestamp from Supabase (stored in UTC)
  * - Output: Formatted using en-US locale in the user's browser timezone
- * - The Date constructor automatically converts UTC to local time
+ * - The Date constructor parses the ISO8601 string; toLocaleString() then formats it in the user's browser timezone
  */
 function formatReleaseTime(isoString: string): string {
   const date = new Date(isoString);
