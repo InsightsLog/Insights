@@ -7,7 +7,7 @@
   - Ensures security is automatic on fresh deployments
   - Test: run migration on fresh DB; verify anon key cannot INSERT/UPDATE/DELETE
 
-- [ ] T091 Add unit tests for CSV parser
+- [X] T091 Add unit tests for CSV parser
   - File: `src/app/api/admin/upload/route.test.ts`
   - Test cases: quoted fields, escaped quotes, empty fields, malformed rows
   - Framework: Vitest or Jest
