@@ -19,11 +19,11 @@
   - Target: 2-3 total queries regardless of row count
   - Test: upload 100-row CSV completes in <5s
 
-- [ ] T093 Delete empty `src/app/actions/` folder
+- [X] T093 Delete empty `src/app/actions/` folder
   - Reduces confusion; re-add when server actions are needed
   - Test: folder does not exist
 
-- [ ] T094 Replace macro-calendar/README.md
+- [X] T094 Replace macro-calendar/README.md
   - Replace Next.js boilerplate with redirect to root README or project-specific docs
   - Test: README.md contains relevant project info
 
