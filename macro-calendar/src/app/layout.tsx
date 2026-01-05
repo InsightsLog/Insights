@@ -13,8 +13,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Macro Calendar",
+  title: {
+    default: "Macro Calendar",
+    template: "%s | Macro Calendar",
+  },
   description: "Public macroeconomic release calendar with searchable historical data",
+  openGraph: {
+    title: "Macro Calendar",
+    description: "Public macroeconomic release calendar with searchable historical data",
+    type: "website",
+    siteName: "Macro Calendar",
+  },
+  twitter: {
+    card: "summary",
+    title: "Macro Calendar",
+    description: "Public macroeconomic release calendar with searchable historical data",
+  },
 };
 
 export default function RootLayout({

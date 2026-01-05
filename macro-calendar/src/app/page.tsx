@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CalendarFilters } from "./components/CalendarFilters";
 import { z } from "zod";
+import Link from "next/link";
 
 // Zod schemas for Supabase response validation
 const indicatorSchema = z.object({
@@ -272,14 +273,44 @@ export default async function CalendarPage({ searchParams }: PageProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {releases.map((release) => {
-                const status = getReleaseStatus(release.actual);
+              {releases.length === 0 && !hasError ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-12 text-center">
+                    <div className="text-zinc-400 dark:text-zinc-500">
+                      <svg
+                        className="mx-auto h-12 w-12 mb-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                        No upcoming releases
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
+                        {filters.country || filters.category || filters.search
+                          ? "Try adjusting your filters or search terms."
+                          : "No economic releases scheduled for the next 7 days."}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                releases.map((release) => {
+                  const status = getReleaseStatus(release.actual);
 
-                return (
-                  <tr
-                    key={release.id}
-                    className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                  >
+                  return (
+                    <tr
+                      key={release.id}
+                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                    >
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100">
                       {formatReleaseTime(release.release_at)}
                     </td>
@@ -287,7 +318,16 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                       {release.indicator?.country_code ?? "—"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {release.indicator?.name ?? "Unknown"}
+                      {release.indicator ? (
+                        <Link
+                          href={`/indicator/${release.indicator.id}`}
+                          className="text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          {release.indicator.name}
+                        </Link>
+                      ) : (
+                        "Unknown"
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
                       {release.period}
@@ -322,8 +362,9 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                       </span>
                     </td>
                   </tr>
-                );
-              })}
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

@@ -1,6 +1,38 @@
 # Changelog
 
 ## Unreleased
+- **Added:** SEO metadata and dynamic page titles (T051)
+  - Root layout includes Open Graph and Twitter card meta tags
+  - Indicator detail pages have dynamic titles showing indicator name and country (e.g., "CPI (YoY) (US)")
+  - Admin pages marked as noindex/nofollow for search engines
+  - Uses Next.js title template for consistent page title suffix
+- **Added:** Empty states and loading states for better UX (T050)
+  - Calendar page shows friendly "No upcoming releases" message when no results match filters
+  - Added skeleton loading animations for Calendar page while data loads
+  - Added skeleton loading animations for Indicator detail page while data loads
+- **Security:** Admin upload endpoint now requires ADMIN_UPLOAD_SECRET (T042)
+  - Requests without secret or with invalid secret receive 401 Unauthorized
+  - Secret must be set in environment variables
+- **Added:** CSV upload POST endpoint at `/api/admin/upload` (T041)
+  - Accepts multipart form data with CSV file
+  - Validates CSV structure using Zod (required: indicator_name, country_code, category, source_name, source_url, release_at, period)
+  - Optional columns: actual, forecast, previous, revised, unit, notes
+  - Upserts indicators (matched by name + country_code) and inserts/updates releases (matched by indicator_id + release_at + period)
+  - Returns detailed validation errors with row numbers for invalid CSV
+  - Admin upload form now submits to the API and shows success/error feedback
+- **Added:** Admin upload page at `/admin/upload` with CSV file upload form (T040)
+  - Includes file input, admin secret field, and CSV format documentation
+  - Upload submission placeholder pending T041 route handler implementation
+- **Added:** Historical releases table on indicator detail page (T031)
+  - Fetches up to 200 releases ordered by date descending (most recent first)
+  - Displays Date, Period, Actual, Forecast, Previous, Revised columns
+  - Actual values highlighted in green; units displayed when available
+  - Shows empty state message when no releases exist
+  - Error state displayed if database query fails
+- **Added:** Indicator detail page scaffold at `/indicator/[id]` (T030)
+  - Displays indicator header with name, country, category, and source link
+  - Indicator names in calendar are now clickable links to detail page
+  - Shows placeholder for historical releases (to be implemented in T031)
 - Initial scaffolding
 - Created Supabase database schema (indicators and releases tables with indexes)
 - Added environment variable validation with zod (src/lib/env.ts)
