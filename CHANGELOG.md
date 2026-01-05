@@ -25,3 +25,8 @@
   - Supabase query errors now return error states instead of silent empty arrays
   - User sees clear error message "Unable to load calendar data" when DB connection fails
   - Error message displayed in red alert banner instead of blank table
+- Added CI/CD pipeline with GitHub Actions (T062)
+  - Lint job: runs ESLint on all PRs and pushes to main
+  - Build job: verifies Next.js build succeeds
+  - Audit job: runs `npm audit` to detect security vulnerabilities
+  - Note: Branch protection rules must be configured in GitHub repo settings to require checks

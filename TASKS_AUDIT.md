@@ -17,7 +17,7 @@ From AUDIT_REPORT.md — High-priority findings requiring agent attention:
   - Files: src/app/page.tsx, CalendarFilters
   - Effort: 4-8 hours
 
-- [ ] T062 Set up CI/CD pipeline (.github/workflows/ci.yml)
+- [X] T062 Set up CI/CD pipeline (.github/workflows/ci.yml)
   - Add: GitHub Actions workflow with lint, build, npm audit jobs
   - Require: PR checks before merge
   - Test: PR requires passing checks before merge
