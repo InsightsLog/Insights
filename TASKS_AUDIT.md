@@ -22,7 +22,7 @@ From AUDIT_REPORT.md — High-priority findings requiring agent attention:
   - Require: PR checks before merge
   - Test: PR requires passing checks before merge
   - Reference: AUDIT_REPORT.md §7, "CI/CD Pipeline"
-  - Effort: 4-6 hours
+  - Effort: 4-6 hourss
 
 - [ ] T063 Add Zod validation for Supabase responses
   - Fix: Validate all Supabase responses with Zod schemas (not just type casts)
