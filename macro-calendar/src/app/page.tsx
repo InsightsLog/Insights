@@ -298,3 +298,4 @@ export default async function CalendarPage({ searchParams }: PageProps) {
     </div>
   );
 }
+const buildFailTest: number = "this will break the build";
