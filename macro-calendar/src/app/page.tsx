@@ -23,16 +23,29 @@ type FilterOptions = {
   categories: string[];
 };
 
+type DataResult<T> = 
+  | { success: true; data: T }
+  | { success: false; error: string };
+
 /**
  * Fetches distinct country codes and categories from indicators table for filter dropdowns.
  */
-async function getFilterOptions(): Promise<FilterOptions> {
+async function getFilterOptions(): Promise<DataResult<FilterOptions>> {
   const supabase = await createSupabaseServerClient();
 
   const [countriesResult, categoriesResult] = await Promise.all([
     supabase.from("indicators").select("country_code").order("country_code"),
     supabase.from("indicators").select("category").order("category"),
   ]);
+
+  // Check for errors
+  if (countriesResult.error || categoriesResult.error) {
+    console.error("Error fetching filter options:", countriesResult.error || categoriesResult.error);
+    return {
+      success: false,
+      error: "Unable to load filter options. Please check your connection and try again."
+    };
+  }
 
   // Extract unique values
   const countries = [
@@ -46,7 +59,7 @@ async function getFilterOptions(): Promise<FilterOptions> {
     ),
   ];
 
-  return { countries, categories };
+  return { success: true, data: { countries, categories } };
 }
 
 /**
@@ -58,7 +71,7 @@ async function getUpcomingReleases(filters: {
   country?: string;
   category?: string;
   search?: string;
-}): Promise<ReleaseWithIndicator[]> {
+}): Promise<DataResult<ReleaseWithIndicator[]>> {
   const supabase = await createSupabaseServerClient();
 
   const now = new Date();
@@ -102,11 +115,17 @@ async function getUpcomingReleases(filters: {
 
   if (error) {
     console.error("Error fetching releases:", error);
-    return [];
+    return {
+      success: false,
+      error: "Unable to load calendar data. Please check your connection and try again."
+    };
   }
 
   // Cast the data to our expected type
-  return (data as unknown as ReleaseWithIndicator[]) ?? [];
+  return {
+    success: true,
+    data: (data as unknown as ReleaseWithIndicator[]) ?? []
+  };
 }
 
 /**
@@ -138,10 +157,23 @@ export default async function CalendarPage({ searchParams }: PageProps) {
     search: params.search,
   };
 
-  const [releases, filterOptions] = await Promise.all([
+  const [releasesResult, filterOptionsResult] = await Promise.all([
     getUpcomingReleases(filters),
     getFilterOptions(),
   ]);
+
+  // Check for errors
+  const hasError = !releasesResult.success || !filterOptionsResult.success;
+  const errorMessage = !releasesResult.success 
+    ? releasesResult.error 
+    : !filterOptionsResult.success 
+    ? filterOptionsResult.error 
+    : null;
+
+  const releases = releasesResult.success ? releasesResult.data : [];
+  const filterOptions = filterOptionsResult.success 
+    ? filterOptionsResult.data 
+    : { countries: [], categories: [] };
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -162,6 +194,15 @@ export default async function CalendarPage({ searchParams }: PageProps) {
         />
 
         {/* Search placeholder — T023 */}
+
+        {/* Error message */}
+        {hasError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-900/20">
+            <p className="text-sm font-medium text-red-800 dark:text-red-400">
+              {errorMessage}
+            </p>
+          </div>
+        )}
 
         <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">

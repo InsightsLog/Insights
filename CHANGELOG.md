@@ -19,3 +19,9 @@
   - Search is case-insensitive and matches partial indicator names
   - Search uses URL search params and debounces input (300ms)
   - Can be combined with country and category filters
+- Updated app metadata: browser title now shows "Macro Calendar" instead of placeholder (T060)
+- Expanded root README with project overview, structure, quick start guide, and features list (T060)
+- **Improved:** Added graceful error handling for database failures (T061)
+  - Supabase query errors now return error states instead of silent empty arrays
+  - User sees clear error message "Unable to load calendar data" when DB connection fails
+  - Error message displayed in red alert banner instead of blank table
