@@ -40,3 +40,12 @@ CREATE INDEX IF NOT EXISTS idx_indicators_category ON indicators(category);
 -- Add comment for documentation
 COMMENT ON TABLE indicators IS 'Economic indicators tracked by the macro calendar';
 COMMENT ON TABLE releases IS 'Scheduled and historical releases for economic indicators';
+
+-- Enable Row Level Security (RLS)
+-- This ensures security is applied automatically on fresh deployments
+ALTER TABLE indicators ENABLE ROW LEVEL SECURITY;
+ALTER TABLE releases ENABLE ROW LEVEL SECURITY;
+
+-- Public read-only policies (anon users can SELECT but not INSERT/UPDATE/DELETE)
+CREATE POLICY "Public read indicators" ON indicators FOR SELECT USING (true);
+CREATE POLICY "Public read releases" ON releases FOR SELECT USING (true);
