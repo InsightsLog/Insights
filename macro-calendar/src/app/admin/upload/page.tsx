@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export default function AdminUploadPage() {
@@ -185,9 +186,9 @@ export default function AdminUploadPage() {
 
         {/* Back Link */}
         <div className="mt-4">
-          <a href="/" className="text-sm text-blue-600 hover:underline">
+          <Link href="/" className="text-sm text-blue-600 hover:underline">
             ← Back to Calendar
-          </a>
+          </Link>
         </div>
       </div>
     </main>
