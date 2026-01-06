@@ -23,3 +23,20 @@ export function MyClientComponent() {
   // use supabase client
 }
 ```
+
+### Auth Helpers (Server-side)
+```typescript
+import { getCurrentUser } from '@/lib/supabase/auth';
+
+export async function MyAuthenticatedComponent() {
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    // User is not logged in
+    return <div>Please sign in</div>;
+  }
+  
+  // User is logged in
+  return <div>Welcome, {user.display_name || user.email}</div>;
+}
+```
