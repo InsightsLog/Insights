@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- **Added:** Auth helper functions for user management (T102)
+  - `getCurrentUser()` in `src/lib/supabase/auth.ts` returns current user's profile or null
+  - Provides typed `UserProfile` interface for consistent user data handling
+  - Unit tests added for logged-in, logged-out, and error scenarios
 - **Added:** Auth middleware for session refresh (T101)
   - Middleware at `src/middleware.ts` refreshes Supabase auth cookies on each request
   - Ensures session cookies are refreshed before expiration
