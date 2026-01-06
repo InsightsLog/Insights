@@ -1,11 +1,10 @@
 # Changelog
 
 ## Unreleased
-- **Added:** Auth proxy for session refresh (T101)
-  - Proxy at `src/proxy.ts` refreshes Supabase auth cookies on each request
+- **Added:** Auth middleware for session refresh (T101)
+  - Middleware at `src/middleware.ts` refreshes Supabase auth cookies on each request
   - Ensures session cookies are refreshed before expiration
   - Configured to run on all routes except static files
-  - Uses Next.js 16 proxy convention (replaces deprecated middleware)
 - **Added:** User accounts infrastructure with profiles table (T100)
   - Profiles table created with id, email, display_name, created_at, updated_at
   - Auto-creates profile when user signs up via Supabase Auth

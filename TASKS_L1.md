@@ -37,7 +37,7 @@
   - Test: create user in Supabase dashboard; profile row appears
 
 - [X] T101 Add auth middleware for session refresh
-  - File: src/proxy.ts (uses Next.js 16 proxy convention)
+  - File: src/middleware.ts
   - Test: auth cookies refresh on page load
 
 - [ ] T102 Add auth helper functions (getCurrentUser, etc.)

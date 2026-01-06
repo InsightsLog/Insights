@@ -3,21 +3,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 
 /**
- * Proxy function that refreshes Supabase auth session on each request.
+ * Middleware that refreshes Supabase auth session on each request.
  * This ensures auth cookies are refreshed before they expire.
  * 
- * Note: This is a lightweight proxy - it only refreshes session cookies.
+ * Note: This is lightweight middleware - it only refreshes session cookies.
  * Actual authentication/authorization checks should happen in server-side code.
  * 
  * See: https://supabase.com/docs/guides/auth/server-side/nextjs
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Create a response that we can modify
   let supabaseResponse = NextResponse.next({
     request,
   });
 
-  // Create Supabase client with cookie handling for proxy
+  // Create Supabase client with cookie handling for middleware
   const supabase = createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
 }
 
 /**
- * Configure which routes the proxy runs on.
+ * Configure which routes the middleware runs on.
  * Excludes static files and Next.js internals.
  */
 export const config = {
