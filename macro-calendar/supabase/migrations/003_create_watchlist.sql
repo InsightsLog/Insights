@@ -15,6 +15,13 @@ CREATE TABLE IF NOT EXISTS watchlist (
     CONSTRAINT watchlist_user_indicator_unique UNIQUE (user_id, indicator_id)
 );
 
+-- Create indexes for efficient lookups
+CREATE INDEX IF NOT EXISTS idx_watchlist_user_id ON watchlist(user_id);
+CREATE INDEX IF NOT EXISTS idx_watchlist_user_created_at ON watchlist(user_id, created_at DESC);
+
+-- Add comment for documentation
+COMMENT ON TABLE watchlist IS 'User watchlist entries linking profiles to indicators';
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE watchlist ENABLE ROW LEVEL SECURITY;
 
