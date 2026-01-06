@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- **Added:** User accounts infrastructure with profiles table (T100)
+  - Profiles table created with id, email, display_name, created_at, updated_at
+  - Auto-creates profile when user signs up via Supabase Auth
+  - Row Level Security ensures users can only access their own profile
 - **Performance:** Batched admin upload queries for improved performance (T092)
   - CSV upload now uses batch queries instead of N+1 queries per row
   - Target: 2-3 total queries for indicators + releases regardless of row count
