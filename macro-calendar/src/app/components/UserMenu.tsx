@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createSupabaseClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
@@ -16,14 +16,21 @@ export function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const supabase = createSupabaseClient();
+  // Memoize the Supabase client to reuse across effect and handlers
+  const supabase = useMemo(() => createSupabaseClient(), []);
 
-    // Get initial auth state
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      setLoading(false);
-    });
+  useEffect(() => {
+    // Get initial auth state with error handling
+    supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        setUser(user);
+        setLoading(false);
+      })
+      .catch(() => {
+        // On error, treat as logged out
+        setUser(null);
+        setLoading(false);
+      });
 
     // Subscribe to auth state changes
     const {
@@ -33,10 +40,9 @@ export function UserMenu() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   const handleSignOut = async () => {
-    const supabase = createSupabaseClient();
     await supabase.auth.signOut();
     // The onAuthStateChange subscription will update the UI
   };
