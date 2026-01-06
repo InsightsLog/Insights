@@ -3,12 +3,12 @@
 -- Date: 2026-01-06
 -- Task: T120
 
--- Enable pgcrypto extension for gen_random_uuid (id defaults)
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- Enable uuid-ossp extension for uuid_generate_v4 (id defaults)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create watchlist table
 CREATE TABLE IF NOT EXISTS watchlist (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     indicator_id UUID NOT NULL REFERENCES indicators(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
