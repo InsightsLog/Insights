@@ -37,7 +37,8 @@ CREATE POLICY "Users can insert own watchlist"
     ON watchlist FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
--- Update policy: users can update only their own watchlist items
+-- Update policy: included for completeness, though current schema has no updatable fields
+-- Users would typically delete and re-add rather than update
 CREATE POLICY "Users can update own watchlist"
     ON watchlist FOR UPDATE
     USING (auth.uid() = user_id)
