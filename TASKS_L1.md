@@ -49,7 +49,7 @@
   - Test: clicking magic link in email redirects to home logged in
 
 ## 1) Auth UI
-- [ ] T110 Add Header component with UserMenu
+- [X] T110 Add Header component with UserMenu
   - Components: Header.tsx, UserMenu.tsx
   - Test: header shows on all pages; shows "Sign In" when logged out
 
@@ -57,7 +57,7 @@
   - Component: AuthModal.tsx
   - Test: clicking Sign In opens modal; entering email sends magic link
 
-- [ ] T112 Update layout.tsx to include Header
+- [X] T112 Update layout.tsx to include Header
   - Test: header visible on /, /indicator/[id], /watchlist
 
 ## 2) Watchlist Feature
