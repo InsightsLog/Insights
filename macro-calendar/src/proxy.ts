@@ -43,10 +43,12 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Refresh session by calling getUser()
+  // Refresh session by calling getClaims()
   // IMPORTANT: Do not remove this call - it refreshes the session cookie
+  // Do not run code between createServerClient and getClaims() to avoid
+  // hard-to-debug issues with users being randomly logged out.
   // The return value is intentionally unused; the side effect is cookie refresh
-  await supabase.auth.getUser();
+  await supabase.auth.getClaims();
 
   return supabaseResponse;
 }
