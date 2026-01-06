@@ -47,14 +47,20 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   // Handle escape key to close modal
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === "Escape") {
         handleClose();
       }
     };
 
     document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [isOpen, handleClose]);
 
   // Prevent body scroll when modal is open
@@ -202,7 +208,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 id="email-input"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.trim())}
                 placeholder="you@example.com"
                 className="mb-3 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder-zinc-400"
                 disabled={loading}
@@ -218,7 +224,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
               <button
                 type="submit"
-                disabled={loading || !email}
+                disabled={loading || !email.trim()}
                 className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Sending..." : "Send Magic Link"}
