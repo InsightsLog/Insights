@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- **Added:** Header component with UserMenu for authentication UI (T110)
+  - Global `Header` component shows app title and navigation
+  - `UserMenu` component shows "Sign In" button when logged out
+  - Shows user email and "Sign Out" button when logged in
+  - Uses Supabase client-side auth state subscription for reactive updates
 - **Added:** Auth callback route for magic link sign-in (T103)
   - Route at `/auth/callback` handles Supabase magic link redirect
   - Exchanges auth code for session and redirects to home page
