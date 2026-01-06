@@ -53,7 +53,7 @@
   - Components: Header.tsx, UserMenu.tsx
   - Test: header shows on all pages; shows "Sign In" when logged out
 
-- [ ] T111 Add AuthModal with magic link sign-in
+- [X] T111 Add AuthModal with magic link sign-in
   - Component: AuthModal.tsx
   - Test: clicking Sign In opens modal; entering email sends magic link
 

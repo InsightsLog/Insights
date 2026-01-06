@@ -1,6 +1,13 @@
 # Changelog
 
 ## Unreleased
+- **Added:** AuthModal component with magic link sign-in (T111)
+  - Modal opens when clicking "Sign In" button in header
+  - Email input with Zod validation
+  - Sends magic link via Supabase Auth `signInWithOtp`
+  - Shows success message after sending magic link
+  - Accessible: supports Escape key to close, backdrop click, and aria labels
+  - Form state resets when closing the modal
 - **Added:** Header component with UserMenu for authentication UI (T110)
   - Global `Header` component shows app title and navigation
   - `UserMenu` component shows "Sign In" button when logged out
