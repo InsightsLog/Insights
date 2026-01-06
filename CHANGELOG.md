@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- **Added:** Auth middleware for session refresh (T101)
+  - Middleware at `src/middleware.ts` refreshes Supabase auth cookies on each request
+  - Ensures session cookies are refreshed before expiration
+  - Configured to run on all routes except static files
 - **Added:** User accounts infrastructure with profiles table (T100)
   - Profiles table created with id, email, display_name, created_at, updated_at
   - Auto-creates profile when user signs up via Supabase Auth
