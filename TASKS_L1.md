@@ -67,7 +67,7 @@
   - RLS: users can only CRUD their own watchlist items
   - Test: insert watchlist row; verify RLS blocks other users
 
-- [ ] T121 Add watchlist server actions
+- [x] T121 Add watchlist server actions
   - File: src/app/actions/watchlist.ts
   - Actions: addToWatchlist, removeFromWatchlist, toggleWatchlist
   - Test: actions modify watchlist table correctly

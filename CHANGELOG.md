@@ -1,6 +1,13 @@
 # Changelog
 
 ## Unreleased
+- **Added:** Watchlist server actions for managing saved indicators (T121)
+  - `addToWatchlist(indicatorId)` - add indicator to user's watchlist
+  - `removeFromWatchlist(indicatorId)` - remove indicator from user's watchlist
+  - `toggleWatchlist(indicatorId)` - toggle indicator's watchlist state
+  - Input validation with Zod (UUID format)
+  - Authentication checks and error handling
+  - Unit tests for all actions and edge cases
 - **Added:** Watchlist table with Row Level Security (T120)
   - Stores user-indicator relationships for saved/watched indicators
   - Unique constraint ensures each user can save an indicator only once
