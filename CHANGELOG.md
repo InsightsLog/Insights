@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- **Added:** Watchlist table with Row Level Security (T120)
+  - Stores user-indicator relationships for saved/watched indicators
+  - Unique constraint ensures each user can save an indicator only once
+  - RLS policies enforce users can only CRUD their own watchlist items
+  - Indexed by user_id and indicator_id for efficient queries
 - **Added:** AuthModal component with magic link sign-in (T111)
   - Modal opens when clicking "Sign In" button in header
   - Email input with Zod validation
