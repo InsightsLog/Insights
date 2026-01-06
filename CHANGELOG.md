@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- **Added:** Auth callback route for magic link sign-in (T103)
+  - Route at `/auth/callback` handles Supabase magic link redirect
+  - Exchanges auth code for session and redirects to home page
+  - Supports optional `next` parameter for post-login redirect destination (validated for security)
+  - Handles error cases (missing code, exchange failure) with redirect to home
+  - Uses shared `createSupabaseServerClient()` utility for consistency
 - **Added:** Auth helper functions for user management (T102)
   - `getCurrentUser()` in `src/lib/supabase/auth.ts` returns current user's profile or null
   - Provides typed `UserProfile` interface for consistent user data handling

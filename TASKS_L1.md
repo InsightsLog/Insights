@@ -44,7 +44,7 @@
   - File: src/lib/supabase/auth.ts
   - Test: getCurrentUser returns null when logged out, user when logged in
 
-- [ ] T103 Add auth callback route for magic link
+- [X] T103 Add auth callback route for magic link
   - Route: /auth/callback
   - Test: clicking magic link in email redirects to home logged in
 
