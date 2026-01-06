@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { createSupabaseClient } from "@/lib/supabase/client";
+import { AuthModal } from "./AuthModal";
 import type { User } from "@supabase/supabase-js";
 
 /**
  * Client component that shows authentication state and sign in/out controls.
  * 
- * - When logged out: shows "Sign In" button
+ * - When logged out: shows "Sign In" button that opens AuthModal
  * - When logged in: shows user email and "Sign Out" button
  * 
  * Uses Supabase client-side auth state subscription to stay reactive to changes.
@@ -15,6 +16,7 @@ import type { User } from "@supabase/supabase-js";
 export function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Memoize the Supabase client to reuse across effect and handlers
   const supabase = useMemo(() => createSupabaseClient(), []);
@@ -47,6 +49,14 @@ export function UserMenu() {
     // The onAuthStateChange subscription will update the UI
   };
 
+  const handleOpenAuthModal = useCallback(() => {
+    setAuthModalOpen(true);
+  }, []);
+
+  const handleCloseAuthModal = useCallback(() => {
+    setAuthModalOpen(false);
+  }, []);
+
   // Show nothing while loading to prevent layout shift
   if (loading) {
     return (
@@ -71,14 +81,14 @@ export function UserMenu() {
   }
 
   return (
-    <button
-      onClick={() => {
-        // T111 will add AuthModal that opens on click
-        // For now, this is a placeholder button
-      }}
-      className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-    >
-      Sign In
-    </button>
+    <>
+      <button
+        onClick={handleOpenAuthModal}
+        className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+      >
+        Sign In
+      </button>
+      <AuthModal isOpen={authModalOpen} onClose={handleCloseAuthModal} />
+    </>
   );
 }
