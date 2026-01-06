@@ -6,7 +6,7 @@
 -- Create watchlist table
 -- Stores user-indicator relationships for saved/watched indicators
 CREATE TABLE IF NOT EXISTS watchlist (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     indicator_id UUID NOT NULL REFERENCES indicators(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
