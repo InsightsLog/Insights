@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { toggleWatchlist, type WatchlistActionResult } from "@/app/actions/watchlist";
 import type { User } from "@supabase/supabase-js";
@@ -32,6 +32,10 @@ export function WatchlistButton({ indicatorId, initialWatching = false }: Watchl
   const [error, setError] = useState<string | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
 
+  // Refs to track timeout IDs for cleanup on unmount
+  const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Memoize the Supabase client
   const supabase = useMemo(() => createSupabaseClient(), []);
 
@@ -61,12 +65,28 @@ export function WatchlistButton({ indicatorId, initialWatching = false }: Watchl
     setIsWatching(initialWatching);
   }, [initialWatching]);
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current);
+      }
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleClick = useCallback(async () => {
     // If not authenticated, show tooltip instead of toggling
     if (!user) {
       setShowTooltip(true);
+      // Clear any existing timeout before setting a new one
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current);
+      }
       // Hide tooltip after 3 seconds
-      setTimeout(() => setShowTooltip(false), 3000);
+      tooltipTimeoutRef.current = setTimeout(() => setShowTooltip(false), 3000);
       return;
     }
 
@@ -81,8 +101,12 @@ export function WatchlistButton({ indicatorId, initialWatching = false }: Watchl
       setIsWatching(result.data.isWatching);
     } else if (!result.success) {
       setError(result.error);
+      // Clear any existing timeout before setting a new one
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
       // Clear error after 3 seconds
-      setTimeout(() => setError(null), 3000);
+      errorTimeoutRef.current = setTimeout(() => setError(null), 3000);
     }
   }, [user, indicatorId]);
 
