@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- **Added:** MCP smoke test results documentation for Supabase, Vercel, and Context7 integrations
+  - Validated MCP server configuration and availability
+  - Identified missing MCP server configurations for Supabase and Vercel
+  - Identified missing/invalid Context7 API key
+  - Documented remediation steps for all three integrations
+  - Created comprehensive test report at `MCP_SMOKE_TEST_RESULTS.md`
 - **Added:** WatchlistButton component for adding/removing indicators (T122)
   - Client component with star icon toggle
   - States: loading, not authenticated (tooltip), watching (filled star), not watching (outline star)
