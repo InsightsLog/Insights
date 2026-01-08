@@ -72,25 +72,31 @@ async function getUserWatchlist(): Promise<DataResult<WatchlistItem[]>> {
     };
   }
 
-  // For each watchlist item, fetch the next release
-  const watchlistWithReleases = await Promise.all(
-    (watchlistData ?? []).map(async (item) => {
-      // Fetch next release for this indicator
-      const { data: releaseData } = await supabase
-        .from("releases")
-        .select("release_at, period")
-        .eq("indicator_id", item.indicator_id)
-        .gte("release_at", new Date().toISOString())
-        .order("release_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
+  // Fetch next releases for all indicators in one query
+  const indicatorIds = (watchlistData ?? []).map(item => item.indicator_id);
+  const { data: releasesData } = await supabase
+    .from("releases")
+    .select("indicator_id, release_at, period")
+    .in("indicator_id", indicatorIds)
+    .gte("release_at", new Date().toISOString())
+    .order("release_at", { ascending: true });
 
-      return {
-        ...item,
-        next_release: releaseData,
-      };
-    })
-  );
+  // Group releases by indicator_id and take the first (next) one for each
+  const nextReleasesByIndicator = new Map<string, { release_at: string; period: string }>();
+  for (const release of releasesData ?? []) {
+    if (!nextReleasesByIndicator.has(release.indicator_id)) {
+      nextReleasesByIndicator.set(release.indicator_id, {
+        release_at: release.release_at,
+        period: release.period,
+      });
+    }
+  }
+
+  // Combine watchlist items with their next releases
+  const watchlistWithReleases = (watchlistData ?? []).map((item) => ({
+    ...item,
+    next_release: nextReleasesByIndicator.get(item.indicator_id) ?? null,
+  }));
 
   // Validate the response with Zod
   try {
@@ -120,20 +126,13 @@ function formatReleaseTime(isoString: string): string {
 }
 
 export default async function WatchlistPage() {
-  const supabase = await createSupabaseServerClient();
-
-  // Check authentication first
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Fetch user's watchlist (includes authentication check)
+  const result = await getUserWatchlist();
 
   // Redirect to home if not authenticated
-  if (!user) {
+  if (!result.success && result.error === "Not authenticated") {
     redirect("/");
   }
-
-  // Fetch user's watchlist
-  const result = await getUserWatchlist();
 
   // Handle errors
   if (!result.success) {
