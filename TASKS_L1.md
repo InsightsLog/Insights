@@ -86,7 +86,7 @@
   - Test: can add/remove indicator from watchlist on detail page
 
 ## 3) Calendar Watchlist Filter
-- [ ] T130 Add "My Watchlist" toggle to CalendarFilters
+- [X] T130 Add "My Watchlist" toggle to CalendarFilters
   - Only shows when authenticated
   - Test: toggle filters calendar to only watchlist items
 

@@ -6,6 +6,7 @@ import { useCallback, useState, useEffect } from "react";
 type CalendarFiltersProps = {
   countries: string[];
   categories: string[];
+  isAuthenticated: boolean;
 };
 
 /**
@@ -15,6 +16,7 @@ type CalendarFiltersProps = {
 export function CalendarFilters({
   countries,
   categories,
+  isAuthenticated,
 }: CalendarFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -22,6 +24,7 @@ export function CalendarFilters({
   const currentCountry = searchParams.get("country") ?? "";
   const currentCategory = searchParams.get("category") ?? "";
   const currentSearch = searchParams.get("search") ?? "";
+  const currentWatchlist = searchParams.get("watchlist") === "true";
 
   // Local state for search input (debounced)
   const [searchValue, setSearchValue] = useState(currentSearch);
@@ -120,8 +123,31 @@ export function CalendarFilters({
         />
       </div>
 
+      {/* Watchlist toggle - only shown when authenticated */}
+      {isAuthenticated && (
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="watchlist-toggle"
+            className="flex cursor-pointer items-center gap-2"
+          >
+            <input
+              id="watchlist-toggle"
+              type="checkbox"
+              checked={currentWatchlist}
+              onChange={(e) =>
+                updateFilter("watchlist", e.target.checked ? "true" : "")
+              }
+              className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:border-zinc-600 dark:bg-zinc-800"
+            />
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              My Watchlist
+            </span>
+          </label>
+        </div>
+      )}
+
       {/* Clear filters button (only show when filters active) */}
-      {(currentCountry || currentCategory || currentSearch) && (
+      {(currentCountry || currentCategory || currentSearch || currentWatchlist) && (
         <button
           onClick={() => {
             setSearchValue("");
