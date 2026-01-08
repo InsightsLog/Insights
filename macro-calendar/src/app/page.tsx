@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { CalendarFilters } from "./components/CalendarFilters";
 import { z } from "zod";
 import Link from "next/link";
@@ -83,18 +84,44 @@ async function getFilterOptions(): Promise<DataResult<FilterOptions>> {
 
 /**
  * Fetches releases scheduled within the next 7 days, joined with indicator data.
- * Optionally filters by country_code and/or category.
+ * Optionally filters by country_code, category, search, and watchlist.
  * Returns releases ordered by release_at ascending.
  */
 async function getUpcomingReleases(filters: {
   country?: string;
   category?: string;
   search?: string;
+  watchlistOnly?: boolean;
+  userId?: string;
 }): Promise<DataResult<ReleaseWithIndicator[]>> {
   const supabase = await createSupabaseServerClient();
 
   const now = new Date();
   const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  // If filtering by watchlist, fetch user's watchlist indicator IDs first
+  let watchlistIndicatorIds: string[] = [];
+  if (filters.watchlistOnly && filters.userId) {
+    const { data: watchlistData, error: watchlistError } = await supabase
+      .from("watchlist")
+      .select("indicator_id")
+      .eq("user_id", filters.userId);
+
+    if (watchlistError) {
+      console.error("Error fetching watchlist:", watchlistError);
+      return {
+        success: false,
+        error: "Unable to load watchlist data. Please check your connection and try again."
+      };
+    }
+
+    watchlistIndicatorIds = (watchlistData ?? []).map(row => row.indicator_id);
+
+    // If watchlist is empty, return empty results early
+    if (watchlistIndicatorIds.length === 0) {
+      return { success: true, data: [] };
+    }
+  }
 
   let query = supabase
     .from("releases")
@@ -117,6 +144,11 @@ async function getUpcomingReleases(filters: {
     )
     .gte("release_at", now.toISOString())
     .lte("release_at", sevenDaysFromNow.toISOString());
+
+  // Apply watchlist filter
+  if (filters.watchlistOnly && watchlistIndicatorIds.length > 0) {
+    query = query.in("indicator_id", watchlistIndicatorIds);
+  }
 
   // Apply filters on the joined indicators table
   if (filters.country) {
@@ -181,15 +213,19 @@ function formatReleaseTime(isoString: string): string {
 }
 
 type PageProps = {
-  searchParams: Promise<{ country?: string; category?: string; search?: string }>;
+  searchParams: Promise<{ country?: string; category?: string; search?: string; watchlist?: string }>;
 };
 
 export default async function CalendarPage({ searchParams }: PageProps) {
   const params = await searchParams;
+  const user = await getCurrentUser();
+  
   const filters = {
     country: params.country,
     category: params.category,
     search: params.search,
+    watchlistOnly: params.watchlist === "true",
+    userId: user?.id,
   };
 
   const [releasesResult, filterOptionsResult] = await Promise.all([
@@ -217,6 +253,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
         <CalendarFilters
           countries={filterOptions.countries}
           categories={filterOptions.categories}
+          isAuthenticated={!!user}
         />
 
         {/* Search placeholder — T023 */}

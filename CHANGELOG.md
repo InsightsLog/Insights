@@ -1,6 +1,13 @@
 # Changelog
 
 ## Unreleased
+- **Added:** "My Watchlist" toggle to calendar filters (T130)
+  - Toggle only appears when user is authenticated
+  - When enabled, filters calendar to show only indicators in user's watchlist
+  - Toggle state persists in URL search params (bookmarkable/shareable)
+  - Combines with existing country, category, and search filters
+  - Shows empty state when watchlist is empty
+  - Clear filters button clears watchlist toggle along with other filters
 - **Added:** WatchlistButton component on indicator detail page (T124)
   - Users can add/remove indicators from their watchlist directly from `/indicator/[id]` pages
   - Button shows different states: loading, not authenticated (with tooltip), watching, not watching
