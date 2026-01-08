@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- **Fixed:** Deployment 404 error persisting after PRs #48/#49 by adding explicit `framework: "nextjs"` to vercel.json
+  - Root cause: Vercel project settings had `outputDirectory: "/macro-calendar/.next"` (absolute path with leading `/`) which breaks SSR routing
+  - The `vercel.json` without explicit framework setting allowed project settings to interfere with Next.js builder
+  - Adding `framework: "nextjs"` tells Vercel to use the Next.js builder which handles SSR output automatically
 - **Fixed:** Deployment 404 error persisting after PR #48 - removed `outputDirectory` from vercel.json
   - Removed `outputDirectory` setting which doesn't work correctly for SSR Next.js apps
   - Kept `installCommand` and `buildCommand` for monorepo build support

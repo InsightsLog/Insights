@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
   "installCommand": "cd macro-calendar && npm install",
   "buildCommand": "cd macro-calendar && npm run build"
 }
