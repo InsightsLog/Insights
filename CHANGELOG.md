@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- **Docs:** Updated migration instructions to include all required migration files
+  - Root cause of "Unable to load watchlist data" error: `watchlist` table migration not applied
+  - DEPLOY.md section 1.2 now lists all four migration files in order: 001_create_tables, 002_create_profiles, 003_create_watchlist, plus optional test seed
+  - Added dedicated troubleshooting section for "Unable to load watchlist data" error
+  - Updated RLS verification section to list all four tables that should have RLS enabled
+  - Fix requires running `003_create_watchlist.sql` in Supabase SQL Editor
 - **Fixed:** Magic link authentication failing with "auth_failed" error
   - Root cause: Middleware used `getClaims()` which only validates JWT locally
   - Changed to `getUser()` which properly refreshes the auth session with Supabase server
