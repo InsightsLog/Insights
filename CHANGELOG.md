@@ -6,6 +6,15 @@
 - **Milestone:** L1 marked as shipped; L2 development now in progress
 - **Focus:** Email alerts, role-based admin access, rate limiting, revision tracking
 
+### Database Migrations
+- **Added:** alert_preferences table migration (`004_create_alert_preferences.sql`) (T200)
+  - Schema: id, user_id, indicator_id, email_enabled, created_at, updated_at
+  - Unique constraint on (user_id, indicator_id) prevents duplicate preferences
+  - RLS policies ensure users can only CRUD their own preferences
+  - Indexes for user lookups, indicator lookups, and email-enabled queries
+  - Auto-update trigger for updated_at column
+- **Added:** Test file for alert_preferences verification (`004_test_alert_preferences.sql`)
+
 ### Documentation Updates
 - **Added:** TASKS_L2.md with structured L2 task definitions
   - T200-T204: Email alerts feature

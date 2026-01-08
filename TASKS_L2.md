@@ -7,7 +7,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
 
 ## 0) Email Alerts
 
-- [ ] T200 Add alert_preferences table
+- [x] T200 Add alert_preferences table
   - Migration: alert_preferences(id, user_id, indicator_id, email_enabled, created_at, updated_at)
   - Constraint: unique(user_id, indicator_id)
   - RLS: users can only CRUD their own preferences
