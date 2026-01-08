@@ -1,10 +1,10 @@
 # Changelog
 
 ## Unreleased
-- **Fixed:** Deployment 404 error by adding vercel.json with correct output configuration
-  - Added vercel.json with correct `outputDirectory` path (`macro-calendar/.next`)
-  - Fixed outputDirectory to use relative path instead of absolute path with leading `/`
-  - Root cause: Vercel project settings had outputDirectory as `/macro-calendar/.next` (absolute) instead of `macro-calendar/.next` (relative)
+- **Fixed:** Deployment 404 error persisting after PR #48 - removed `outputDirectory` from vercel.json
+  - Removed `outputDirectory` setting which doesn't work correctly for SSR Next.js apps
+  - Kept `installCommand` and `buildCommand` for monorepo build support
+  - Root cause: For SSR Next.js apps, Vercel's built-in Next.js builder handles output directories automatically; manually setting `outputDirectory` causes 404 errors on routes
 - **Docs:** Added MCP tools section to AGENTS.md
   - Instructions for agents to use GitHub MCP for CI/PR/issue operations
   - Instructions for agents to use Supabase MCP for schema and documentation lookups
