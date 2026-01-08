@@ -1,190 +1,173 @@
 # Changelog
 
-## Unreleased
-- **Improved:** Loading states for auth components now prevent layout shift (T140)
+## [1.0.0] - L1 Release - 2026-01-08
+
+### User Accounts & Authentication
+- **Added:** Magic link authentication with Supabase Auth
+  - Email-based sign-in (no passwords required)
+  - Auth callback route at `/auth/callback` for magic link redirect
+  - Supports optional post-login redirect with security validation
+- **Added:** User profiles table with auto-provisioning
+  - Profile automatically created when user signs up
+  - Row Level Security ensures users can only access their own profile
+  - Helper function `getCurrentUser()` for user management
+- **Added:** Auth middleware for session refresh
+  - Session cookies refreshed on each request before expiration
+- **Added:** Header component with UserMenu for authentication UI
+  - Shows "Sign In" button when logged out
+  - Shows user email and "Sign Out" button when logged in
+  - Real-time auth state updates via Supabase subscription
+- **Added:** AuthModal component with magic link sign-in
+  - Modal opens when clicking "Sign In" button
+  - Email validation with Zod
+  - Accessible with keyboard navigation and ARIA labels
+- **Improved:** Loading states for auth components prevent layout shift (T140)
   - UserMenu receives initial auth state from server-side rendering
-  - Eliminates skeleton loader that could cause layout shift during hydration
-  - Auth state is passed from root layout → Header → UserMenu
-  - Client-side auth state subscription still active for real-time updates
+  - Auth state passed from root layout → Header → UserMenu
   - No visual jump when auth state is resolved on page load
-- **Docs:** Updated migration instructions to include all required migration files
-  - Root cause of "Unable to load watchlist data" error: `watchlist` table migration not applied
-  - DEPLOY.md section 1.2 now lists all four migration files in order: 001_create_tables, 002_create_profiles, 003_create_watchlist, plus optional test seed
-  - Added dedicated troubleshooting section for "Unable to load watchlist data" error
-  - Updated RLS verification section to list all four tables that should have RLS enabled
-  - Fix requires running `003_create_watchlist.sql` in Supabase SQL Editor
-- **Fixed:** Magic link authentication failing with "auth_failed" error
-  - Root cause: Middleware used `getClaims()` which only validates JWT locally
-  - Changed to `getUser()` which properly refreshes the auth session with Supabase server
-  - Reference: https://supabase.com/docs/guides/auth/server-side/creating-a-client
-- **Docs:** Added troubleshooting guide for magic link localhost redirect issue
-  - Root cause: Supabase Auth Site URL not configured to production URL
-  - Magic links redirect to `http://localhost:3000` when Site URL is left as default
-  - Fix: Update Site URL in Supabase Authentication → URL Configuration to production URL
-  - Updated section 1.5 with clearer, step-by-step Site URL configuration instructions
-  - Added dedicated troubleshooting section explaining the issue and resolution
-- **Added:** "My Watchlist" toggle to calendar filters (T130)
+
+### Watchlist Features
+- **Added:** Watchlist table with Row Level Security
+  - Users can save indicators to their personal watchlist
+  - Unique constraint prevents duplicate saves
+  - RLS policies enforce users can only manage their own watchlist items
+- **Added:** Watchlist server actions for managing saved indicators
+  - `addToWatchlist(indicatorId)` - add indicator to watchlist
+  - `removeFromWatchlist(indicatorId)` - remove from watchlist
+  - `toggleWatchlist(indicatorId)` - toggle watchlist state
+  - Input validation with Zod, authentication checks, error handling
+- **Added:** WatchlistButton component
+  - Available on indicator detail pages
+  - Shows different states: loading, not authenticated (with tooltip), watching, not watching
+  - Disabled with "Sign in to save" tooltip when logged out
+- **Added:** Watchlist page at `/watchlist`
+  - View all saved indicators with next release date and period
+  - Redirects to home if not authenticated
+  - Empty state with call-to-action when no indicators saved
+  - Table shows: Indicator name (linked), Country, Category, Next Release, Period
+- **Added:** "My Watchlist" toggle to calendar filters
   - Toggle only appears when user is authenticated
-  - When enabled, filters calendar to show only indicators in user's watchlist
-  - Toggle state persists in URL search params (bookmarkable/shareable)
+  - Filters calendar to show only watchlist indicators
+  - Toggle state persists in URL (bookmarkable/shareable)
   - Combines with existing country, category, and search filters
   - Shows empty state when watchlist is empty
-  - Clear filters button clears watchlist toggle along with other filters
-- **Added:** WatchlistButton component on indicator detail page (T124)
-  - Users can add/remove indicators from their watchlist directly from `/indicator/[id]` pages
-  - Button shows different states: loading, not authenticated (with tooltip), watching, not watching
-  - Disabled with "Sign in to save" tooltip when user is logged out
-  - Integrates with existing watchlist server actions (T121)
-- **Added:** Watchlist page at `/watchlist` for viewing saved indicators (T123)
-  - Shows user's saved indicators with next release date and period
-  - Redirects to home page if user is not authenticated
-  - Empty state with call-to-action when no indicators saved
-  - Table displays: Indicator name (linked), Country, Category, Next Release, Period
-  - Integrates with existing watchlist actions and RLS policies
-- **Fixed:** Production deployment 404 errors caused by conflicting vercel.json commands
-  - Root cause: The `vercel.json` file used `cd macro-calendar &&` prefixes in `installCommand` and `buildCommand`, but the Vercel project Root Directory is already set to `macro-calendar`
-  - When Root Directory is set, Vercel changes working directory BEFORE running any commands, so `cd macro-calendar` failed with "No such file or directory"
-  - Fix: Removed `installCommand` and `buildCommand` from `vercel.json` since the project settings in Vercel UI already handle this correctly
-- **Docs:** Added deployment troubleshooting for 404 errors caused by incorrect Vercel project settings
-  - Root cause: Vercel project settings have `outputDirectory: "/macro-calendar/.next"` (absolute path with leading `/`) which breaks SSR routing
-  - For Next.js SSR apps, the Output Directory should be left empty (Vercel handles it automatically)
-  - Added clear instructions in DEPLOY.md section 2.1 and troubleshooting section 7
-  - Manual fix required: User must clear Output Directory in Vercel project settings and redeploy
-- **Fixed:** Deployment 404 error persisting after PR #48 - removed `outputDirectory` from vercel.json
-  - Removed `outputDirectory` setting which doesn't work correctly for SSR Next.js apps
-  - Kept `installCommand` and `buildCommand` for monorepo build support
-  - Root cause: For SSR Next.js apps, Vercel's built-in Next.js builder handles output directories automatically; manually setting `outputDirectory` causes 404 errors on routes
-- **Docs:** Added MCP tools section to AGENTS.md
-  - Instructions for agents to use GitHub MCP for CI/PR/issue operations
-  - Instructions for agents to use Supabase MCP for schema and documentation lookups
-  - Instructions for agents to use Vercel MCP for deployment management
-- **Added:** Watchlist server actions for managing saved indicators (T121)
-  - `addToWatchlist(indicatorId)` - add indicator to user's watchlist
-  - `removeFromWatchlist(indicatorId)` - remove indicator from user's watchlist
-  - `toggleWatchlist(indicatorId)` - toggle indicator's watchlist state
-  - Input validation with Zod (UUID format)
-  - Authentication checks and error handling
-  - Unit tests for all actions and edge cases
-- **Added:** Watchlist table with Row Level Security (T120)
-  - Stores user-indicator relationships for saved/watched indicators
-  - Unique constraint ensures each user can save an indicator only once
-  - RLS policies enforce users can only CRUD their own watchlist items
-  - Indexed by user_id and indicator_id for efficient queries
-- **Added:** AuthModal component with magic link sign-in (T111)
-  - Modal opens when clicking "Sign In" button in header
-  - Email input with Zod validation
-  - Sends magic link via Supabase Auth `signInWithOtp`
-  - Shows success message after sending magic link
-  - Accessible: supports Escape key to close, backdrop click, and aria labels
-  - Form state resets when closing the modal
-- **Added:** Header component with UserMenu for authentication UI (T110)
-  - Global `Header` component shows app title and navigation
-  - `UserMenu` component shows "Sign In" button when logged out
-  - Shows user email and "Sign Out" button when logged in
-  - Uses Supabase client-side auth state subscription for reactive updates
-- **Added:** Auth callback route for magic link sign-in (T103)
-  - Route at `/auth/callback` handles Supabase magic link redirect
-  - Exchanges auth code for session and redirects to home page
-  - Supports optional `next` parameter for post-login redirect destination (validated for security)
-  - Handles error cases (missing code, exchange failure) with redirect to home
-  - Uses shared `createSupabaseServerClient()` utility for consistency
-- **Added:** Auth helper functions for user management (T102)
-  - `getCurrentUser()` in `src/lib/supabase/auth.ts` returns current user's profile or null
-  - Provides typed `UserProfile` interface for consistent user data handling
-  - Unit tests added for logged-in, logged-out, and error scenarios
-- **Added:** Auth middleware for session refresh (T101)
-  - Middleware at `src/middleware.ts` refreshes Supabase auth cookies on each request
-  - Ensures session cookies are refreshed before expiration
-  - Configured to run on all routes except static files
-- **Added:** User accounts infrastructure with profiles table (T100)
-  - Profiles table created with id, email, display_name, created_at, updated_at
-  - Auto-creates profile when user signs up via Supabase Auth
-  - Row Level Security ensures users can only access their own profile
-- **Performance:** Batched admin upload queries for improved performance (T092)
+
+### Performance & Optimization
+- **Performance:** Batched admin upload queries for improved performance
   - CSV upload now uses batch queries instead of N+1 queries per row
-  - Target: 2-3 total queries for indicators + releases regardless of row count
+  - Reduced to 2-3 total queries for indicators + releases regardless of row count
   - Indicators are batch-fetched, then batch-inserted/updated
   - Releases are batch-fetched (chunked at 50), then batch-inserted/updated
-- **Tests:** Added unit tests for CSV parser (T091)
-  - Extracted CSV parser into reusable module at `src/lib/csv-parser.ts`
-  - Added 30 unit tests covering: quoted fields, escaped quotes, empty fields, malformed rows
-  - Set up Vitest testing framework with `npm test` script
-- **Docs:** Updated to L1 scope (auth + watchlists)
-  - SPEC, ROADMAP, README, DEPLOY, RISKS, and templates aligned to L1
-  - L0 task/audit docs marked as archive; app README replaced with project-specific guide
-  - Backlog populated with L2 ideas surfaced during documentation pass
-- **Security:** RLS policies now included in migration file (T090)
-  - Row Level Security automatically enabled on fresh deployments
+
+### Security
+- **Security:** Row Level Security policies included in migration files
+  - RLS automatically enabled on fresh deployments
   - Public read-only access enforced; anon key cannot INSERT/UPDATE/DELETE
-  - DEPLOY.md updated to document verification steps instead of manual SQL
-- **Added:** SEO metadata and dynamic page titles (T051)
-  - Root layout includes Open Graph and Twitter card meta tags
-  - Indicator detail pages have dynamic titles showing indicator name and country (e.g., "CPI (YoY) (US)")
-  - Admin pages marked as noindex/nofollow for search engines
-  - Uses Next.js title template for consistent page title suffix
-- **Added:** Empty states and loading states for better UX (T050)
-  - Calendar page shows friendly "No upcoming releases" message when no results match filters
-  - Added skeleton loading animations for Calendar page while data loads
-  - Added skeleton loading animations for Indicator detail page while data loads
-- **Security:** Admin upload endpoint now requires ADMIN_UPLOAD_SECRET (T042)
+  - Users can only access their own profiles and watchlist items
+- **Security:** Admin upload endpoint requires ADMIN_UPLOAD_SECRET
   - Requests without secret or with invalid secret receive 401 Unauthorized
   - Secret must be set in environment variables
-- **Added:** CSV upload POST endpoint at `/api/admin/upload` (T041)
-  - Accepts multipart form data with CSV file
-  - Validates CSV structure using Zod (required: indicator_name, country_code, category, source_name, source_url, release_at, period)
-  - Optional columns: actual, forecast, previous, revised, unit, notes
-  - Upserts indicators (matched by name + country_code) and inserts/updates releases (matched by indicator_id + release_at + period)
-  - Returns detailed validation errors with row numbers for invalid CSV
-  - Admin upload form now submits to the API and shows success/error feedback
-- **Added:** Admin upload page at `/admin/upload` with CSV file upload form (T040)
-  - Includes file input, admin secret field, and CSV format documentation
-  - Upload submission placeholder pending T041 route handler implementation
-- **Added:** Historical releases table on indicator detail page (T031)
-  - Fetches up to 200 releases ordered by date descending (most recent first)
-  - Displays Date, Period, Actual, Forecast, Previous, Revised columns
-  - Actual values highlighted in green; units displayed when available
-  - Shows empty state message when no releases exist
-  - Error state displayed if database query fails
-- **Added:** Indicator detail page scaffold at `/indicator/[id]` (T030)
-  - Displays indicator header with name, country, category, and source link
-  - Indicator names in calendar are now clickable links to detail page
-  - Shows placeholder for historical releases (to be implemented in T031)
-- Initial scaffolding
-- Created Supabase database schema (indicators and releases tables with indexes)
-- Added environment variable validation with zod (src/lib/env.ts)
-- Added Supabase client wrappers for server and client components
-- **Fixed:** Environment validation now runs at startup via next.config.ts import (fail-fast on missing env vars)
-- Added calendar page "/" with table layout showing placeholder release data (T020)
-- Calendar page now queries real releases from Supabase (next 7 days, joined with indicators, ordered by release_at) (T021)
-- Calendar table now shows separate columns: Actual, Forecast, Previous, Revised (T024)
-  - Actual values display in green bold when released
-  - Revised column visible for all rows (shows "—" when no data)
-- **Verified:** `revised` column correctly included in Supabase query; added test seed data with revised value (T025)
-- Added filter dropdowns for Country and Category on calendar page (T022)
-  - Filters use URL search params for bookmarkable/shareable state
-  - Clear filters button appears when any filter is active
-- Added search input for indicator name on calendar page (T023)
-  - Search is case-insensitive and matches partial indicator names
-  - Search uses URL search params and debounces input (300ms)
-  - Can be combined with country and category filters
-- Updated app metadata: browser title now shows "Macro Calendar" instead of placeholder (T060)
-- Expanded root README with project overview, structure, quick start guide, and features list (T060)
-- **Improved:** Added graceful error handling for database failures (T061)
-  - Supabase query errors now return error states instead of silent empty arrays
-  - User sees clear error message "Unable to load calendar data" when DB connection fails
-  - Error message displayed in red alert banner instead of blank table
-- **Added:** CI/CD pipeline via GitHub Actions (T062)
-  - Runs lint, build, and security audit on every PR and push to main
-  - Uses npm audit with high severity threshold
-  - Build job validates TypeScript compilation with placeholder env vars- **Improved:** Added Zod validation for all Supabase responses (T063)
+- **Security:** Zod validation for all Supabase responses
   - Validates structure of releases and filter options data at runtime
   - Catches malformed database responses with clear error messages
   - Replaced unsafe type casts with schema-based validation
-- **Improved:** Added inline code comments for security and clarity (T065)
-  - Documented that `ilike()` search is SQL injection safe via parameterized queries
-  - Explained timezone handling assumptions in `formatReleaseTime()` function
-- **Added:** Comprehensive deployment guide (DEPLOY.md) with Vercel and Supabase setup instructions (T064)
+
+### Documentation & Deployment
+- **Docs:** Comprehensive deployment guide (DEPLOY.md) with Vercel and Supabase setup
   - Step-by-step deployment checklist for new developers
   - Environment variable configuration guide
   - Security best practices including secret rotation
   - Monitoring tips and troubleshooting section
+- **Docs:** Updated migration instructions to include all required migration files
+  - Lists all four migration files in order: 001_create_tables, 002_create_profiles, 003_create_watchlist, plus optional test seed
+  - Added dedicated troubleshooting section for "Unable to load watchlist data" error
+  - Updated RLS verification section to list all four tables
+- **Docs:** Added troubleshooting guide for magic link localhost redirect issue
+  - Fixed Site URL configuration in Supabase Authentication settings
+  - Updated section 1.5 with step-by-step Site URL configuration instructions
+- **Docs:** Documentation scope updated to L1 (auth + watchlists)
+  - SPEC, ROADMAP, README, DEPLOY, RISKS aligned to L1
+  - L0 task/audit docs marked as archive
+  - Backlog populated with L2 ideas
+- **Docs:** Added MCP tools section to AGENTS.md
+  - Instructions for using GitHub MCP for CI/PR/issue operations
+  - Instructions for using Supabase MCP for schema and documentation lookups
+  - Instructions for using Vercel MCP for deployment management
+
+### Testing & Quality
+- **Tests:** Added unit tests for CSV parser
+  - Extracted CSV parser into reusable module at `src/lib/csv-parser.ts`
+  - Added 30 unit tests covering: quoted fields, escaped quotes, empty fields, malformed rows
+  - Set up Vitest testing framework with `npm test` script
+- **Tests:** Unit tests for watchlist server actions
+  - Tests for all actions and edge cases
+  - Authentication checks and error handling validation
+
+### Bug Fixes
+- **Fixed:** Magic link authentication failing with "auth_failed" error
+  - Changed middleware from `getClaims()` to `getUser()` to properly refresh session
+  - Reference: https://supabase.com/docs/guides/auth/server-side/creating-a-client
+- **Fixed:** Production deployment 404 errors caused by conflicting vercel.json commands
+  - Removed `cd macro-calendar &&` prefixes from installCommand and buildCommand
+  - Root Directory setting in Vercel handles working directory automatically
+- **Fixed:** Deployment 404 error - removed `outputDirectory` from vercel.json
+  - For SSR Next.js apps, Vercel's builder handles output directories automatically
+  - Manually setting `outputDirectory` causes 404 errors on routes
+
+## [0.9.0] - L0 Release - 2025-12
+
+### Calendar & Browse Features
+- **Added:** Calendar page with release table showing upcoming releases (next 7 days)
+  - Real-time data from Supabase (releases joined with indicators)
+  - Displays: Date/Time, Indicator, Country, Category, Actual, Forecast, Previous, Revised
+  - Actual values highlighted in green when released
+- **Added:** Filter dropdowns for Country and Category
+  - Filters use URL search params for bookmarkable/shareable state
+  - Clear filters button appears when any filter is active
+- **Added:** Search input for indicator name
+  - Case-insensitive partial matching
+  - Debounced input (300ms)
+  - Combines with country and category filters
+- **Added:** Indicator detail pages at `/indicator/[id]`
+  - Displays indicator header with name, country, category, source link
+  - Indicator names in calendar are clickable links
+- **Added:** Historical releases table on indicator detail pages
+  - Shows up to 200 releases ordered by date descending
+  - Columns: Date, Period, Actual, Forecast, Previous, Revised
+  - Empty state message when no releases exist
+
+### Admin Features
+- **Added:** Admin upload page at `/admin/upload` with CSV file upload form
+  - File input, admin secret field, CSV format documentation
+- **Added:** CSV upload POST endpoint at `/api/admin/upload`
+  - Accepts multipart form data with CSV file
+  - Validates CSV structure using Zod
+  - Upserts indicators and inserts/updates releases
+  - Returns detailed validation errors with row numbers
+
+### Infrastructure & Quality
+- **Added:** Supabase database schema (indicators and releases tables with indexes)
+- **Added:** Environment variable validation with Zod (`src/lib/env.ts`)
+  - Validation runs at startup via next.config.ts import (fail-fast on missing env vars)
+- **Added:** Supabase client wrappers for server and client components
+- **Added:** CI/CD pipeline via GitHub Actions
+  - Runs lint, build, and security audit on every PR and push to main
+  - Uses npm audit with high severity threshold
+- **Added:** SEO metadata and dynamic page titles
+  - Open Graph and Twitter card meta tags
+  - Dynamic titles for indicator pages (e.g., "CPI (YoY) (US)")
+  - Admin pages marked as noindex/nofollow
+- **Added:** Empty states and loading states for better UX
+  - Skeleton loading animations for Calendar and Indicator detail pages
+  - Friendly "No upcoming releases" message when no results match filters
+- **Improved:** Graceful error handling for database failures
+  - Clear error messages when DB connection fails
+  - Error displayed in red alert banner instead of blank table
+- **Improved:** Added inline code comments for security and clarity
+  - Documented SQL injection safety via parameterized queries
+  - Explained timezone handling assumptions
+- **Added:** Expanded root README with project overview, structure, quick start guide
+
+## Unreleased
+
+_(No unreleased changes)_
