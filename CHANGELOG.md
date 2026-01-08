@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.1.0] - 2026-01-08
+
+### Developer Workflow
+- **Added:** GitHub workflow documentation (`GITHUB_WORKFLOW.md`)
+  - Comprehensive guide for milestones (L0, L1, L2)
+  - Label definitions with colors and usage guidelines
+  - Issue and PR workflow best practices
+  - Quick reference links and search queries
+  - CLI commands for bulk label creation
+- **Added:** Task issue template for development tasks
+  - Structured template linking to TASKS_L1.md
+  - Task ID, acceptance criteria, and test steps fields
+- **Improved:** Bug report issue template
+  - Added environment, severity, and better structure
+  - Auto-applies `bug` label
+- **Improved:** Feature request issue template
+  - Added milestone selection and user story format
+  - Auto-applies `enhancement` label
+- **Added:** Issue template config with quick links
+  - Links to ROADMAP.md, BACKLOG.md, and TASKS_L1.md
+- **Improved:** PR template with label suggestions section
+  - Checkbox list of common labels to apply
+- **Docs:** Updated AGENTS.md with GitHub workflow section
+- **Docs:** Updated README.md to reference workflow guide
+
 ## [1.0.0] - L1 Release - 2026-01-08
 
 ### User Accounts & Authentication

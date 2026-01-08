@@ -12,6 +12,12 @@ You are working in a production-bound repo. Follow these rules:
 - Update CHANGELOG.md for every user-visible change.
 - When you identify an L2 improvement during work, append it to BACKLOG.md under the appropriate section.
 
+## GitHub Issues & PRs
+- Use issue templates when creating issues (Bug, Feature, Task)
+- Apply appropriate labels to issues and PRs (see [GITHUB_WORKFLOW.md](GITHUB_WORKFLOW.md))
+- Link PRs to issues with "Closes #123" or "Fixes #123"
+- Assign issues to milestones (L1, L2) based on scope
+
 ## MCP Tools
 
 Use MCP (Model Context Protocol) tools when available for these operations:
