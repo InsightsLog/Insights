@@ -43,12 +43,16 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session by calling getClaims()
+  // Refresh session by calling getUser()
   // IMPORTANT: Do not remove this call - it refreshes the session cookie
-  // Do not run code between createServerClient and getClaims() to avoid
+  // Do not run code between createServerClient and getUser() to avoid
   // hard-to-debug issues with users being randomly logged out.
-  // The return value is intentionally unused; the side effect is cookie refresh
-  await supabase.auth.getClaims();
+  // 
+  // NOTE: We use getUser() instead of getClaims() because:
+  // - getUser() makes a request to Supabase Auth to refresh the token
+  // - getClaims() only validates the JWT locally and does NOT refresh tokens
+  // See: https://supabase.com/docs/guides/auth/server-side/creating-a-client
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
