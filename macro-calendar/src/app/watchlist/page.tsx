@@ -74,6 +74,21 @@ async function getUserWatchlist(): Promise<DataResult<WatchlistItem[]>> {
 
   // Fetch next releases for all indicators in one query
   const indicatorIds = (watchlistData ?? []).map(item => item.indicator_id);
+  
+  // Early return if no watchlist items (avoid empty .in() query)
+  if (indicatorIds.length === 0) {
+    try {
+      const validated = z.array(watchlistItemSchema).parse([]);
+      return { success: true, data: validated };
+    } catch (zodError) {
+      console.error("Watchlist data validation failed:", zodError);
+      return {
+        success: false,
+        error: "Received invalid data format from database.",
+      };
+    }
+  }
+
   const { data: releasesData } = await supabase
     .from("releases")
     .select("indicator_id, release_at, period")
