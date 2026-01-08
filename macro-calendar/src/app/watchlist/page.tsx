@@ -89,12 +89,17 @@ async function getUserWatchlist(): Promise<DataResult<WatchlistItem[]>> {
     }
   }
 
-  const { data: releasesData } = await supabase
+  const { data: releasesData, error: releasesError } = await supabase
     .from("releases")
     .select("indicator_id, release_at, period")
     .in("indicator_id", indicatorIds)
     .gte("release_at", new Date().toISOString())
     .order("release_at", { ascending: true });
+
+  if (releasesError) {
+    console.error("Error fetching releases:", releasesError);
+    // Continue with empty releases rather than failing completely
+  }
 
   // Group releases by indicator_id and take the first (next) one for each
   const nextReleasesByIndicator = new Map<string, { release_at: string; period: string }>();
