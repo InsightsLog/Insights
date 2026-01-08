@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- **Added:** WatchlistButton component on indicator detail page (T124)
+  - Users can add/remove indicators from their watchlist directly from `/indicator/[id]` pages
+  - Button shows different states: loading, not authenticated (with tooltip), watching, not watching
+  - Disabled with "Sign in to save" tooltip when user is logged out
+  - Integrates with existing watchlist server actions (T121)
 - **Added:** Watchlist page at `/watchlist` for viewing saved indicators (T123)
   - Shows user's saved indicators with next release date and period
   - Redirects to home page if user is not authenticated

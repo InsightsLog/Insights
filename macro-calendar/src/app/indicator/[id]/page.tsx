@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { WatchlistButton } from "@/app/components/WatchlistButton";
 
 // Zod schema for indicator validation
 const indicatorSchema = z.object({
@@ -204,9 +205,12 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
 
         {/* Indicator Header */}
         <header className="bg-white rounded-lg shadow p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {indicator.name}
-          </h1>
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {indicator.name}
+            </h1>
+            <WatchlistButton indicatorId={indicator.id} />
+          </div>
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
             <div>
               <span className="font-medium text-gray-700">Country:</span>{" "}
