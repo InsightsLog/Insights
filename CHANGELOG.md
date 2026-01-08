@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- **Added:** Watchlist page at `/watchlist` for viewing saved indicators (T123)
+  - Shows user's saved indicators with next release date and period
+  - Redirects to home page if user is not authenticated
+  - Empty state with call-to-action when no indicators saved
+  - Table displays: Indicator name (linked), Country, Category, Next Release, Period
+  - Integrates with existing watchlist actions and RLS policies
 - **Fixed:** Production deployment 404 errors caused by conflicting vercel.json commands
   - Root cause: The `vercel.json` file used `cd macro-calendar &&` prefixes in `installCommand` and `buildCommand`, but the Vercel project Root Directory is already set to `macro-calendar`
   - When Root Directory is set, Vercel changes working directory BEFORE running any commands, so `cd macro-calendar` failed with "No such file or directory"
