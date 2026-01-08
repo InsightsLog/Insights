@@ -21,7 +21,9 @@ CREATE TABLE IF NOT EXISTS alert_preferences (
 CREATE INDEX IF NOT EXISTS idx_alert_preferences_user_id ON alert_preferences(user_id);
 -- Index for looking up which users have alerts enabled for an indicator
 CREATE INDEX IF NOT EXISTS idx_alert_preferences_indicator_id ON alert_preferences(indicator_id);
--- Index for finding users with email alerts enabled (used by Edge Function)
+-- Partial index for finding users with email alerts enabled for a specific indicator
+-- Used by Edge Function (T203) to query: SELECT user_id FROM alert_preferences WHERE indicator_id = ? AND email_enabled = true
+-- Leading column is indicator_id because we filter by indicator first to find all subscribed users
 CREATE INDEX IF NOT EXISTS idx_alert_preferences_email_enabled ON alert_preferences(indicator_id, email_enabled) WHERE email_enabled = true;
 
 -- Add comment for documentation
