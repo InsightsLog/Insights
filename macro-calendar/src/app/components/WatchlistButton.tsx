@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { toggleWatchlist } from "@/app/actions/watchlist";
 import type { User } from "@supabase/supabase-js";
@@ -27,29 +27,38 @@ export function WatchlistButton({ indicatorId }: WatchlistButtonProps) {
   const [isToggling, setIsToggling] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
-  // Memoize the Supabase client to reuse across effect and handlers
-  const supabase = useMemo(() => createSupabaseClient(), []);
+  // Use ref to store the Supabase client to avoid recreating it
+  const supabaseRef = useRef(createSupabaseClient());
+
+  // Helper function to check watchlist status for a user
+  const checkWatchlistStatus = useCallback(async (userId: string) => {
+    try {
+      const { data } = await supabaseRef.current
+        .from("watchlist")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("indicator_id", indicatorId)
+        .maybeSingle();
+
+      setIsWatching(!!data);
+    } catch (error) {
+      console.error("Error fetching watchlist status:", error);
+      setIsWatching(false);
+    }
+  }, [indicatorId]);
 
   // Fetch initial auth state and watchlist status
   useEffect(() => {
     async function init() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabaseRef.current.auth.getUser();
         setUser(user);
 
         if (user) {
-          // Check if indicator is in user's watchlist
-          const { data } = await supabase
-            .from("watchlist")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("indicator_id", indicatorId)
-            .maybeSingle();
-
-          setIsWatching(!!data);
+          await checkWatchlistStatus(user.id);
         }
       } catch (error) {
-        console.error("Error fetching watchlist status:", error);
+        console.error("Error fetching initial auth state:", error);
       } finally {
         setLoading(false);
       }
@@ -60,16 +69,21 @@ export function WatchlistButton({ indicatorId }: WatchlistButtonProps) {
     // Subscribe to auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      // Reset watching state when auth changes
-      if (!session?.user) {
+    } = supabaseRef.current.auth.onAuthStateChange(async (_event, session) => {
+      const newUser = session?.user ?? null;
+      setUser(newUser);
+      
+      // Refresh watchlist status when user logs in
+      if (newUser) {
+        await checkWatchlistStatus(newUser.id);
+      } else {
+        // Reset watching state when user logs out
         setIsWatching(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase, indicatorId]);
+  }, [checkWatchlistStatus]);
 
   const handleToggle = useCallback(async () => {
     if (!user || isToggling) return;
@@ -137,12 +151,13 @@ export function WatchlistButton({ indicatorId }: WatchlistButtonProps) {
           ? "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
           : "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
       } ${isToggling ? "cursor-wait opacity-50" : ""}`}
+      aria-busy={isToggling}
     >
       {isToggling ? (
-        "..."
+        "Loading..."
       ) : isWatching ? (
         <>
-          <span className="mr-1">✓</span> Watching
+          <span className="mr-1" aria-hidden="true">✓</span> Watching
         </>
       ) : (
         "Add to Watchlist"
