@@ -1,10 +1,10 @@
 # Changelog
 
 ## Unreleased
-- **Fixed:** Deployment 404 error persisting after PR #48 - changed vercel.json to use `rootDirectory` instead of custom build commands
-  - Removed `outputDirectory`, `installCommand`, `buildCommand` which don't work correctly for SSR Next.js apps in monorepos
-  - Added `rootDirectory: "macro-calendar"` so Vercel builds from the correct subdirectory
-  - Root cause: For SSR Next.js apps, Vercel's built-in Next.js builder should handle output directories automatically; manually setting `outputDirectory` for SSR apps causes 404 errors
+- **Fixed:** Deployment 404 error persisting after PR #48 - removed `outputDirectory` from vercel.json
+  - Removed `outputDirectory` setting which doesn't work correctly for SSR Next.js apps
+  - Kept `installCommand` and `buildCommand` for monorepo build support
+  - Root cause: For SSR Next.js apps, Vercel's built-in Next.js builder handles output directories automatically; manually setting `outputDirectory` causes 404 errors on routes
 - **Docs:** Added MCP tools section to AGENTS.md
   - Instructions for agents to use GitHub MCP for CI/PR/issue operations
   - Instructions for agents to use Supabase MCP for schema and documentation lookups
