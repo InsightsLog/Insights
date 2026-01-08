@@ -19,10 +19,10 @@
 - [ ] `refactor` - Code improvement (no behavior change)
 - [ ] `test` - Test additions/improvements
 - [ ] `breaking` - Breaking change
-- [ ] `L1` / `L2` - Milestone scope
+- [ ] `L2` / `L3` - Milestone scope
 
 ## Checklist
-- [ ] Scope matches SPEC.md L1
+- [ ] Scope matches SPEC.md L2
 - [ ] Small PR (single task)
 - [ ] CHANGELOG.md updated (if user-visible)
 - [ ] Build passes locally

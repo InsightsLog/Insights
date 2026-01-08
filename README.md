@@ -9,11 +9,12 @@ A public macroeconomic release calendar with authenticated watchlists. Users can
 ## Project Structure
 ```
 Insights/
-├── SPEC.md              # Product specification (L1 scope)
-├── TASKS.md             # L0 task archive (see TASKS_L1.md for active work)
-├── TASKS_L1.md          # Implementation task list for current scope
+├── SPEC.md              # Product specification (L2 scope)
+├── TASKS.md             # L0 task archive
+├── TASKS_L1.md          # L1 task archive (shipped)
+├── TASKS_L2.md          # Current implementation task list
 ├── CHANGELOG.md         # Release history
-├── BACKLOG.md           # Future feature ideas (L1+)
+├── BACKLOG.md           # Future feature ideas (L3+)
 ├── AGENTS.md            # Agent coding rules
 ├── macro-calendar/      # Next.js application
 │   ├── src/

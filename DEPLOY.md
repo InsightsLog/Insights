@@ -286,4 +286,4 @@ After signing in, the calendar page shows "Unable to load watchlist data. Please
 ---
 
 **Last Updated**: January 2026  
-**Version**: L1 (Auth + watchlists)
+**Version**: L2 (Alerts + Admin)

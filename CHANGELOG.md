@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.2.0] - 2026-01-08 - L2 Kickoff
+
+### Project Transition
+- **Milestone:** L1 marked as shipped; L2 development now in progress
+- **Focus:** Email alerts, role-based admin access, rate limiting, revision tracking
+
+### Documentation Updates
+- **Added:** TASKS_L2.md with structured L2 task definitions
+  - T200-T204: Email alerts feature
+  - T210-T214: Role-based admin access
+  - T220-T222: Rate limiting and abuse protection
+  - T230-T232: Revision tracking
+  - T240-T242: Documentation polish
+- **Updated:** ROADMAP.md - L1 marked shipped, L2 in progress, L3 planned
+- **Updated:** SPEC.md - Added L2 user stories and data model (alert_preferences, user_roles, audit_log tables)
+- **Updated:** AGENTS.md - Scope changed to L2, added L3 backlog references
+- **Updated:** GITHUB_WORKFLOW.md - Milestones and labels updated for L2/L3
+- **Updated:** Issue templates - Task template now references TASKS_L2.md
+- **Updated:** PR template - Checklist now references L2 scope
+- **Updated:** BACKLOG.md - Items moved to L3+ (API, billing, webhooks)
+- **Completed:** T140, T141 marked as complete in TASKS_L1.md
+
 ## [1.1.0] - 2026-01-08
 
 ### Developer Workflow
