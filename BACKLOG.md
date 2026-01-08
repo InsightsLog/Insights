@@ -1,8 +1,13 @@
 # Backlog — Future Improvements
 
-Items discovered during L1 development.
+Items discovered during development that are out of current scope.
 
-## L2+ Ideas
-- Role-based admin access (replace shared secret) with audit logs
-- Rate limiting and abuse protections for public and watchlist endpoints
-- Email/webhook alerts for indicator releases with preferences
+## L3+ Ideas
+- Webhook/push notifications for instant release alerts
+- Full REST API with API keys and versioning
+- Billing integration (Stripe) and usage quotas
+- Multi-tenant admin dashboard
+- Mobile app (React Native)
+- Calendar integrations (Google Calendar, Outlook)
+- Data export (CSV, JSON, iCal)
+- Historical data API for backtesting

@@ -91,10 +91,10 @@
   - Test: toggle filters calendar to only watchlist items
 
 ## 4) Polish + Documentation
-- [ ] T140 Add loading states for auth components
+- [X] T140 Add loading states for auth components
   - Test: no layout shift during auth state resolution
 
-- [ ] T141 Update CHANGELOG.md with L1 features
+- [X] T141 Update CHANGELOG.md with L1 features
   - Test: changelog documents user accounts + watchlist
 
 - [x] T142 Update SPEC.md with L1 user stories

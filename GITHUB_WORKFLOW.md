@@ -9,16 +9,18 @@ Milestones track feature scope aligned with the [ROADMAP.md](ROADMAP.md).
 | Milestone | Description | Status |
 |-----------|-------------|--------|
 | **L0** | Public calendar, search/filter, admin upload | ✅ Shipped |
-| **L1** | Auth with magic-link, watchlists, calendar filter | 🚧 In Progress |
-| **L2** | Email/webhook alerts, revision tracking, API | 📋 Planned |
+| **L1** | Auth with magic-link, watchlists, calendar filter | ✅ Shipped |
+| **L2** | Email alerts, role-based admin, rate limiting, revision tracking | 🚧 In Progress |
+| **L3** | Webhooks, full API, billing | 📋 Planned |
 
 ### Creating Milestones in GitHub
 
 1. Go to **Issues** → **Milestones** → **New milestone**
 2. Create milestones:
    - **L0 - Public Calendar** (Due: Dec 2025, Closed)
-   - **L1 - Auth + Watchlists** (Due: Jan 2026)
-   - **L2 - Alerts + API** (Due: TBD)
+   - **L1 - Auth + Watchlists** (Due: Jan 2026, Closed)
+   - **L2 - Alerts + Admin** (Due: TBD)
+   - **L3 - API + Billing** (Due: TBD)
 
 ## Labels
 
@@ -57,8 +59,9 @@ Use labels to categorize issues and PRs for quick filtering.
 
 | Label | Color | Description |
 |-------|-------|-------------|
-| `L1` | `#c5def5` (light blue) | Part of L1 milestone |
+| `L1` | `#c5def5` (light blue) | Part of L1 milestone (shipped) |
 | `L2` | `#bfdadc` (teal) | Part of L2 milestone |
+| `L3` | `#d4c5f9` (purple) | Part of L3 milestone |
 | `breaking` | `#b60205` (dark red) | Breaking change |
 | `security` | `#d73a4a` (red) | Security-related |
 
@@ -70,6 +73,7 @@ Use labels to categorize issues and PRs for quick filtering.
 | `area: watchlist` | `#e4e669` (lime) | Watchlist feature |
 | `area: calendar` | `#e4e669` (lime) | Calendar/releases |
 | `area: admin` | `#e4e669` (lime) | Admin upload |
+| `area: alerts` | `#e4e669` (lime) | Email/webhook alerts |
 | `area: infra` | `#e4e669` (lime) | CI/CD, deployment |
 
 ## Issue Workflow
@@ -79,15 +83,15 @@ Use labels to categorize issues and PRs for quick filtering.
 1. Use the appropriate template:
    - **Bug report** - For broken functionality
    - **Feature request** - For new features (must map to roadmap)
-   - **Task** - For development tasks from TASKS_L1.md
+   - **Task** - For development tasks from TASKS_L2.md
 
 2. Apply labels:
    - One **type** label (bug, enhancement, task)
    - One **priority** label
-   - One **scope** label (L1 or L2)
+   - One **scope** label (L2 or L3)
    - Optionally, an **area** label
 
-3. Assign to a milestone (L1 or L2)
+3. Assign to a milestone (L2 or L3)
 
 ### Issue Lifecycle
 
@@ -118,7 +122,7 @@ Open → In Progress → Ready for Review → Closed
 ### Finding Work
 
 - [Open bugs](../../issues?q=is%3Aissue+is%3Aopen+label%3Abug)
-- [L1 tasks](../../issues?q=is%3Aissue+is%3Aopen+label%3AL1)
+- [L2 tasks](../../issues?q=is%3Aissue+is%3Aopen+label%3AL2)
 - [High priority](../../issues?q=is%3Aissue+is%3Aopen+label%3A%22priority%3A+high%22)
 - [Ready for review PRs](../../pulls?q=is%3Apr+is%3Aopen+label%3A%22ready+for+review%22)
 
@@ -155,21 +159,24 @@ gh label create "in progress" --color "5319e7" --description "Currently being wo
 gh label create "blocked" --color "e99695" --description "Waiting on something"
 gh label create "ready for review" --color "0e8a16" --description "PR ready for review"
 gh label create "needs discussion" --color "fbca04" --description "Requires team input"
-gh label create "L1" --color "c5def5" --description "Part of L1 milestone"
+gh label create "L1" --color "c5def5" --description "Part of L1 milestone (shipped)"
 gh label create "L2" --color "bfdadc" --description "Part of L2 milestone"
+gh label create "L3" --color "d4c5f9" --description "Part of L3 milestone"
 gh label create "breaking" --color "b60205" --description "Breaking change"
 gh label create "security" --color "d73a4a" --description "Security-related"
 gh label create "area: auth" --color "e4e669" --description "Authentication/profiles"
 gh label create "area: watchlist" --color "e4e669" --description "Watchlist feature"
 gh label create "area: calendar" --color "e4e669" --description "Calendar/releases"
 gh label create "area: admin" --color "e4e669" --description "Admin upload"
+gh label create "area: alerts" --color "e4e669" --description "Email/webhook alerts"
 gh label create "area: infra" --color "e4e669" --description "CI/CD, deployment"
 ```
 
 ## Related Files
 
 - [ROADMAP.md](ROADMAP.md) - Feature roadmap and milestone definitions
-- [TASKS_L1.md](TASKS_L1.md) - Current task list
+- [TASKS_L2.md](TASKS_L2.md) - Current task list
+- [TASKS_L1.md](TASKS_L1.md) - L1 task archive
 - [BACKLOG.md](BACKLOG.md) - Future improvement ideas
 - [SPEC.md](SPEC.md) - Product specification
 - [AGENTS.md](AGENTS.md) - Agent coding rules

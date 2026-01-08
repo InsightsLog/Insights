@@ -20,8 +20,8 @@ As a [user type], I want to [action] so that [benefit].
 
 ## Milestone
 <!-- Which milestone does this belong to? Check ROADMAP.md -->
-- [ ] L1 (Auth + Watchlists)
-- [ ] L2 (Alerts + API)
+- [ ] L2 (Alerts + Admin)
+- [ ] L3 (API + Billing)
 - [ ] Future
 
 ## Design / mockups

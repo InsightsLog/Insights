@@ -1,6 +1,6 @@
 ---
 name: Task
-about: Development task from TASKS_L1.md or new work item
+about: Development task from TASKS_L2.md or new work item
 labels: task
 ---
 
@@ -18,7 +18,7 @@ T___
 
 ## Related
 - SPEC.md section:
-- Milestone: L1 / L2
+- Milestone: L2 / L3
 
 ## Notes
 <!-- Any additional context, links to docs, or implementation notes -->
