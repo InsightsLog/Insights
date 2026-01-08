@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- **Fixed:** Production deployment 404 errors caused by conflicting vercel.json commands
+  - Root cause: The `vercel.json` file used `cd macro-calendar &&` prefixes in `installCommand` and `buildCommand`, but the Vercel project Root Directory is already set to `macro-calendar`
+  - When Root Directory is set, Vercel changes working directory BEFORE running any commands, so `cd macro-calendar` failed with "No such file or directory"
+  - Fix: Removed `installCommand` and `buildCommand` from `vercel.json` since the project settings in Vercel UI already handle this correctly
 - **Docs:** Added deployment troubleshooting for 404 errors caused by incorrect Vercel project settings
   - Root cause: Vercel project settings have `outputDirectory: "/macro-calendar/.next"` (absolute path with leading `/`) which breaks SSR routing
   - For Next.js SSR apps, the Output Directory should be left empty (Vercel handles it automatically)

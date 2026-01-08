@@ -60,12 +60,28 @@ The policies configured:
 4. Configure project settings:
    - **Framework Preset**: Next.js (should auto-detect)
    - **Root Directory**: `macro-calendar` ← **Required for monorepo**
-   - **Build Command**: `npm run build` (default)
+   - **Build Command**: `npm run build` (default) – do NOT use `cd macro-calendar &&` prefix
+   - **Install Command**: `npm install` (default) – do NOT use `cd macro-calendar &&` prefix
    - **Output Directory**: Leave empty (Vercel handles this automatically for Next.js SSR)
-   - **Note**: Do NOT set Output Directory to `/macro-calendar/.next` or any absolute path - this breaks SSR routing
+   - **Node.js Version**: 24.x (default)
+   - **Note**: When Root Directory is set, Vercel automatically changes to that folder BEFORE running commands. Do NOT prefix commands with `cd macro-calendar &&` as this will fail.
 5. Do NOT deploy yet — configure environment variables first
 
-### 2.2 Configure Environment Variables
+### 2.2 Correct Project Settings Summary
+The Vercel project must have these settings:
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| **Root Directory** | `macro-calendar` | Required – Vercel changes to this folder before build |
+| **Framework Preset** | Next.js | Auto-detected |
+| **Build Command** | `npm run build` | Default – NO `cd` prefix needed |
+| **Install Command** | `npm install` | Default – NO `cd` prefix needed |
+| **Output Directory** | (empty) | Let Vercel auto-detect for Next.js SSR |
+| **Node.js Version** | 24.x | Current default |
+
+**Important**: The `vercel.json` file in the repo should NOT contain `installCommand` or `buildCommand` with `cd macro-calendar &&` prefixes. These conflict with the Root Directory setting and cause build failures.
+
+### 2.3 Configure Environment Variables
 In the Vercel project settings, add these environment variables:
 
 | Variable Name | Value | Where to Find |
@@ -78,7 +94,7 @@ In the Vercel project settings, add these environment variables:
 - The `NEXT_PUBLIC_` prefix exposes these to the browser (safe for anon key)
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
-### 2.3 Deploy
+### 2.4 Deploy
 1. Click **"Deploy"**
 2. Wait for build to complete (2-3 minutes)
 3. Vercel will provide a production URL: `https://your-project.vercel.app`
@@ -155,6 +171,24 @@ cp .env.example .env.local
 4. Environment validation (`src/lib/env.ts`) will fail fast if variables are missing
 
 ## 7. Troubleshooting
+
+### Build Fails with "cd: macro-calendar: No such file or directory"
+This error occurs when:
+- The `vercel.json` file has `installCommand` or `buildCommand` with `cd macro-calendar &&` prefix
+- AND the Vercel project Root Directory is set to `macro-calendar`
+
+When Root Directory is set, Vercel automatically changes to that folder BEFORE running commands. The `cd macro-calendar` then fails because there's no nested `macro-calendar` folder.
+
+**To fix:**
+1. Remove `installCommand` and `buildCommand` from `vercel.json`, OR
+2. Remove the Root Directory setting (not recommended for this monorepo)
+
+The correct `vercel.json` should be minimal:
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json"
+}
+```
 
 ### Build Fails with "Environment variable missing"
 - Check that all required variables are set in Vercel: **Settings** → **Environment Variables**
