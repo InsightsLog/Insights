@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: View Roadmap
+    url: https://github.com/InsightsLog/Insights/blob/main/ROADMAP.md
+    about: Check the roadmap before proposing features
+  - name: View Backlog
+    url: https://github.com/InsightsLog/Insights/blob/main/BACKLOG.md
+    about: See future improvement ideas
+  - name: View Current Tasks
+    url: https://github.com/InsightsLog/Insights/blob/main/TASKS_L1.md
+    about: Check active L1 task list
