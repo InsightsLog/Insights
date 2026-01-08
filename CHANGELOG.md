@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- **Docs:** Added troubleshooting guide for magic link localhost redirect issue
+  - Root cause: Supabase Auth Site URL not configured to production URL
+  - Magic links redirect to `http://localhost:3000` when Site URL is left as default
+  - Fix: Update Site URL in Supabase Authentication → URL Configuration to production URL
+  - Updated section 1.5 with clearer, step-by-step Site URL configuration instructions
+  - Added dedicated troubleshooting section explaining the issue and resolution
 - **Added:** "My Watchlist" toggle to calendar filters (T130)
   - Toggle only appears when user is authenticated
   - When enabled, filters calendar to show only indicators in user's watchlist
