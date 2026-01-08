@@ -11,10 +11,11 @@ Add authenticated watchlists on top of the public macroeconomic calendar.
 
 ## L1 User Stories
 1. As a visitor, I can browse upcoming releases (next 7/30 days) with search and filters.
-2. As a signed-in user, I can save or remove indicators from my watchlist from calendar rows and indicator pages.
-3. As a signed-in user, I can view my saved indicators on `/watchlist` with the next release date.
-4. As a signed-in user, I can filter the calendar to only show my watchlist items.
-5. As an admin, I can upload a CSV to add/update releases (secured by admin secret until L2 auth roles exist).
+2. As a user, I can sign in and save indicators to my watchlist.
+3. As a signed-in user, I can save or remove indicators from my watchlist from calendar rows and indicator pages.
+4. As a signed-in user, I can view my saved indicators on `/watchlist` with the next release date.
+5. As a signed-in user, I can filter the calendar to only show my watchlist items.
+6. As an admin, I can upload a CSV to add/update releases (secured by admin secret until L2 auth roles exist).
 
 ## Data Model (L1)
 ### Table: indicators (existing)

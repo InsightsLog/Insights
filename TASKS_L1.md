@@ -97,7 +97,7 @@
 - [ ] T141 Update CHANGELOG.md with L1 features
   - Test: changelog documents user accounts + watchlist
 
-- [ ] T142 Update SPEC.md with L1 user stories
+- [x] T142 Update SPEC.md with L1 user stories
   - Add: "As a user, I can sign in and save indicators to my watchlist"
   - Test: spec reflects implemented features
 
