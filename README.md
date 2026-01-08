@@ -3,6 +3,9 @@
 ## Overview
 A public macroeconomic release calendar with authenticated watchlists. Users can view upcoming releases, search/filter by country and category, sign in with a magic link, save indicators to a watchlist, and explore historical data.
 
+## Production URL
+**Live:** [https://insights-econ-watchs-projects.vercel.app](https://insights-econ-watchs-projects.vercel.app)
+
 ## Project Structure
 ```
 Insights/

@@ -1,5 +1,3 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "cd macro-calendar && npm install",
-  "buildCommand": "cd macro-calendar && npm run build"
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 }
