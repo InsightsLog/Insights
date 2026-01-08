@@ -91,6 +91,7 @@ export async function updateAlertPreference(
 
   // Upsert the alert preference
   // RLS policy ensures user can only modify their own preferences
+  // Note: updated_at is managed by database trigger (see 002_create_profiles.sql)
   const { data, error: upsertError } = await supabase
     .from("alert_preferences")
     .upsert(
@@ -98,7 +99,6 @@ export async function updateAlertPreference(
         user_id: user.id,
         indicator_id: indicatorId,
         email_enabled: emailEnabled,
-        updated_at: new Date().toISOString(),
       },
       {
         onConflict: "user_id,indicator_id",
@@ -161,12 +161,12 @@ export async function toggleEmailAlert(
 
   if (existing) {
     // Toggle the existing preference
+    // Note: updated_at is managed by database trigger (see 002_create_profiles.sql)
     const newEmailEnabled = !existing.email_enabled;
     const { data, error: updateError } = await supabase
       .from("alert_preferences")
       .update({
         email_enabled: newEmailEnabled,
-        updated_at: new Date().toISOString(),
       })
       .eq("id", existing.id)
       .select()
