@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- **Docs:** Added MCP tools section to AGENTS.md
+  - Instructions for agents to use GitHub MCP for CI/PR/issue operations
+  - Instructions for agents to use Supabase MCP for schema and documentation lookups
+  - Instructions for agents to use Vercel MCP for deployment management
 - **Added:** Watchlist server actions for managing saved indicators (T121)
   - `addToWatchlist(indicatorId)` - add indicator to user's watchlist
   - `removeFromWatchlist(indicatorId)` - remove indicator from user's watchlist
