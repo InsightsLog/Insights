@@ -64,14 +64,15 @@ export function UserMenu({ initialUser }: UserMenuProps) {
   }, []);
 
   // Use initial user state to prevent layout shift during hydration
-  // Once client-side auth state is loaded, use that instead
-  const displayUser = loading ? (initialUser ? { email: initialUser.email } : null) : user;
+  // Once client-side auth state is loaded, prefer that over initial state
+  // We only need the email for display purposes
+  const displayEmail = user?.email ?? initialUser?.email;
 
-  if (displayUser) {
+  if (displayEmail) {
     return (
       <div className="flex items-center gap-3">
         <span className="text-sm text-zinc-600 dark:text-zinc-400">
-          {displayUser.email}
+          {displayEmail}
         </span>
         <button
           onClick={handleSignOut}
