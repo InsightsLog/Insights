@@ -6,6 +6,17 @@
 - **Milestone:** L1 marked as shipped; L2 development now in progress
 - **Focus:** Email alerts, role-based admin access, rate limiting, revision tracking
 
+### Email Alerts (T201)
+- **Added:** Alert preferences server actions (`src/app/actions/alerts.ts`)
+  - `getAlertPreferences()` - fetch user's alert preferences
+  - `updateAlertPreference(indicatorId, emailEnabled)` - create/update alert preference
+  - `toggleEmailAlert(indicatorId)` - toggle email alert on/off for an indicator
+  - Input validation with Zod, authentication checks, error handling
+  - TypeScript types for AlertPreference and AlertActionResult
+- **Added:** Unit tests for alert preferences actions (20 tests)
+  - Tests for all three actions and their edge cases
+  - Authentication checks and error handling validation
+
 ### Documentation Updates
 - **Added:** TASKS_L2.md with structured L2 task definitions
   - T200-T204: Email alerts feature
