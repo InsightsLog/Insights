@@ -1,12 +1,6 @@
 # Changelog
 
 ## Unreleased
-- **Added:** WatchlistButton component for adding/removing indicators (T122)
-  - Client component with star icon toggle
-  - States: loading, not authenticated (tooltip), watching (filled star), not watching (outline star)
-  - Shows tooltip prompting sign-in when clicked while logged out
-  - Accessible with aria-labels and keyboard support
-  - Integrates with `toggleWatchlist` server action
 - **Added:** Watchlist server actions for managing saved indicators (T121)
   - `addToWatchlist(indicatorId)` - add indicator to user's watchlist
   - `removeFromWatchlist(indicatorId)` - remove indicator from user's watchlist
