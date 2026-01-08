@@ -115,7 +115,7 @@ async function getUpcomingReleases(filters: {
       };
     }
 
-    watchlistIndicatorIds = (watchlistData ?? []).map(row => row.indicator_id);
+    watchlistIndicatorIds = watchlistData.map(row => row.indicator_id);
 
     // If watchlist is empty, return empty results early
     if (watchlistIndicatorIds.length === 0) {
