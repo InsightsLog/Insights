@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- **Fixed:** Magic link authentication failing with "auth_failed" error
+  - Root cause: Middleware used `getClaims()` which only validates JWT locally
+  - Changed to `getUser()` which properly refreshes the auth session with Supabase server
+  - Reference: https://supabase.com/docs/guides/auth/server-side/creating-a-client
 - **Docs:** Added troubleshooting guide for magic link localhost redirect issue
   - Root cause: Supabase Auth Site URL not configured to production URL
   - Magic links redirect to `http://localhost:3000` when Site URL is left as default
