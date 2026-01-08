@@ -48,7 +48,10 @@ The policies configured:
 
 ### 1.5 Configure Supabase Auth
 1. In Supabase **Authentication** → **Providers**, enable **Email** (magic link).
-2. In **Authentication** → **URL Configuration**, set **Site URL** to your Vercel domain and add a redirect for `/auth/callback`.
+2. In **Authentication** → **URL Configuration**:
+   - **Site URL**: Set to your production Vercel domain (e.g., `https://your-project.vercel.app`)
+   - **Redirect URLs**: Add `https://your-project.vercel.app/auth/callback`
+   - ⚠️ **Critical**: If Site URL is left as `http://localhost:3000`, magic links will redirect to localhost instead of your production site. This is a common cause of "can't reach page" errors after clicking magic links.
 3. In **Authentication** → **Policies**, confirm the default RLS policies apply to `auth.users` and that `profiles`/`watchlist` tables have per-user policies (see migrations).
 
 ## 2. Vercel Deployment
@@ -223,6 +226,22 @@ This typically indicates incorrect Output Directory settings in Vercel:
 - Check browser console for JavaScript errors
 - Verify Next.js is using the correct build output
 - Clear Vercel build cache: **Settings** → **General** → **Clear Build Cache**
+
+### Magic Link Redirects to localhost:3000
+When clicking a magic link from the sign-in email, you're redirected to `http://localhost:3000/?code=XX` instead of your production URL.
+
+**Root cause**: The **Site URL** in Supabase Authentication settings is set to `http://localhost:3000` instead of your production Vercel URL.
+
+**To fix:**
+1. Go to your Supabase project dashboard
+2. Navigate to **Authentication** → **URL Configuration**
+3. Update **Site URL** to your production URL (e.g., `https://your-project.vercel.app`)
+4. Ensure **Redirect URLs** includes `https://your-project.vercel.app/auth/callback`
+5. Click **Save**
+
+**Why this happens**: Supabase Auth uses the Site URL to construct the base URL for magic links. Even though the app passes `emailRedirectTo` with the correct production URL, Supabase validates and constructs the final redirect URL based on the Site URL configuration. If it's set to localhost, the magic link will redirect to localhost.
+
+**Note**: No code changes or redeployment are needed — this is purely a Supabase dashboard configuration issue.
 
 ## 8. Maintenance
 
