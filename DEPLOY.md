@@ -59,9 +59,10 @@ The policies configured:
 3. Import your repository: `InsightsLog/Insights`
 4. Configure project settings:
    - **Framework Preset**: Next.js (should auto-detect)
-   - **Root Directory**: `macro-calendar`
+   - **Root Directory**: `macro-calendar` ← **Required for monorepo**
    - **Build Command**: `npm run build` (default)
-   - **Output Directory**: `.next` (default)
+   - **Output Directory**: Leave empty (Vercel handles this automatically for Next.js SSR)
+   - **Note**: Do NOT set Output Directory to `/macro-calendar/.next` or any absolute path - this breaks SSR routing
 5. Do NOT deploy yet — configure environment variables first
 
 ### 2.2 Configure Environment Variables
@@ -164,6 +165,20 @@ cp .env.example .env.local
 - Verify Supabase project is active (not paused)
 - Check that RLS policies are configured correctly
 - Confirm `NEXT_PUBLIC_SUPABASE_URL` and anon key are correct
+
+### 404 Error After Deployment
+This typically indicates incorrect Output Directory settings in Vercel:
+
+**To fix:**
+1. Go to your Vercel project → **Settings** → **General**
+2. Scroll to **Build & Development Settings**
+3. Verify these settings:
+   - **Root Directory**: `macro-calendar`
+   - **Output Directory**: Leave empty or `.next` (for Next.js SSR apps, Vercel handles this automatically)
+4. **Important**: If Output Directory shows `/macro-calendar/.next` (with leading `/`), clear it completely
+5. Click **Save** and redeploy
+
+**Why this happens**: For Next.js SSR apps, Vercel's built-in builder handles output directories automatically. Setting a custom `outputDirectory` (especially with an absolute path like `/macro-calendar/.next`) breaks serverless function routing, causing 404 errors on all routes.
 
 ### Blank Calendar Page
 - Check Vercel function logs for errors
