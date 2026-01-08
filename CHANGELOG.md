@@ -1,10 +1,10 @@
 # Changelog
 
 ## Unreleased
-- **Fixed:** Deployment 404 error by adding vercel.json with correct framework and output configuration
-  - Added `framework: "nextjs"` to ensure Vercel uses proper Next.js build adapter
-  - Fixed `outputDirectory` to use relative path (`macro-calendar/.next`) instead of absolute
-  - Root cause: Vercel was treating the project as static content instead of Next.js app
+- **Fixed:** Deployment 404 error by adding vercel.json with correct output configuration
+  - Added vercel.json with correct `outputDirectory` path (`macro-calendar/.next`)
+  - Fixed outputDirectory to use relative path instead of absolute path with leading `/`
+  - Root cause: Vercel project settings had outputDirectory as `/macro-calendar/.next` (absolute) instead of `macro-calendar/.next` (relative)
 - **Docs:** Added MCP tools section to AGENTS.md
   - Instructions for agents to use GitHub MCP for CI/PR/issue operations
   - Instructions for agents to use Supabase MCP for schema and documentation lookups
