@@ -1,6 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "cd macro-calendar && npm install",
-  "buildCommand": "cd macro-calendar && npm run build",
-  "outputDirectory": "macro-calendar/.next"
+  "rootDirectory": "macro-calendar"
 }
