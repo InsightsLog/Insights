@@ -40,7 +40,7 @@
   - File: src/middleware.ts
   - Test: auth cookies refresh on page load
 
-- [ ] T102 Add auth helper functions (getCurrentUser, etc.)
+- [X] T102 Add auth helper functions (getCurrentUser, etc.)
   - File: src/lib/supabase/auth.ts
   - Test: getCurrentUser returns null when logged out, user when logged in
 
@@ -61,7 +61,7 @@
   - Test: header visible on /, /indicator/[id], /watchlist
 
 ## 2) Watchlist Feature
-- [ ] T120 Add watchlist table + RLS
+- [X] T120 Add watchlist table + RLS
   - Migration: watchlist(id, user_id, indicator_id, created_at)
   - Constraint: unique(user_id, indicator_id)
   - RLS: users can only CRUD their own watchlist items
@@ -77,12 +77,12 @@
   - States: loading, not authenticated (tooltip), watching, not watching
   - Test: button toggles watchlist state; shows tooltip when logged out
 
-- [ ] T123 Add /watchlist page
+- [X] T123 Add /watchlist page
   - Shows user's saved indicators with next release date
   - Redirects to home if not authenticated
   - Test: saved indicators appear; empty state when none saved
 
-- [ ] T124 Add WatchlistButton to indicator detail page
+- [X] T124 Add WatchlistButton to indicator detail page
   - Test: can add/remove indicator from watchlist on detail page
 
 ## 3) Calendar Watchlist Filter
