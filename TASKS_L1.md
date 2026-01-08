@@ -2,7 +2,7 @@
 
 ## Audit Remediation (Priority)
 
-- [X] T090 Add RLS policies to migration file
+- [X] T090 Add RLS policies to migration file.
   - Move RLS statements from DEPLOY.md into `supabase/migrations/001_create_tables.sql`
   - Ensures security is automatic on fresh deployments
   - Test: run migration on fresh DB; verify anon key cannot INSERT/UPDATE/DELETE
