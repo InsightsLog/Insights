@@ -22,10 +22,13 @@ This document provides step-by-step instructions for deploying the Macro Calenda
 
 ### 1.2 Run Database Migrations
 1. In your Supabase project dashboard, navigate to **SQL Editor**
-2. Execute the migration files in order:
-   - Copy content from `supabase/migrations/001_create_tables.sql`
-   - Click "Run" to create tables and indexes
-   - (Optional) Run `supabase/migrations/001_test_seed.sql` for test data
+2. Execute the migration files **in order** (each migration builds on the previous):
+   - `supabase/migrations/001_create_tables.sql` — Creates `indicators` and `releases` tables with RLS
+   - `supabase/migrations/002_create_profiles.sql` — Creates `profiles` table for user accounts
+   - `supabase/migrations/003_create_watchlist.sql` — Creates `watchlist` table for saved indicators
+   - (Optional) `supabase/migrations/001_test_seed.sql` — Adds sample indicator/release data
+3. For each migration file: copy the SQL content, paste into SQL Editor, and click "Run"
+4. **Important**: All migrations must be run for full functionality. Missing migrations will cause runtime errors.
 
 ### 1.3 Get API Credentials
 1. In Supabase dashboard, go to **Settings** → **API**
@@ -34,12 +37,14 @@ This document provides step-by-step instructions for deploying the Macro Calenda
    - **anon/public key** (starts with `eyJ...`)
 
 ### 1.4 Verify Row Level Security (RLS)
-RLS policies are included in the migration file (`001_create_tables.sql`) and are applied automatically.
+RLS policies are included in each migration file and are applied automatically.
 
 To verify RLS is enabled:
-1. In Supabase **Table Editor**, click on `indicators` table
-2. Check that "RLS enabled" badge appears
-3. Repeat for `releases` table
+1. In Supabase **Table Editor**, check that "RLS enabled" badge appears for all tables:
+   - `indicators` (from 001_create_tables.sql)
+   - `releases` (from 001_create_tables.sql)
+   - `profiles` (from 002_create_profiles.sql)
+   - `watchlist` (from 003_create_watchlist.sql)
 
 The policies configured:
 - **Public read access**: Anonymous users can SELECT from `indicators` and `releases`
@@ -242,6 +247,20 @@ When clicking a magic link from the sign-in email, you're redirected to `http://
 **Why this happens**: Supabase Auth uses the Site URL to construct the base URL for magic links. Even though the app passes `emailRedirectTo` with the correct production URL, Supabase validates and constructs the final redirect URL based on the Site URL configuration. If it's set to localhost, the magic link will redirect to localhost.
 
 **Note**: No code changes or redeployment are needed — this is purely a Supabase dashboard configuration issue.
+
+### "Unable to load watchlist data" Error
+After signing in, the calendar page shows "Unable to load watchlist data. Please check your connection and try again." when the watchlist toggle is enabled.
+
+**Root cause**: The `watchlist` table does not exist in the database. The migration `003_create_watchlist.sql` was not applied.
+
+**To fix:**
+1. Go to your Supabase project dashboard
+2. Navigate to **SQL Editor**
+3. Copy the contents of `supabase/migrations/003_create_watchlist.sql`
+4. Paste into the SQL Editor and click **Run**
+5. Verify the `watchlist` table appears in the **Table Editor** with "RLS enabled" badge
+
+**Why this happens**: Each migration file creates specific tables. If any migration is skipped or missed, features depending on that table will fail. The watchlist feature (T120-T130) requires the `watchlist` table from migration 003.
 
 ## 8. Maintenance
 
