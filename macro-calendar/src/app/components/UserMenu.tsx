@@ -21,7 +21,6 @@ type UserMenuProps = {
  */
 export function UserMenu({ initialUser }: UserMenuProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Memoize the Supabase client to reuse across effect and handlers
@@ -32,12 +31,10 @@ export function UserMenu({ initialUser }: UserMenuProps) {
     supabase.auth.getUser()
       .then(({ data: { user } }) => {
         setUser(user);
-        setLoading(false);
       })
       .catch(() => {
         // On error, treat as logged out
         setUser(null);
-        setLoading(false);
       });
 
     // Subscribe to auth state changes
