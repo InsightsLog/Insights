@@ -72,7 +72,7 @@
   - Actions: addToWatchlist, removeFromWatchlist, toggleWatchlist
   - Test: actions modify watchlist table correctly
 
-- [ ] T122 Add WatchlistButton component
+- [x] T122 Add WatchlistButton component
   - Component: WatchlistButton.tsx
   - States: loading, not authenticated (tooltip), watching, not watching
   - Test: button toggles watchlist state; shows tooltip when logged out
