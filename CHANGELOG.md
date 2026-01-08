@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- **Docs:** Added deployment troubleshooting for 404 errors caused by incorrect Vercel project settings
+  - Root cause: Vercel project settings have `outputDirectory: "/macro-calendar/.next"` (absolute path with leading `/`) which breaks SSR routing
+  - For Next.js SSR apps, the Output Directory should be left empty (Vercel handles it automatically)
+  - Added clear instructions in DEPLOY.md section 2.1 and troubleshooting section 7
+  - Manual fix required: User must clear Output Directory in Vercel project settings and redeploy
 - **Fixed:** Deployment 404 error persisting after PR #48 - removed `outputDirectory` from vercel.json
   - Removed `outputDirectory` setting which doesn't work correctly for SSR Next.js apps
   - Kept `installCommand` and `buildCommand` for monorepo build support
