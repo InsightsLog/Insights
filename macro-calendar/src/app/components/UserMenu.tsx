@@ -4,6 +4,11 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { createSupabaseClient } from "@/lib/supabase/client";
 import { AuthModal } from "./AuthModal";
 import type { User } from "@supabase/supabase-js";
+import type { UserProfile } from "@/lib/supabase/auth";
+
+type UserMenuProps = {
+  initialUser: UserProfile | null;
+};
 
 /**
  * Client component that shows authentication state and sign in/out controls.
@@ -12,10 +17,11 @@ import type { User } from "@supabase/supabase-js";
  * - When logged in: shows user email and "Sign Out" button
  * 
  * Uses Supabase client-side auth state subscription to stay reactive to changes.
+ * Receives initial auth state from server to prevent layout shift during hydration.
  */
-export function UserMenu() {
+export function UserMenu({ initialUser }: UserMenuProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Memoize the Supabase client to reuse across effect and handlers
@@ -26,12 +32,12 @@ export function UserMenu() {
     supabase.auth.getUser()
       .then(({ data: { user } }) => {
         setUser(user);
-        setLoading(false);
+        setIsInitialized(true);
       })
       .catch(() => {
         // On error, treat as logged out
         setUser(null);
-        setLoading(false);
+        setIsInitialized(true);
       });
 
     // Subscribe to auth state changes
@@ -39,6 +45,7 @@ export function UserMenu() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setIsInitialized(true);
     });
 
     return () => subscription.unsubscribe();
@@ -57,18 +64,16 @@ export function UserMenu() {
     setAuthModalOpen(false);
   }, []);
 
-  // Show nothing while loading to prevent layout shift
-  if (loading) {
-    return (
-      <div className="h-8 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-    );
-  }
+  // Use initial user state to prevent layout shift during hydration
+  // Once client-side auth state is loaded, always use that instead
+  const currentUser = isInitialized ? user : initialUser;
+  const displayEmail = currentUser?.email;
 
-  if (user) {
+  if (currentUser && displayEmail) {
     return (
       <div className="flex items-center gap-3">
         <span className="text-sm text-zinc-600 dark:text-zinc-400">
-          {user.email}
+          {displayEmail}
         </span>
         <button
           onClick={handleSignOut}

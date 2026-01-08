@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { UserMenu } from "./UserMenu";
+import type { UserProfile } from "@/lib/supabase/auth";
+
+type HeaderProps = {
+  initialUser: UserProfile | null;
+};
 
 /**
  * Global header component for the Macro Calendar app.
@@ -10,8 +15,9 @@ import { UserMenu } from "./UserMenu";
  * - UserMenu (sign in/out controls)
  * 
  * This component should be included in the root layout to appear on all pages.
+ * Receives initial auth state from server to prevent layout shift.
  */
-export function Header() {
+export function Header({ initialUser }: HeaderProps) {
   return (
     <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between">
@@ -25,7 +31,7 @@ export function Header() {
             Upcoming economic releases — next 7 days
           </p>
         </div>
-        <UserMenu />
+        <UserMenu initialUser={initialUser} />
       </div>
     </header>
   );

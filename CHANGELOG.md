@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- **Improved:** Loading states for auth components now prevent layout shift (T140)
+  - UserMenu receives initial auth state from server-side rendering
+  - Eliminates skeleton loader that could cause layout shift during hydration
+  - Auth state is passed from root layout → Header → UserMenu
+  - Client-side auth state subscription still active for real-time updates
+  - No visual jump when auth state is resolved on page load
 - **Docs:** Updated migration instructions to include all required migration files
   - Root cause of "Unable to load watchlist data" error: `watchlist` table migration not applied
   - DEPLOY.md section 1.2 now lists all four migration files in order: 001_create_tables, 002_create_profiles, 003_create_watchlist, plus optional test seed
