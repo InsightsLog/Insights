@@ -21,6 +21,7 @@ type UserMenuProps = {
  */
 export function UserMenu({ initialUser }: UserMenuProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Memoize the Supabase client to reuse across effect and handlers
@@ -31,10 +32,12 @@ export function UserMenu({ initialUser }: UserMenuProps) {
     supabase.auth.getUser()
       .then(({ data: { user } }) => {
         setUser(user);
+        setIsInitialized(true);
       })
       .catch(() => {
         // On error, treat as logged out
         setUser(null);
+        setIsInitialized(true);
       });
 
     // Subscribe to auth state changes
@@ -42,6 +45,7 @@ export function UserMenu({ initialUser }: UserMenuProps) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setIsInitialized(true);
     });
 
     return () => subscription.unsubscribe();
@@ -61,9 +65,9 @@ export function UserMenu({ initialUser }: UserMenuProps) {
   }, []);
 
   // Use initial user state to prevent layout shift during hydration
-  // Once client-side auth state is loaded, prefer that over initial state
+  // Once client-side auth state is loaded, always use that instead
   // We only need the email for display purposes
-  const displayEmail = user?.email ?? initialUser?.email;
+  const displayEmail = isInitialized ? user?.email : initialUser?.email;
 
   if (displayEmail) {
     return (
