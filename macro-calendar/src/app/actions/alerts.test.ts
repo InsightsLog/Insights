@@ -12,9 +12,16 @@ vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 
+// Mock the createSupabaseServiceClient function
+vi.mock("@/lib/supabase/service-role", () => ({
+  createSupabaseServiceClient: vi.fn(),
+}));
+
 // Import the mocked function to control its behavior
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
 const mockCreateSupabaseServerClient = vi.mocked(createSupabaseServerClient);
+const mockCreateSupabaseServiceClient = vi.mocked(createSupabaseServiceClient);
 
 // Helper to create a mock Supabase client
 function createMockSupabase(options: {
@@ -631,7 +638,7 @@ describe("unsubscribeWithToken", () => {
 
     mockSupabase.from.mockReturnValueOnce({ select: mockSelect });
     mockSupabase.from.mockReturnValueOnce({ update: mockUpdate });
-    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
 
     const result = await unsubscribeWithToken("valid.token");
 
@@ -663,7 +670,7 @@ describe("unsubscribeWithToken", () => {
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
 
     mockSupabase.from.mockReturnValue({ select: mockSelect });
-    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
 
     const result = await unsubscribeWithToken("valid.token");
 
@@ -694,7 +701,7 @@ describe("unsubscribeWithToken", () => {
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
 
     mockSupabase.from.mockReturnValue({ select: mockSelect });
-    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
 
     const result = await unsubscribeWithToken("valid.token");
 
@@ -724,7 +731,7 @@ describe("unsubscribeWithToken", () => {
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
 
     mockSupabase.from.mockReturnValue({ select: mockSelect });
-    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
 
     const result = await unsubscribeWithToken("valid.token");
 
@@ -762,7 +769,7 @@ describe("unsubscribeWithToken", () => {
 
     mockSupabase.from.mockReturnValueOnce({ select: mockSelect });
     mockSupabase.from.mockReturnValueOnce({ update: mockUpdate });
-    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
 
     const result = await unsubscribeWithToken("valid.token");
 

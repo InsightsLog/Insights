@@ -3,6 +3,11 @@
 ## [Unreleased]
 
 ### Email Alerts
+- **Fixed:** User sign-out issue when using unsubscribe link (T204)
+  - Created service role Supabase client (`src/lib/supabase/service-role.ts`) to bypass RLS without authentication
+  - Updated `unsubscribeWithToken()` action to use service role client instead of regular server client
+  - Prevents interference with user authentication cookies during unsubscribe operation
+  - Added `SUPABASE_SERVICE_ROLE_KEY` environment variable requirement
 - **Added:** One-click unsubscribe functionality (T204)
   - Unsubscribe page at `/unsubscribe?token=...` with no authentication required
   - HMAC-SHA256 signed unsubscribe tokens with 90-day expiration
