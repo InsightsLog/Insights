@@ -15,7 +15,7 @@ In your Supabase SQL Editor, execute the migrations in the following order:
 
 To verify the schema:
 
-1. `001_test_seed.sql` - Test data for indicators and releases
+1. `001_test_seed.sql` - Test data for indicators and releases (uses dynamic dates, always within next 7 days)
 2. `004_test_alert_preferences.sql` - Verification queries for alert_preferences
 
 ### 3. Verify Indexes
