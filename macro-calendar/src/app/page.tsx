@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { CalendarFilters } from "./components/CalendarFilters";
+import { AlertToggle } from "./components/AlertToggle";
 import { z } from "zod";
 import Link from "next/link";
 
@@ -80,6 +81,39 @@ async function getFilterOptions(): Promise<DataResult<FilterOptions>> {
       error: "Received invalid data format from database."
     };
   }
+}
+
+/**
+ * Fetches alert preferences for specific indicators for the current user.
+ * Returns a Map of indicator_id -> email_enabled status.
+ */
+async function getAlertPreferences(
+  indicatorIds: string[],
+  userId: string | undefined
+): Promise<Map<string, boolean>> {
+  if (!userId || indicatorIds.length === 0) {
+    return new Map();
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("alert_preferences")
+    .select("indicator_id, email_enabled")
+    .eq("user_id", userId)
+    .in("indicator_id", indicatorIds);
+
+  if (error) {
+    console.error("Error fetching alert preferences:", error);
+    return new Map();
+  }
+
+  const preferencesMap = new Map<string, boolean>();
+  for (const pref of data ?? []) {
+    preferencesMap.set(pref.indicator_id, pref.email_enabled);
+  }
+
+  return preferencesMap;
 }
 
 /**
@@ -246,6 +280,12 @@ export default async function CalendarPage({ searchParams }: PageProps) {
     ? filterOptionsResult.data 
     : { countries: [], categories: [] };
 
+  // Fetch alert preferences for all visible indicators
+  const indicatorIds = releases
+    .map(release => release.indicator?.id)
+    .filter((id): id is string => id !== null && id !== undefined);
+  const alertPreferences = await getAlertPreferences(indicatorIds, user?.id);
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <main className="mx-auto max-w-5xl px-4 py-6">
@@ -298,12 +338,17 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Status
                 </th>
+                {user && (
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Alerts
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {releases.length === 0 && !hasError ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center">
+                  <td colSpan={user ? 10 : 9} className="px-4 py-12 text-center">
                     <div className="text-zinc-400 dark:text-zinc-500">
                       <svg
                         className="mx-auto h-12 w-12 mb-4"
@@ -389,6 +434,14 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                         {status}
                       </span>
                     </td>
+                    {user && release.indicator && (
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <AlertToggle
+                          indicatorId={release.indicator.id}
+                          initialEmailEnabled={alertPreferences.get(release.indicator.id) ?? false}
+                        />
+                      </td>
+                    )}
                   </tr>
                   );
                 })
