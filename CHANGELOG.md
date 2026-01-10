@@ -3,6 +3,11 @@
 ## [Unreleased]
 
 ### Email Alerts
+- **Fixed:** User sign-out issue persisting when using unsubscribe link
+  - Skip middleware session refresh for `/unsubscribe` route to prevent cookie manipulation
+  - Skip `getCurrentUser()` auth call in layout for `/unsubscribe` route
+  - Added `x-pathname` header in middleware for route detection in layouts
+  - Root cause: Multiple concurrent Supabase auth calls during unsubscribe could cause session token refresh conflicts
 - **Fixed:** Unsubscribe failing with "An unexpected error occurred" when `ADMIN_UPLOAD_SECRET` env var not set
   - `createSupabaseServiceClient()` now only validates the `SUPABASE_SERVICE_ROLE_KEY` it needs
   - Previously it validated all server env vars via `getServerEnv()`, causing failures when unrelated vars were missing
