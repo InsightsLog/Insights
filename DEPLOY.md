@@ -96,10 +96,12 @@ In the Vercel project settings, add these environment variables:
 |---------------|-------|---------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Supabase → Settings → API → Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon key | Supabase → Settings → API → anon/public key |
+| `UNSUBSCRIBE_TOKEN_SECRET` | Random secret for unsubscribe tokens | Generate with: `openssl rand -hex 32` |
 
 **Important notes:**
-- Both variables are required for the app to run (validated by `src/lib/env.ts`)
+- Both `NEXT_PUBLIC_` variables are required for the app to run (validated by `src/lib/env.ts`)
 - The `NEXT_PUBLIC_` prefix exposes these to the browser (safe for anon key)
+- `UNSUBSCRIBE_TOKEN_SECRET` is server-only and used to sign email unsubscribe tokens
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
 ### 2.4 Deploy
@@ -152,11 +154,19 @@ To rotate your Supabase anon key:
 - Store sensitive credentials only in Vercel environment variables
 - Use separate Supabase projects for production and staging
 
-### 4.3 Admin Upload Secret (interim)
-While admin access uses a shared secret (until role-based auth lands in L2):
-1. Generate a secure random string: `openssl rand -hex 32`
-2. Add to Vercel environment variables as `ADMIN_UPLOAD_SECRET`
-3. Rotate monthly and update Vercel settings
+### 4.3 Admin Upload Secret & Unsubscribe Token Secret
+Two server-side secrets are required:
+
+1. **ADMIN_UPLOAD_SECRET** (interim until role-based auth in L2):
+   - Generate: `openssl rand -hex 32`
+   - Add to Vercel environment variables
+   - Rotate monthly and update Vercel settings
+
+2. **UNSUBSCRIBE_TOKEN_SECRET** (for email alert unsubscribe links):
+   - Generate: `openssl rand -hex 32`
+   - Add to Vercel environment variables
+   - Also add to Supabase Edge Function secrets (see Section 8.2)
+   - Used to sign HMAC tokens for one-click unsubscribe
 
 ## 5. Rollback Procedure
 
@@ -287,6 +297,11 @@ The email alert system uses a Supabase Edge Function triggered by database webho
    supabase secrets set RESEND_API_KEY=<your-resend-api-key>
    supabase secrets set EMAIL_FROM=alerts@yourdomain.com
    supabase secrets set APP_URL=https://your-app.vercel.app
+   supabase secrets set UNSUBSCRIBE_TOKEN_SECRET=<your-random-secret>
+   ```
+   Generate a secure random secret for UNSUBSCRIBE_TOKEN_SECRET:
+   ```bash
+   openssl rand -hex 32
    ```
 4. Deploy the Edge Function:
    ```bash

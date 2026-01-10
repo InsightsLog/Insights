@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Email Alerts
+- **Added:** One-click unsubscribe functionality (T204)
+  - Unsubscribe page at `/unsubscribe?token=...` with no authentication required
+  - HMAC-SHA256 signed unsubscribe tokens with 90-day expiration
+  - Token utilities in `src/lib/unsubscribe-token.ts` for secure token generation/validation
+  - Server actions: `getUnsubscribeToken()`, `unsubscribeWithToken(token)`
+  - Comprehensive test coverage (15 tests for token utilities, 8 tests for unsubscribe actions)
+  - Updated Edge Function to include personalized unsubscribe links in emails (HTML and text)
+  - Environment variable: `UNSUBSCRIBE_TOKEN_SECRET` for token signing
+  - Success/error/invalid UI states with helpful user feedback
+
 ### Testing & Development
 - **Updated:** Test seed data now uses dynamic dates (`001_test_seed.sql`)
   - Release dates calculated using PostgreSQL date functions (CURRENT_TIMESTAMP + INTERVAL)

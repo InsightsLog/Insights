@@ -31,7 +31,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - Sends email via Resend/SendGrid
   - Test: inserting a release triggers email to subscribed users
 
-- [ ] T204 Add email alert unsubscribe link
+- [x] T204 Add email alert unsubscribe link
   - Route: /unsubscribe?token=...
   - One-click unsubscribe without login required
   - Test: clicking unsubscribe link disables email alerts
