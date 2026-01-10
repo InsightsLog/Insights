@@ -3,6 +3,13 @@
 ## [Unreleased]
 
 ### Email Alerts
+- **Added:** Bell icon (AlertToggle) now visible on home calendar page
+  - Added new "Alerts" column to calendar table for authenticated users
+  - Bell icon appears next to each indicator in the releases table
+  - Users can enable/disable email alerts directly from the home calendar
+  - Alert preferences fetched efficiently for all visible indicators in a single query
+  - Only authenticated users see the Alerts column and bell icons
+  - Alert state persists across page refreshes and is consistent with watchlist and indicator detail pages
 - **Fixed:** Bell icon (AlertToggle) now visible on indicator detail pages
   - Added AlertToggle component to indicator detail page header
   - Bell icon appears next to watchlist button for authenticated users
