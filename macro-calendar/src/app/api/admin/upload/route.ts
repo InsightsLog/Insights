@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServerEnv } from "@/lib/env";
 import { parseCSV } from "@/lib/csv-parser";
+import { checkAdminRole, logAuditAction } from "@/lib/supabase/auth";
 
 /**
  * Zod schema for a single CSV row.
@@ -31,6 +32,11 @@ const csvRowSchema = z.object({
 type CsvRow = z.infer<typeof csvRowSchema>;
 
 /**
+ * Authentication method used for the upload.
+ */
+type AuthMethod = "role" | "secret";
+
+/**
  * Helper to create a unique key for an indicator (name + country_code).
  */
 function indicatorKey(name: string, countryCode: string): string {
@@ -48,35 +54,52 @@ function releaseKey(indicatorId: string, releaseAt: string, period: string): str
  * POST /api/admin/upload
  * Accepts multipart form data with a CSV file.
  * Validates CSV structure and inserts data into Supabase.
+ *
+ * Authentication (T212):
+ * - Primary: Supabase auth + admin role check
+ * - Fallback: ADMIN_UPLOAD_SECRET (for migration period)
+ *
+ * All uploads are logged to audit_log table.
  */
 export async function POST(request: NextRequest) {
   try {
-    // Validate admin secret
-    let serverEnv;
-    try {
-      serverEnv = getServerEnv();
-    } catch {
-      return NextResponse.json(
-        { error: "Server configuration error: ADMIN_UPLOAD_SECRET not set" },
-        { status: 500 }
-      );
-    }
+    // Get server env (now with optional ADMIN_UPLOAD_SECRET)
+    const serverEnv = getServerEnv();
 
-    // Parse form data
+    // Parse form data first to get the secret (if provided)
     const formData = await request.formData();
-
-    // Check secret from form data
     const providedSecret = formData.get("secret");
-    if (!providedSecret || typeof providedSecret !== "string") {
-      return NextResponse.json(
-        { error: "Admin secret is required" },
-        { status: 401 }
-      );
+
+    // Authentication: Check admin role first, then fallback to secret
+    let authUserId: string | null = null;
+    let authMethod: AuthMethod | null = null;
+
+    // Try role-based authentication first
+    const adminCheck = await checkAdminRole();
+    if (adminCheck.isAdmin && adminCheck.userId) {
+      authUserId = adminCheck.userId;
+      authMethod = "role";
+    } else if (providedSecret && typeof providedSecret === "string") {
+      // Fallback: check ADMIN_UPLOAD_SECRET (migration period)
+      if (serverEnv.ADMIN_UPLOAD_SECRET && providedSecret === serverEnv.ADMIN_UPLOAD_SECRET) {
+        // Secret auth succeeded - use the authenticated user's ID if available
+        authUserId = adminCheck.userId; // May be null for anonymous secret auth
+        authMethod = "secret";
+      }
     }
 
-    if (providedSecret !== serverEnv.ADMIN_UPLOAD_SECRET) {
+    // If neither auth method succeeded, return appropriate error
+    if (!authMethod) {
+      // If user is authenticated but not admin, return 403 Forbidden
+      if (adminCheck.userId) {
+        return NextResponse.json(
+          { error: "Access denied: Admin role required" },
+          { status: 403 }
+        );
+      }
+      // If not authenticated at all and no valid secret, return 401 Unauthorized
       return NextResponse.json(
-        { error: "Invalid admin secret" },
+        { error: "Authentication required: Sign in with an admin account or provide a valid admin secret" },
         { status: 401 }
       );
     }
@@ -370,11 +393,30 @@ export async function POST(request: NextRequest) {
 
     const releasesInserted = releasesToUpdate.length + releasesToInsert.length;
 
+    // Log upload action to audit_log (T212)
+    // Note: We log even if authUserId is null (anonymous secret auth during migration)
+    if (authUserId) {
+      await logAuditAction(
+        authUserId,
+        "upload",
+        "release",
+        null, // No single resource ID - bulk upload
+        {
+          filename: file.name,
+          rowCount: validatedRows.length,
+          indicatorsUpserted,
+          releasesInserted,
+          authMethod,
+        }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       message: `Successfully processed ${validatedRows.length} rows`,
       indicatorsUpserted,
       releasesInserted,
+      authMethod, // Include auth method in response for transparency
     });
   } catch (error) {
     console.error("Upload error:", error);

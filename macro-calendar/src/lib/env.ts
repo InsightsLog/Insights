@@ -12,9 +12,12 @@ const envSchema = z.object({
 /**
  * Server-only environment variables.
  * These are not exposed to the client and validated on-demand.
+ * 
+ * Note: ADMIN_UPLOAD_SECRET is optional during the migration period (T212).
+ * Role-based auth is the primary authentication method; secret is fallback.
  */
 const serverEnvSchema = z.object({
-  ADMIN_UPLOAD_SECRET: z.string().min(1, "ADMIN_UPLOAD_SECRET is required"),
+  ADMIN_UPLOAD_SECRET: z.string().optional(),
   UNSUBSCRIBE_TOKEN_SECRET: z.string().min(1, "UNSUBSCRIBE_TOKEN_SECRET is required"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
 });
