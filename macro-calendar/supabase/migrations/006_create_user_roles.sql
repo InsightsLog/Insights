@@ -43,20 +43,20 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Select policy: only admins can read user roles
 CREATE POLICY "Only admins can read user roles"
     ON user_roles FOR SELECT
-    USING (public.is_admin());
+    USING ((SELECT public.is_admin()));
 
 -- Insert policy: only admins can insert new user roles
 CREATE POLICY "Only admins can insert user roles"
     ON user_roles FOR INSERT
-    WITH CHECK (public.is_admin());
+    WITH CHECK ((SELECT public.is_admin()));
 
 -- Update policy: only admins can update user roles
 CREATE POLICY "Only admins can update user roles"
     ON user_roles FOR UPDATE
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
+    USING ((SELECT public.is_admin()))
+    WITH CHECK ((SELECT public.is_admin()));
 
 -- Delete policy: only admins can delete user roles
 CREATE POLICY "Only admins can delete user roles"
     ON user_roles FOR DELETE
-    USING (public.is_admin());
+    USING ((SELECT public.is_admin()));
