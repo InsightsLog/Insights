@@ -18,7 +18,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - Actions: getAlertPreferences, updateAlertPreference, toggleEmailAlert
   - Test: actions modify alert_preferences table correctly
 
-- [ ] T202 Add AlertToggle component to watchlist items
+- [x] T202 Add AlertToggle component to watchlist items
   - Component: AlertToggle.tsx
   - States: loading, enabled, disabled
   - Shows on /watchlist page next to each indicator
