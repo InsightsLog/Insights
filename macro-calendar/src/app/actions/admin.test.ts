@@ -672,3 +672,368 @@ describe("getAdminDashboardData", () => {
     }
   });
 });
+
+// Import updateUserRole for testing
+import { updateUserRole } from "./admin";
+
+describe("updateUserRole", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when user is not admin", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: false,
+      userId: TEST_UUIDS.user1,
+    });
+
+    const result = await updateUserRole(TEST_UUIDS.user2, "admin");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe("Access denied: Admin role required");
+    }
+  });
+
+  it("returns error for invalid user ID", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: true,
+      userId: TEST_UUIDS.admin,
+    });
+
+    const result = await updateUserRole("not-a-uuid", "admin");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe("Invalid user ID format");
+    }
+  });
+
+  it("returns error for invalid role", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: true,
+      userId: TEST_UUIDS.admin,
+    });
+
+    // @ts-expect-error Testing invalid input
+    const result = await updateUserRole(TEST_UUIDS.user1, "superadmin");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      // Zod enum validation error message
+      expect(result.error).toContain("Invalid");
+    }
+  });
+
+  it("prevents admin from demoting themselves", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: true,
+      userId: TEST_UUIDS.admin,
+    });
+
+    const result = await updateUserRole(TEST_UUIDS.admin, "user");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe("Cannot demote your own admin role");
+    }
+  });
+
+  it("returns error when target user not found", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: true,
+      userId: TEST_UUIDS.admin,
+    });
+
+    const mockSupabase = {
+      from: vi.fn((table) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: { code: "PGRST116", message: "No rows found" },
+                }),
+              }),
+            }),
+          };
+        }
+        return {};
+      }),
+    };
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
+
+    const result = await updateUserRole(TEST_UUIDS.user1, "admin");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe("User not found");
+    }
+  });
+
+  it("grants admin role successfully", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: true,
+      userId: TEST_UUIDS.admin,
+    });
+
+    const mockSupabase = {
+      from: vi.fn((table) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: TEST_UUIDS.user1, email: "user1@example.com" },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === "user_roles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: { code: "PGRST116" },
+                }),
+              }),
+            }),
+            upsert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        if (table === "audit_log") {
+          return {
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        return {};
+      }),
+    };
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
+
+    const result = await updateUserRole(TEST_UUIDS.user1, "admin");
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.userId).toBe(TEST_UUIDS.user1);
+      expect(result.data.role).toBe("admin");
+    }
+  });
+
+  it("revokes admin role successfully", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: true,
+      userId: TEST_UUIDS.admin,
+    });
+
+    const mockSupabase = {
+      from: vi.fn((table) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: TEST_UUIDS.user1, email: "user1@example.com" },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === "user_roles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { role: "admin" },
+                  error: null,
+                }),
+              }),
+            }),
+            delete: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ error: null }),
+            }),
+          };
+        }
+        if (table === "audit_log") {
+          return {
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        return {};
+      }),
+    };
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
+
+    const result = await updateUserRole(TEST_UUIDS.user1, "user");
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.userId).toBe(TEST_UUIDS.user1);
+      expect(result.data.role).toBe("user");
+    }
+  });
+
+  it("returns error when upsert fails", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: true,
+      userId: TEST_UUIDS.admin,
+    });
+
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const mockSupabase = {
+      from: vi.fn((table) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: TEST_UUIDS.user1, email: "user1@example.com" },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === "user_roles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: { code: "PGRST116" },
+                }),
+              }),
+            }),
+            upsert: vi.fn().mockResolvedValue({ error: { message: "Database error" } }),
+          };
+        }
+        return {};
+      }),
+    };
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
+
+    const result = await updateUserRole(TEST_UUIDS.user1, "admin");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe("Failed to update user role");
+    }
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("returns error when delete fails", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: true,
+      userId: TEST_UUIDS.admin,
+    });
+
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const mockSupabase = {
+      from: vi.fn((table) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: TEST_UUIDS.user1, email: "user1@example.com" },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === "user_roles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { role: "admin" },
+                  error: null,
+                }),
+              }),
+            }),
+            delete: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ error: { message: "Database error" } }),
+            }),
+          };
+        }
+        return {};
+      }),
+    };
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
+
+    const result = await updateUserRole(TEST_UUIDS.user1, "user");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe("Failed to update user role");
+    }
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("succeeds even if audit log fails", async () => {
+    mockCheckAdminRole.mockResolvedValue({
+      isAdmin: true,
+      userId: TEST_UUIDS.admin,
+    });
+
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const mockSupabase = {
+      from: vi.fn((table) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: TEST_UUIDS.user1, email: "user1@example.com" },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === "user_roles") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: { code: "PGRST116" },
+                }),
+              }),
+            }),
+            upsert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        if (table === "audit_log") {
+          return {
+            insert: vi.fn().mockResolvedValue({ error: { message: "Audit log error" } }),
+          };
+        }
+        return {};
+      }),
+    };
+    mockCreateSupabaseServiceClient.mockReturnValue(mockSupabase as never);
+
+    const result = await updateUserRole(TEST_UUIDS.user1, "admin");
+
+    // Should still succeed - audit log failure is non-blocking
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.userId).toBe(TEST_UUIDS.user1);
+      expect(result.data.role).toBe("admin");
+    }
+
+    consoleErrorSpy.mockRestore();
+  });
+});

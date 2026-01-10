@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { checkAdminRole } from "@/lib/supabase/auth";
 import { getAdminDashboardData } from "@/app/actions/admin";
+import { RoleManager } from "@/app/components/RoleManager";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -78,9 +79,12 @@ export default async function AdminDashboardPage() {
   const adminCheck = await checkAdminRole();
 
   // Redirect non-admins to home page
-  if (!adminCheck.isAdmin) {
+  if (!adminCheck.isAdmin || !adminCheck.userId) {
     redirect("/");
   }
+
+  // Store the current admin's user ID for the RoleManager
+  const currentAdminUserId = adminCheck.userId;
 
   // Fetch dashboard data
   const result = await getAdminDashboardData();
@@ -225,13 +229,16 @@ export default async function AdminDashboardPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                       Joined
                     </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                   {users.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={4}
                         className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400"
                       >
                         No users found
@@ -260,6 +267,14 @@ export default async function AdminDashboardPage() {
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
                           {formatDateTime(user.created_at)}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <RoleManager
+                            userId={user.id}
+                            userEmail={user.email}
+                            initialRole={user.role}
+                            currentAdminUserId={currentAdminUserId}
+                          />
                         </td>
                       </tr>
                     ))

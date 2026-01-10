@@ -320,3 +320,119 @@ export async function getAdminDashboardData(): Promise<
     },
   };
 }
+
+// Zod schema for updateUserRole input validation
+const updateUserRoleInputSchema = z.object({
+  userId: z.string().uuid("Invalid user ID format"),
+  role: z.enum(["admin", "user"]),
+});
+
+/**
+ * Update a user's role.
+ * Requires admin role.
+ * Logs the change to audit_log.
+ *
+ * @param userId - The ID of the user to update
+ * @param role - The new role ('admin' or 'user')
+ * @returns Updated user role information or error
+ */
+export async function updateUserRole(
+  userId: string,
+  role: "admin" | "user"
+): Promise<AdminActionResult<{ userId: string; role: "admin" | "user" }>> {
+  // Validate input
+  const parseResult = updateUserRoleInputSchema.safeParse({ userId, role });
+  if (!parseResult.success) {
+    const firstError = parseResult.error.issues[0];
+    return {
+      success: false,
+      error: firstError?.message ?? "Invalid input",
+    };
+  }
+
+  // Check admin role
+  const adminCheck = await checkAdminRole();
+  if (!adminCheck.isAdmin || !adminCheck.userId) {
+    return { success: false, error: "Access denied: Admin role required" };
+  }
+
+  // Prevent admins from demoting themselves
+  if (userId === adminCheck.userId && role === "user") {
+    return { success: false, error: "Cannot demote your own admin role" };
+  }
+
+  // Use service role client to bypass RLS
+  const supabase = createSupabaseServiceClient();
+
+  // Check if the target user exists
+  const { data: targetUser, error: userError } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .eq("id", userId)
+    .single();
+
+  if (userError || !targetUser) {
+    return { success: false, error: "User not found" };
+  }
+
+  // Get current role for audit log metadata
+  const { data: currentRoleData } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .single();
+
+  const previousRole = currentRoleData?.role ?? null;
+
+  if (role === "admin") {
+    // Grant admin role: upsert into user_roles
+    // Note: granted_at uses database default NOW() for consistent timezone handling
+    const { error: upsertError } = await supabase.from("user_roles").upsert(
+      {
+        user_id: userId,
+        role: "admin",
+        granted_by: adminCheck.userId,
+      },
+      { onConflict: "user_id" }
+    );
+
+    if (upsertError) {
+      console.error("Failed to grant admin role:", upsertError);
+      return { success: false, error: "Failed to update user role" };
+    }
+  } else {
+    // Revoke admin role: delete from user_roles (users without entry are regular users)
+    const { error: deleteError } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId);
+
+    if (deleteError) {
+      console.error("Failed to revoke admin role:", deleteError);
+      return { success: false, error: "Failed to update user role" };
+    }
+  }
+
+  // Log the role change to audit_log
+  const { error: auditError } = await supabase.from("audit_log").insert({
+    user_id: adminCheck.userId,
+    action: "role_change",
+    resource_type: "user_role",
+    resource_id: userId,
+    metadata: {
+      target_user_email: targetUser.email,
+      previous_role: previousRole,
+      new_role: role,
+    },
+  });
+
+  if (auditError) {
+    // Log the error but don't fail the operation - role change succeeded
+    console.error("Failed to log role change to audit_log:", auditError);
+  }
+
+  return {
+    success: true,
+    data: { userId, role },
+  };
+}

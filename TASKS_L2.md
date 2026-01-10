@@ -64,7 +64,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - Requires admin role
   - Test: admin can view dashboard; non-admin redirected
 
-- [ ] T214 Add role management UI
+- [x] T214 Add role management UI
   - Component: RoleManager.tsx
   - Admin can grant/revoke admin role
   - All changes logged to audit_log

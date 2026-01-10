@@ -3,6 +3,19 @@
 ## [Unreleased]
 
 ### Role-Based Admin Access
+- **Added:** Role management UI in admin dashboard (T214)
+  - `RoleManager.tsx` component for granting/revoking admin roles
+  - Dropdown to select role (admin/user) for each user
+  - Prevents admins from demoting themselves
+  - Loading state shown during role updates
+  - Success feedback after role change
+  - "Actions" column added to Users table in admin dashboard
+  - Server action `updateUserRole(userId, role)` in `src/app/actions/admin.ts`:
+    - Validates input with Zod
+    - Grants admin role via upsert to user_roles table
+    - Revokes admin role via delete from user_roles table
+    - Logs all role changes to audit_log with previous/new role metadata
+  - Unit tests for `updateUserRole` action (10 tests)
 - **Added:** Admin dashboard page at `/admin` (T213)
   - Displays recent uploads from audit log with user emails and file details
   - Shows user management table with email, role, and join date
