@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Bug Fixes
+- **Fixed:** Magic link sign-in showing `?error=auth_failed` in URL despite successful authentication
+  - Skip middleware session refresh for `/auth/callback` route
+  - Root cause: Middleware called `getUser()` before callback could exchange code for session
+  - The auth callback needs to establish the session first without interference from middleware
+
 ### Email Alerts
 - **Fixed:** User sign-out issue persisting when using unsubscribe link
   - Skip middleware session refresh for `/unsubscribe` route to prevent cookie manipulation
