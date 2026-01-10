@@ -4,11 +4,12 @@ import { env } from "@/lib/env";
 
 /**
  * Routes that should skip session refresh in middleware.
- * These routes use alternative authentication mechanisms (e.g., signed tokens)
- * and should not trigger cookie manipulation that could interfere with 
- * the user's existing session.
+ * These routes either:
+ * - Use alternative authentication mechanisms (e.g., signed tokens)
+ * - Need to establish a session first (e.g., auth callback)
+ * and should not trigger cookie manipulation that could interfere.
  */
-const SKIP_SESSION_REFRESH_ROUTES = ["/unsubscribe"];
+const SKIP_SESSION_REFRESH_ROUTES = ["/unsubscribe", "/auth/callback"];
 
 /**
  * Check if a route should skip session refresh.
