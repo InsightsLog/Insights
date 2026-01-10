@@ -98,12 +98,15 @@ In the Vercel project settings, add these environment variables:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon key | Supabase → Settings → API → anon/public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase service role key | Supabase → Settings → API → service_role key (secret) |
 | `UNSUBSCRIBE_TOKEN_SECRET` | Random secret for unsubscribe tokens | Generate with: `openssl rand -hex 32` |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST API URL (optional) | Upstash Console → Redis Database → REST API |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST API token (optional) | Upstash Console → Redis Database → REST API |
 
 **Important notes:**
 - Both `NEXT_PUBLIC_` variables are required for the app to run (validated by `src/lib/env.ts`)
 - The `NEXT_PUBLIC_` prefix exposes these to the browser (safe for anon key)
 - `SUPABASE_SERVICE_ROLE_KEY` is server-only and used for operations that bypass RLS (e.g., unsubscribe)
 - `UNSUBSCRIBE_TOKEN_SECRET` is server-only and used to sign email unsubscribe tokens
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are optional; rate limiting is disabled if not set
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
 ### 2.4 Deploy
@@ -352,7 +355,60 @@ The email alert system uses a Supabase Edge Function triggered by database webho
 - Check that EMAIL_FROM matches your verified domain
 - Review Resend dashboard for delivery status
 
-## 9. Maintenance
+## 9. Rate Limiting (L2)
+
+Rate limiting protects the API from abuse and ensures fair usage. It uses Upstash Redis for distributed rate limiting.
+
+### 9.1 Upstash Redis Setup
+
+1. Create an [Upstash](https://upstash.com) account
+2. Create a new Redis database:
+   - Go to **Console** → **Create Database**
+   - Choose a region close to your Vercel deployment
+   - Select the free tier (10,000 commands/day)
+3. Copy the REST API credentials:
+   - **UPSTASH_REDIS_REST_URL**: The REST API endpoint (e.g., `https://xxx.upstash.io`)
+   - **UPSTASH_REDIS_REST_TOKEN**: The REST API token
+
+### 9.2 Configure Environment Variables
+
+Add the Upstash Redis credentials to Vercel:
+
+1. Go to your Vercel project → **Settings** → **Environment Variables**
+2. Add the following variables:
+   - `UPSTASH_REDIS_REST_URL`: Your Upstash REST API URL
+   - `UPSTASH_REDIS_REST_TOKEN`: Your Upstash REST API token
+3. Redeploy the application
+
+### 9.3 Rate Limits
+
+The following rate limits are enforced:
+
+| Route Type | Limit | Routes |
+|------------|-------|--------|
+| Public | 60 requests/minute | All routes except below |
+| Strict | 30 requests/minute | `/watchlist`, `/api/admin` |
+
+When a rate limit is exceeded:
+- HTTP 429 (Too Many Requests) is returned
+- `Retry-After` header indicates seconds until limit resets
+- `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` headers are included
+
+### 9.4 Graceful Degradation
+
+Rate limiting is **optional**. If the Upstash environment variables are not set:
+- The application continues to work normally
+- No rate limiting is applied
+- This is useful for local development or if Redis is unavailable
+
+### 9.5 Monitoring
+
+Monitor rate limiting in the Upstash Console:
+- **Usage**: View request counts and rate limit hits
+- **Analytics**: Track patterns and identify potential abuse
+- **Alerts**: Set up notifications for unusual activity
+
+## 10. Maintenance
 
 ### Regular Tasks
 - **Weekly**: Check Vercel analytics for traffic patterns and errors

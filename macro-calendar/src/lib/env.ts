@@ -42,3 +42,35 @@ export function getServerEnv() {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   });
 }
+
+/**
+ * Rate limiting environment variables schema.
+ * Optional: If not set, rate limiting is disabled.
+ * Used by @upstash/ratelimit for distributed rate limiting.
+ */
+const rateLimitEnvSchema = z.object({
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+});
+
+/**
+ * Get rate limiting environment variables.
+ * Returns null if rate limiting is not configured.
+ * Both URL and token must be set for rate limiting to be enabled.
+ */
+export function getRateLimitEnv(): { url: string; token: string } | null {
+  const parsed = rateLimitEnvSchema.parse({
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+
+  // Both must be set for rate limiting to be enabled
+  if (parsed.UPSTASH_REDIS_REST_URL && parsed.UPSTASH_REDIS_REST_TOKEN) {
+    return {
+      url: parsed.UPSTASH_REDIS_REST_URL,
+      token: parsed.UPSTASH_REDIS_REST_TOKEN,
+    };
+  }
+
+  return null;
+}
