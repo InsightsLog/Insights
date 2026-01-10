@@ -3,6 +3,23 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 
 /**
+ * Routes that should skip session refresh in middleware.
+ * These routes use alternative authentication mechanisms (e.g., signed tokens)
+ * and should not trigger cookie manipulation that could interfere with 
+ * the user's existing session.
+ */
+const SKIP_SESSION_REFRESH_ROUTES = ["/unsubscribe"];
+
+/**
+ * Check if a route should skip session refresh.
+ */
+function shouldSkipSessionRefresh(pathname: string): boolean {
+  return SKIP_SESSION_REFRESH_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+}
+
+/**
  * Middleware that refreshes Supabase auth session on each request.
  * This ensures auth cookies are refreshed before they expire.
  * 
@@ -16,6 +33,16 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
+
+  // Add pathname header for use in layouts that need to know the current route
+  // This enables conditional auth checking based on the route
+  supabaseResponse.headers.set("x-pathname", request.nextUrl.pathname);
+
+  // Skip session refresh for routes that don't require it
+  // This prevents cookie manipulation that could interfere with the user's session
+  if (shouldSkipSessionRefresh(request.nextUrl.pathname)) {
+    return supabaseResponse;
+  }
 
   // Create Supabase client with cookie handling for middleware
   const supabase = createServerClient(
@@ -35,6 +62,8 @@ export async function middleware(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           });
+          // Preserve the pathname header when recreating the response
+          supabaseResponse.headers.set("x-pathname", request.nextUrl.pathname);
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
