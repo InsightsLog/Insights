@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.3] - 2026-01-10
+
+### Bug Fixes
+- **Fixed:** Build failure caused by Next.js type-checking Supabase Edge Functions
+  - Updated `tsconfig.json` to exclude `supabase/functions` directory
+  - Edge Functions use Deno-specific imports (e.g., `npm:@supabase/supabase-js@2`) incompatible with Next.js
+  - Edge Functions will be type-checked separately by Supabase CLI during deployment
+
 ## [1.2.2] - 2026-01-10
 
 ### Email Alerts
