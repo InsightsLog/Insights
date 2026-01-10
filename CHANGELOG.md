@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **Fixed:** Email alert Edge Function not sending emails when release inserted
+  - Fixed `generateUnsubscribeToken` function type mismatch in Edge Function
+  - Function was declared to return `string` but actually returned `Promise<string>`
+  - Changed function to properly use `async/await` pattern with correct return type
 - **Fixed:** Magic link sign-in showing `?error=auth_failed` in URL despite successful authentication
   - Skip middleware session refresh for `/auth/callback` route
   - Root cause: Middleware called `getUser()` before callback could exchange code for session

@@ -73,11 +73,11 @@ interface UnsubscribeTokenPayload {
  * Generate a signed unsubscribe token.
  * Matches the implementation in src/lib/unsubscribe-token.ts
  */
-function generateUnsubscribeToken(
+async function generateUnsubscribeToken(
   userId: string,
   indicatorId: string,
   expirationDays = 90
-): string {
+): Promise<string> {
   if (!UNSUBSCRIBE_TOKEN_SECRET) {
     throw new Error("UNSUBSCRIBE_TOKEN_SECRET environment variable is required");
   }
@@ -99,19 +99,20 @@ function generateUnsubscribeToken(
   const dataToSign = encoder.encode(payloadBase64);
   
   // Use Web Crypto API for HMAC
-  return crypto.subtle
-    .importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
-    .then((cryptoKey) =>
-      crypto.subtle.sign("HMAC", cryptoKey, dataToSign)
-    )
-    .then((signature) => {
-      const signatureBytes = new Uint8Array(signature);
-      const signatureBase64 = btoa(String.fromCharCode(...signatureBytes))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=/g, "");
-      return `${payloadBase64}.${signatureBase64}`;
-    });
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    key,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", cryptoKey, dataToSign);
+  const signatureBytes = new Uint8Array(signature);
+  const signatureBase64 = btoa(String.fromCharCode(...signatureBytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+  return `${payloadBase64}.${signatureBase64}`;
 }
 
 /**
