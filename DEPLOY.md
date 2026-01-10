@@ -262,7 +262,80 @@ After signing in, the calendar page shows "Unable to load watchlist data. Please
 
 **Why this happens**: Each migration file creates specific tables. If any migration is skipped or missed, features depending on that table will fail. The watchlist feature (T120-T130) requires the `watchlist` table from migration 003.
 
-## 8. Maintenance
+## 8. Email Alerts (L2)
+
+Email alerts require Supabase Edge Functions and a Resend account for sending emails.
+
+### 8.1 Resend Setup
+
+1. Create a [Resend](https://resend.com) account
+2. [Verify your domain](https://resend.com/domains) for sending emails
+3. [Create an API key](https://resend.com/api-keys) and save it securely
+
+### 8.2 Deploy Edge Function
+
+The email alert system uses a Supabase Edge Function triggered by database webhooks.
+
+1. Install the [Supabase CLI](/docs/guides/cli#installation) if not already installed
+2. Link your project:
+   ```bash
+   cd macro-calendar
+   supabase link --project-ref <your-project-ref>
+   ```
+3. Set the required secrets:
+   ```bash
+   supabase secrets set RESEND_API_KEY=<your-resend-api-key>
+   supabase secrets set EMAIL_FROM=alerts@yourdomain.com
+   supabase secrets set APP_URL=https://your-app.vercel.app
+   ```
+4. Deploy the Edge Function:
+   ```bash
+   supabase functions deploy send-release-alert --no-verify-jwt
+   ```
+
+### 8.3 Configure Database Webhook
+
+1. In Supabase Dashboard, go to **Database** → **Webhooks**
+2. Click **Create a new webhook**
+3. Configure the webhook:
+   - **Name**: `send-release-alert`
+   - **Table**: `public.releases`
+   - **Events**: Check `INSERT`
+   - **Type**: `Supabase Edge Functions`
+   - **Edge Function**: Select `send-release-alert`
+   - **Method**: `POST`
+   - **Timeout**: `5000` (5 seconds for email delivery)
+4. Add HTTP Headers:
+   - Click "Add new header"
+   - Add `Content-Type`: `application/json`
+   - Click "Add auth header with service key"
+5. Click **Create webhook**
+
+### 8.4 Verify Setup
+
+1. Enable email alerts for an indicator in the watchlist
+2. Insert a test release row in the `releases` table
+3. Check Edge Function logs in **Functions** → **send-release-alert** → **Logs**
+4. Verify the email was received
+
+### 8.5 Troubleshooting Email Alerts
+
+**No emails sent**
+- Verify RESEND_API_KEY is set correctly: `supabase secrets list`
+- Check Edge Function logs for errors
+- Ensure users have email alerts enabled (`email_enabled = true` in `alert_preferences`)
+
+**Webhook not triggering**
+- Verify the webhook is enabled in Database → Webhooks
+- Check the webhook targets the correct table and event
+- Review webhook logs in the Supabase Dashboard
+
+**Email delivery issues**
+- Verify your domain is verified in Resend
+- Check that EMAIL_FROM matches your verified domain
+- Review Resend dashboard for delivery status
+
+## 9. Maintenance
 
 ### Regular Tasks
 - **Weekly**: Check Vercel analytics for traffic patterns and errors
