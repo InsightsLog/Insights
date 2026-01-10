@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.2] - 2026-01-10
+
+### Email Alerts
+- **Added:** AlertToggle component in watchlist (`src/app/components/AlertToggle.tsx`) (T202)
+  - Toggle button for enabling/disabling email alerts per indicator
+  - Three states: loading, enabled (blue bell icon), disabled (gray bell with slash)
+  - Uses `toggleEmailAlert` server action to update preferences
+  - Shows error messages when toggle fails
+  - Prevents double-clicks during API calls
+- **Updated:** Watchlist page to include AlertToggle component
+  - Added "Alerts" column to watchlist table
+  - Fetches alert preferences for all watchlist items
+  - Each indicator row shows its current alert state
+  - Alert preferences persist across page refreshes
+
 ## [1.2.1] - 2026-01-10
 
 ### Email Alerts

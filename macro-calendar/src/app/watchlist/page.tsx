@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { AlertToggle } from "@/app/components/AlertToggle";
 
 export const metadata: Metadata = {
   title: "My Watchlist",
@@ -23,6 +24,7 @@ const watchlistItemSchema = z.object({
     release_at: z.string(),
     period: z.string(),
   }).nullable(),
+  email_enabled: z.boolean().default(false),
 });
 
 type WatchlistItem = z.infer<typeof watchlistItemSchema>;
@@ -101,6 +103,18 @@ async function getUserWatchlist(): Promise<DataResult<WatchlistItem[]>> {
     // Continue with empty releases rather than failing completely
   }
 
+  // Fetch alert preferences for all indicators
+  const { data: alertPreferencesData, error: alertPreferencesError } = await supabase
+    .from("alert_preferences")
+    .select("indicator_id, email_enabled")
+    .eq("user_id", user.id)
+    .in("indicator_id", indicatorIds);
+
+  if (alertPreferencesError) {
+    console.error("Error fetching alert preferences:", alertPreferencesError);
+    // Continue with no alert preferences rather than failing completely
+  }
+
   // Group releases by indicator_id and take the first (next) one for each
   const nextReleasesByIndicator = new Map<string, { release_at: string; period: string }>();
   for (const release of releasesData ?? []) {
@@ -112,10 +126,17 @@ async function getUserWatchlist(): Promise<DataResult<WatchlistItem[]>> {
     }
   }
 
-  // Combine watchlist items with their next releases
+  // Group alert preferences by indicator_id
+  const alertPreferencesByIndicator = new Map<string, boolean>();
+  for (const pref of alertPreferencesData ?? []) {
+    alertPreferencesByIndicator.set(pref.indicator_id, pref.email_enabled);
+  }
+
+  // Combine watchlist items with their next releases and alert preferences
   const watchlistWithReleases = (watchlistData ?? []).map((item) => ({
     ...item,
     next_release: nextReleasesByIndicator.get(item.indicator_id) ?? null,
+    email_enabled: alertPreferencesByIndicator.get(item.indicator_id) ?? false,
   }));
 
   // Validate the response with Zod
@@ -253,6 +274,9 @@ export default async function WatchlistPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     Period
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Alerts
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -286,6 +310,12 @@ export default async function WatchlistPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
                       {item.next_release?.period ?? "—"}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <AlertToggle
+                        indicatorId={item.indicator_id}
+                        initialEmailEnabled={item.email_enabled}
+                      />
                     </td>
                   </tr>
                 ))}
