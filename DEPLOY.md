@@ -96,11 +96,13 @@ In the Vercel project settings, add these environment variables:
 |---------------|-------|---------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Supabase → Settings → API → Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon key | Supabase → Settings → API → anon/public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase service role key | Supabase → Settings → API → service_role key (secret) |
 | `UNSUBSCRIBE_TOKEN_SECRET` | Random secret for unsubscribe tokens | Generate with: `openssl rand -hex 32` |
 
 **Important notes:**
 - Both `NEXT_PUBLIC_` variables are required for the app to run (validated by `src/lib/env.ts`)
 - The `NEXT_PUBLIC_` prefix exposes these to the browser (safe for anon key)
+- `SUPABASE_SERVICE_ROLE_KEY` is server-only and used for operations that bypass RLS (e.g., unsubscribe)
 - `UNSUBSCRIBE_TOKEN_SECRET` is server-only and used to sign email unsubscribe tokens
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
