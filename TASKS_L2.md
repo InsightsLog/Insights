@@ -52,7 +52,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - No RLS (admin-only access via service role)
   - Test: audit log entries created on admin actions
 
-- [ ] T212 Refactor admin upload to use role-based auth
+- [x] T212 Refactor admin upload to use role-based auth
   - Replace ADMIN_UPLOAD_SECRET with Supabase auth + role check
   - Log all uploads to audit_log
   - Keep secret as fallback during migration period

@@ -19,6 +19,29 @@
   - Indexes for user_id, action, resource, and created_at queries
   - No RLS: admin-only access via service role (tamper-proof audit trail)
 - **Added:** Test file (`007_test_audit_log.sql`) with verification queries for T211
+- **Refactored:** Admin upload to use role-based auth (`/api/admin/upload`) (T212)
+  - Primary auth: Supabase auth + admin role check (via `checkAdminRole()` helper)
+  - Fallback auth: ADMIN_UPLOAD_SECRET kept for migration period (now optional in env)
+  - Audit logging: All successful uploads logged to audit_log table (via `logAuditAction()` helper)
+  - Response includes `authMethod` field indicating how user was authenticated ('role' or 'secret')
+  - Returns 403 Forbidden for authenticated non-admin users (was 401)
+  - Returns 401 Unauthorized for unauthenticated users without valid secret
+- **Added:** `checkAdminRole()` helper function (`src/lib/supabase/auth.ts`)
+  - Checks if current authenticated user has admin role
+  - Uses service role client to bypass RLS on user_roles table
+  - Returns `AdminCheckResult` with `isAdmin`, `userId`, and optional `error`
+- **Added:** `logAuditAction()` helper function (`src/lib/supabase/auth.ts`)
+  - Logs admin actions to audit_log table using service role client
+  - Supports action types: 'upload', 'role_change', 'delete'
+  - Accepts optional resource_id and metadata for detailed logging
+- **Changed:** ADMIN_UPLOAD_SECRET is now optional in server environment (`src/lib/env.ts`)
+  - Role-based auth is the primary authentication method
+  - Secret kept as fallback for migration period
+- **Updated:** Admin upload page (`/admin/upload`)
+  - New auth info banner explaining authentication methods
+  - Secret input moved to collapsible section (optional fallback)
+  - Success message shows which auth method was used
+- **Added:** Unit tests for `checkAdminRole()` and `logAuditAction()` functions (10 tests)
 
 ### Bug Fixes
 - **Fixed:** Email alert Edge Function not sending emails when release inserted

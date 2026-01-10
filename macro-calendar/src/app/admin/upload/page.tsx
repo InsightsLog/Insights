@@ -25,17 +25,15 @@ export default function AdminUploadPage() {
       return;
     }
 
-    if (!secret.trim()) {
-      setStatus({ type: "error", message: "Admin secret is required." });
-      return;
-    }
-
     setStatus({ type: "loading", message: "Uploading..." });
 
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("secret", secret);
+      // Include secret if provided (optional - for fallback auth during migration)
+      if (secret.trim()) {
+        formData.append("secret", secret);
+      }
 
       const response = await fetch("/api/admin/upload", {
         method: "POST",
@@ -62,9 +60,11 @@ export default function AdminUploadPage() {
         return;
       }
 
+      // Include auth method in success message
+      const authInfo = data.authMethod === "role" ? " (authenticated via admin role)" : " (authenticated via secret)";
       setStatus({
         type: "success",
-        message: `${data.message}. Indicators: ${data.indicatorsUpserted}, Releases: ${data.releasesInserted}`,
+        message: `${data.message}. Indicators: ${data.indicatorsUpserted}, Releases: ${data.releasesInserted}${authInfo}`,
       });
       setFile(null);
       // Reset file input
@@ -88,28 +88,16 @@ export default function AdminUploadPage() {
           Upload a CSV file to add or update indicators and releases.
         </p>
 
+        {/* Authentication Info */}
+        <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+          <strong>Authentication:</strong> Sign in with an admin account to upload.
+          If you have an admin secret, you can enter it below as a fallback.
+        </div>
+
         <form
           onSubmit={handleSubmit}
           className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
         >
-          {/* Secret Input */}
-          <div className="mb-4">
-            <label
-              htmlFor="secret"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Admin Secret
-            </label>
-            <input
-              type="password"
-              id="secret"
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              placeholder="Enter admin secret"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
           {/* File Input */}
           <div className="mb-4">
             <label
@@ -131,6 +119,26 @@ export default function AdminUploadPage() {
               </p>
             )}
           </div>
+
+          {/* Secret Input (Optional - for fallback auth) */}
+          <details className="mb-4">
+            <summary className="cursor-pointer text-sm font-medium text-gray-700">
+              Admin Secret (optional fallback)
+            </summary>
+            <div className="mt-2">
+              <input
+                type="password"
+                id="secret"
+                value={secret}
+                onChange={(e) => setSecret(e.target.value)}
+                placeholder="Enter admin secret if not signed in as admin"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Only needed if you are not signed in with an admin account.
+              </p>
+            </div>
+          </details>
 
           {/* CSV Format Help */}
           <details className="mb-4 rounded-md border border-gray-200 bg-gray-50 p-3">
