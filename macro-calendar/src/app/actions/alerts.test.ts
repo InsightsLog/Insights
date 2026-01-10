@@ -3,6 +3,8 @@ import {
   getAlertPreferences,
   updateAlertPreference,
   toggleEmailAlert,
+  getUnsubscribeToken,
+  unsubscribeWithToken,
 } from "./alerts";
 
 // Mock the createSupabaseServerClient function
@@ -501,6 +503,272 @@ describe("toggleEmailAlert", () => {
     expect(result).toEqual({
       success: false,
       error: "Indicator not found",
+    });
+  });
+});
+
+// Mock the unsubscribe token utilities
+vi.mock("@/lib/unsubscribe-token", () => ({
+  generateUnsubscribeToken: vi.fn(),
+  validateUnsubscribeToken: vi.fn(),
+}));
+
+import {
+  generateUnsubscribeToken,
+  validateUnsubscribeToken,
+} from "@/lib/unsubscribe-token";
+const mockGenerateUnsubscribeToken = vi.mocked(generateUnsubscribeToken);
+const mockValidateUnsubscribeToken = vi.mocked(validateUnsubscribeToken);
+
+describe("getUnsubscribeToken", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error for invalid indicator ID format", async () => {
+    const result = await getUnsubscribeToken("invalid-id");
+
+    expect(result).toEqual({
+      success: false,
+      error: "Invalid indicator ID format",
+    });
+  });
+
+  it("returns error when not authenticated", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getUnsubscribeToken(validIndicatorId);
+
+    expect(result).toEqual({
+      success: false,
+      error: "Not authenticated",
+    });
+  });
+
+  it("successfully generates unsubscribe token", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+    const mockToken = "mock.token.value";
+    mockGenerateUnsubscribeToken.mockReturnValue(mockToken);
+
+    const result = await getUnsubscribeToken(validIndicatorId);
+
+    expect(result).toEqual({
+      success: true,
+      data: { token: mockToken },
+    });
+    expect(mockGenerateUnsubscribeToken).toHaveBeenCalledWith(
+      mockUserId,
+      validIndicatorId
+    );
+  });
+
+  it("returns error when token generation fails", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+    mockGenerateUnsubscribeToken.mockImplementation(() => {
+      throw new Error("Token generation failed");
+    });
+
+    const result = await getUnsubscribeToken(validIndicatorId);
+
+    expect(result).toEqual({
+      success: false,
+      error: "Failed to generate unsubscribe token",
+    });
+  });
+});
+
+describe("unsubscribeWithToken", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error for invalid token format", async () => {
+    const result = await unsubscribeWithToken("");
+
+    expect(result).toEqual({
+      success: false,
+      error: "Invalid token",
+    });
+  });
+
+  it("returns error for invalid token", async () => {
+    mockValidateUnsubscribeToken.mockReturnValue(null);
+
+    const result = await unsubscribeWithToken("invalid.token");
+
+    expect(result).toEqual({
+      success: false,
+      error: "Invalid or expired token",
+    });
+  });
+
+  it("successfully unsubscribes when preference exists and is enabled", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    const mockPayload = {
+      userId: mockUserId,
+      indicatorId: validIndicatorId,
+      exp: Date.now() + 100000,
+    };
+    mockValidateUnsubscribeToken.mockReturnValue(mockPayload);
+
+    // First call: select (returns existing preference with email_enabled=true)
+    const mockMaybeSingle = vi.fn().mockResolvedValue({
+      data: { id: mockPreferenceId, email_enabled: true },
+      error: null,
+    });
+    const mockEqIndicator = vi
+      .fn()
+      .mockReturnValue({ maybeSingle: mockMaybeSingle });
+    const mockEqUser = vi.fn().mockReturnValue({ eq: mockEqIndicator });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
+
+    // Second call: update
+    const mockEqId = vi.fn().mockResolvedValue({ error: null });
+    const mockUpdate = vi.fn().mockReturnValue({ eq: mockEqId });
+
+    mockSupabase.from.mockReturnValueOnce({ select: mockSelect });
+    mockSupabase.from.mockReturnValueOnce({ update: mockUpdate });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await unsubscribeWithToken("valid.token");
+
+    expect(result).toEqual({
+      success: true,
+      data: { indicator_id: validIndicatorId },
+    });
+    expect(mockUpdate).toHaveBeenCalledWith({ email_enabled: false });
+    expect(mockEqId).toHaveBeenCalledWith("id", mockPreferenceId);
+  });
+
+  it("returns success when no preference exists", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    const mockPayload = {
+      userId: mockUserId,
+      indicatorId: validIndicatorId,
+      exp: Date.now() + 100000,
+    };
+    mockValidateUnsubscribeToken.mockReturnValue(mockPayload);
+
+    // Select returns null (no preference)
+    const mockMaybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: null });
+    const mockEqIndicator = vi
+      .fn()
+      .mockReturnValue({ maybeSingle: mockMaybeSingle });
+    const mockEqUser = vi.fn().mockReturnValue({ eq: mockEqIndicator });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
+
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await unsubscribeWithToken("valid.token");
+
+    expect(result).toEqual({
+      success: true,
+      data: { indicator_id: validIndicatorId },
+    });
+  });
+
+  it("returns success when already unsubscribed", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    const mockPayload = {
+      userId: mockUserId,
+      indicatorId: validIndicatorId,
+      exp: Date.now() + 100000,
+    };
+    mockValidateUnsubscribeToken.mockReturnValue(mockPayload);
+
+    // Select returns preference with email_enabled=false
+    const mockMaybeSingle = vi.fn().mockResolvedValue({
+      data: { id: mockPreferenceId, email_enabled: false },
+      error: null,
+    });
+    const mockEqIndicator = vi
+      .fn()
+      .mockReturnValue({ maybeSingle: mockMaybeSingle });
+    const mockEqUser = vi.fn().mockReturnValue({ eq: mockEqIndicator });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
+
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await unsubscribeWithToken("valid.token");
+
+    expect(result).toEqual({
+      success: true,
+      data: { indicator_id: validIndicatorId },
+    });
+  });
+
+  it("returns error when select fails", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    const mockPayload = {
+      userId: mockUserId,
+      indicatorId: validIndicatorId,
+      exp: Date.now() + 100000,
+    };
+    mockValidateUnsubscribeToken.mockReturnValue(mockPayload);
+
+    // Select fails
+    const mockMaybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: { message: "DB error" } });
+    const mockEqIndicator = vi
+      .fn()
+      .mockReturnValue({ maybeSingle: mockMaybeSingle });
+    const mockEqUser = vi.fn().mockReturnValue({ eq: mockEqIndicator });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
+
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await unsubscribeWithToken("valid.token");
+
+    expect(result).toEqual({
+      success: false,
+      error: "Failed to process unsubscribe request",
+    });
+  });
+
+  it("returns error when update fails", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    const mockPayload = {
+      userId: mockUserId,
+      indicatorId: validIndicatorId,
+      exp: Date.now() + 100000,
+    };
+    mockValidateUnsubscribeToken.mockReturnValue(mockPayload);
+
+    // First call: select (returns existing preference)
+    const mockMaybeSingle = vi.fn().mockResolvedValue({
+      data: { id: mockPreferenceId, email_enabled: true },
+      error: null,
+    });
+    const mockEqIndicator = vi
+      .fn()
+      .mockReturnValue({ maybeSingle: mockMaybeSingle });
+    const mockEqUser = vi.fn().mockReturnValue({ eq: mockEqIndicator });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqUser });
+
+    // Second call: update fails
+    const mockEqId = vi
+      .fn()
+      .mockResolvedValue({ error: { message: "Update failed" } });
+    const mockUpdate = vi.fn().mockReturnValue({ eq: mockEqId });
+
+    mockSupabase.from.mockReturnValueOnce({ select: mockSelect });
+    mockSupabase.from.mockReturnValueOnce({ update: mockUpdate });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await unsubscribeWithToken("valid.token");
+
+    expect(result).toEqual({
+      success: false,
+      error: "Failed to process unsubscribe request",
     });
   });
 });
