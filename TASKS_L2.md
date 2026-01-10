@@ -46,7 +46,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - RLS: only admins can read/write user_roles
   - Test: verify RLS policies work correctly
 
-- [ ] T211 Add audit_log table
+- [x] T211 Add audit_log table
   - Migration: audit_log(id, user_id, action, resource_type, resource_id, metadata, created_at)
   - Actions: 'upload', 'role_change', 'delete'
   - No RLS (admin-only access via service role)

@@ -12,6 +12,13 @@
   - RLS policies: only admins can read/write user_roles table
   - `is_admin()` helper function for checking admin status in RLS policies
 - **Added:** Test file (`006_test_user_roles.sql`) with verification queries for T210
+- **Added:** audit_log table migration (`007_create_audit_log.sql`) (T211)
+  - Schema: id, user_id, action, resource_type, resource_id, metadata, created_at
+  - Actions: 'upload', 'role_change', 'delete' enforced via check constraint
+  - Foreign key to profiles with SET NULL (preserves audit entries when user deleted)
+  - Indexes for user_id, action, resource, and created_at queries
+  - No RLS: admin-only access via service role (tamper-proof audit trail)
+- **Added:** Test file (`007_test_audit_log.sql`) with verification queries for T211
 
 ### Bug Fixes
 - **Fixed:** Email alert Edge Function not sending emails when release inserted
