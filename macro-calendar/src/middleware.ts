@@ -22,28 +22,33 @@ const STRICT_RATE_LIMIT_ROUTES = ["/watchlist", "/api/admin"];
 
 /**
  * Rate limiters for different route types (T220).
- * Initialized lazily when first request comes in.
+ * Stored as a single object to ensure atomic initialization.
  * - Public routes: 60 requests per minute
  * - Watchlist/admin routes: 30 requests per minute (stricter)
  */
-let publicRateLimiter: Ratelimit | null = null;
-let strictRateLimiter: Ratelimit | null = null;
-let rateLimitingEnabled = false;
+interface RateLimiters {
+  public: Ratelimit;
+  strict: Ratelimit;
+}
+let rateLimiters: RateLimiters | null = null;
+let rateLimitInitialized = false;
 
 /**
  * Initialize rate limiters with Upstash Redis.
- * Called once on first request. Returns true if rate limiting is enabled.
+ * Called once on first request. Returns the rate limiters if enabled, null otherwise.
+ * Uses atomic assignment to prevent race conditions in edge runtime.
  */
-function initializeRateLimiters(): boolean {
-  if (publicRateLimiter !== null) {
-    return rateLimitingEnabled;
+function initializeRateLimiters(): RateLimiters | null {
+  // Return cached result if already initialized
+  if (rateLimitInitialized) {
+    return rateLimiters;
   }
 
   const rateLimitEnv = getRateLimitEnv();
   if (!rateLimitEnv) {
-    // Rate limiting not configured, skip
-    rateLimitingEnabled = false;
-    return false;
+    // Rate limiting not configured, mark as initialized with null
+    rateLimitInitialized = true;
+    return null;
   }
 
   const redis = new Redis({
@@ -51,24 +56,28 @@ function initializeRateLimiters(): boolean {
     token: rateLimitEnv.token,
   });
 
-  // Public rate limiter: 60 requests per minute
-  publicRateLimiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(60, "1 m"),
-    prefix: "@upstash/ratelimit:public",
-    analytics: true,
-  });
+  // Create both limiters atomically and assign together
+  const newLimiters: RateLimiters = {
+    // Public rate limiter: 60 requests per minute
+    public: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(60, "1 m"),
+      prefix: "@upstash/ratelimit:public",
+      analytics: true,
+    }),
+    // Strict rate limiter: 30 requests per minute for watchlist actions
+    strict: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(30, "1 m"),
+      prefix: "@upstash/ratelimit:strict",
+      analytics: true,
+    }),
+  };
 
-  // Strict rate limiter: 30 requests per minute for watchlist actions
-  strictRateLimiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(30, "1 m"),
-    prefix: "@upstash/ratelimit:strict",
-    analytics: true,
-  });
-
-  rateLimitingEnabled = true;
-  return true;
+  // Atomic assignment
+  rateLimiters = newLimiters;
+  rateLimitInitialized = true;
+  return rateLimiters;
 }
 
 /**
@@ -155,13 +164,13 @@ export async function middleware(request: NextRequest, context: NextFetchEvent) 
 
   // --- Rate Limiting (T220) ---
   // Check rate limit before processing the request
-  const isRateLimitingEnabled = initializeRateLimiters();
+  const limiters = initializeRateLimiters();
   let rateLimitInfo: { limit: number; remaining: number; reset: number } | null = null;
 
-  if (isRateLimitingEnabled) {
+  if (limiters) {
     const identifier = getClientIdentifier(request);
     const useStrictLimit = shouldUseStrictRateLimit(pathname);
-    const limiter = useStrictLimit ? strictRateLimiter! : publicRateLimiter!;
+    const limiter = useStrictLimit ? limiters.strict : limiters.public;
 
     const { success, pending, reset, limit, remaining } = await limiter.limit(identifier);
 
