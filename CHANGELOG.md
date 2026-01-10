@@ -7,6 +7,8 @@
   - Skip middleware session refresh for `/auth/callback` route
   - Root cause: Middleware called `getUser()` before callback could exchange code for session
   - The auth callback needs to establish the session first without interference from middleware
+  - Added fallback: If code exchange fails but user is already authenticated, redirect to success
+  - Added detailed error logging (message, status, code) for debugging auth callback issues
 
 ### Email Alerts
 - **Fixed:** User sign-out issue persisting when using unsubscribe link
