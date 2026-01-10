@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { updateUserRole } from "@/app/actions/admin";
 
 type RoleManagerProps = {
@@ -31,6 +31,16 @@ export function RoleManager({
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Ref to track component mount state
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Check if this is the current admin user
   const isSelf = userId === currentAdminUserId;
 
@@ -45,19 +55,30 @@ export function RoleManager({
       try {
         const result = await updateUserRole(userId, newRole);
 
+        // Only update state if component is still mounted
+        if (!isMountedRef.current) return;
+
         if (result.success) {
           setRole(result.data.role);
           setShowSuccess(true);
           // Hide success message after 2 seconds
-          setTimeout(() => setShowSuccess(false), 2000);
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              setShowSuccess(false);
+            }
+          }, 2000);
         } else {
           setError(result.error);
         }
       } catch (err) {
         console.error("Error updating user role:", err);
-        setError("Failed to update role");
+        if (isMountedRef.current) {
+          setError("Failed to update role");
+        }
       } finally {
-        setIsUpdating(false);
+        if (isMountedRef.current) {
+          setIsUpdating(false);
+        }
       }
     },
     [userId, role, isUpdating]

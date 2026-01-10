@@ -386,11 +386,11 @@ export async function updateUserRole(
 
   if (role === "admin") {
     // Grant admin role: upsert into user_roles
+    // Note: granted_at uses database default NOW() for consistent timezone handling
     const { error: upsertError } = await supabase.from("user_roles").upsert(
       {
         user_id: userId,
         role: "admin",
-        granted_at: new Date().toISOString(),
         granted_by: adminCheck.userId,
       },
       { onConflict: "user_id" }
