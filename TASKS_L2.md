@@ -24,7 +24,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - Shows on /watchlist page next to each indicator
   - Test: toggle updates alert preference; persists across page refresh
 
-- [ ] T203 Create email alert Edge Function
+- [x] T203 Create email alert Edge Function
   - Supabase Edge Function: send-release-alert
   - Triggered by database webhook on releases table insert
   - Queries users with matching indicator in alert_preferences

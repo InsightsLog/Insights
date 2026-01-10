@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.2.3] - 2026-01-10
+
+### Email Alerts
+- **Added:** Email alert Edge Function (`supabase/functions/send-release-alert/index.ts`) (T203)
+  - Triggered by database webhook on releases table INSERT
+  - Queries users with email alerts enabled for the released indicator
+  - Sends styled HTML email with release details via Resend API
+  - Includes: indicator name, country, category, period, release date, actual/forecast/previous values
+  - Email links to indicator detail page and watchlist management
+- **Added:** Database migration for webhook trigger (`005_create_release_alert_webhook.sql`)
+  - Enables pg_net extension for async HTTP requests
+  - Documents both trigger-based and Dashboard webhook approaches
+  - Recommends Dashboard webhook configuration for production
+- **Updated:** DEPLOY.md with Edge Function deployment instructions
+  - Section 8: Complete email alerts setup guide
+  - Resend account setup and domain verification
+  - Edge Function deployment commands
+  - Database webhook configuration steps
+  - Troubleshooting guide for email delivery issues
+
 ## [1.2.2] - 2026-01-10
 
 ### Email Alerts
