@@ -16,6 +16,7 @@ const envSchema = z.object({
 const serverEnvSchema = z.object({
   ADMIN_UPLOAD_SECRET: z.string().min(1, "ADMIN_UPLOAD_SECRET is required"),
   UNSUBSCRIBE_TOKEN_SECRET: z.string().min(1, "UNSUBSCRIBE_TOKEN_SECRET is required"),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
 });
 
 /**
@@ -35,5 +36,6 @@ export function getServerEnv() {
   return serverEnvSchema.parse({
     ADMIN_UPLOAD_SECRET: process.env.ADMIN_UPLOAD_SECRET,
     UNSUBSCRIBE_TOKEN_SECRET: process.env.UNSUBSCRIBE_TOKEN_SECRET,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   });
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
 import {
   generateUnsubscribeToken,
   validateUnsubscribeToken,
@@ -255,10 +256,11 @@ export async function unsubscribeWithToken(
     return { success: false, error: "Invalid or expired token" };
   }
 
-  const supabase = await createSupabaseServerClient();
+  // Use service role client to bypass RLS since this is an unauthenticated request
+  // This prevents interfering with the user's session cookies
+  const supabase = createSupabaseServiceClient();
 
   // Check if alert preference exists
-  // We use service role to bypass RLS since this is an unauthenticated request
   const { data: existing, error: selectError } = await supabase
     .from("alert_preferences")
     .select("id, email_enabled")
