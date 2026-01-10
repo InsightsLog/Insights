@@ -50,6 +50,7 @@ Insights/
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
    ADMIN_UPLOAD_SECRET=your-random-secret
+   UNSUBSCRIBE_TOKEN_SECRET=your-random-secret-for-unsubscribe-tokens
    ```
 
 4. **Run database migrations:**

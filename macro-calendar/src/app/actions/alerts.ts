@@ -1,6 +1,10 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  generateUnsubscribeToken,
+  validateUnsubscribeToken,
+} from "@/lib/unsubscribe-token";
 import { z } from "zod";
 
 // Schema for validating UUID indicator IDs
@@ -190,4 +194,112 @@ export async function toggleEmailAlert(
 
     return { success: true, data: { email_enabled: true } };
   }
+}
+
+/**
+ * Generate an unsubscribe token for the current user and indicator.
+ * This token allows one-click unsubscribe without authentication.
+ *
+ * @param indicatorId - UUID of the indicator
+ * @returns Success/failure result with unsubscribe token
+ */
+export async function getUnsubscribeToken(
+  indicatorId: string
+): Promise<AlertActionResult<{ token: string }>> {
+  // Validate indicator ID format
+  const parseResult = indicatorIdSchema.safeParse(indicatorId);
+  if (!parseResult.success) {
+    return { success: false, error: "Invalid indicator ID format" };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    // Generate signed unsubscribe token
+    const token = generateUnsubscribeToken(user.id, indicatorId);
+    return { success: true, data: { token } };
+  } catch (error) {
+    console.error("Failed to generate unsubscribe token:", error);
+    return { success: false, error: "Failed to generate unsubscribe token" };
+  }
+}
+
+/**
+ * Unsubscribe from email alerts using a token.
+ * This action does not require authentication.
+ *
+ * @param token - Signed unsubscribe token
+ * @returns Success/failure result
+ */
+export async function unsubscribeWithToken(
+  token: string
+): Promise<AlertActionResult<{ indicator_id: string }>> {
+  // Validate token format
+  if (!token || typeof token !== "string") {
+    return { success: false, error: "Invalid token" };
+  }
+
+  // Validate and parse token
+  const payload = validateUnsubscribeToken(token);
+  if (!payload) {
+    return { success: false, error: "Invalid or expired token" };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  // Check if alert preference exists
+  // We use service role to bypass RLS since this is an unauthenticated request
+  const { data: existing, error: selectError } = await supabase
+    .from("alert_preferences")
+    .select("id, email_enabled")
+    .eq("user_id", payload.userId)
+    .eq("indicator_id", payload.indicatorId)
+    .maybeSingle();
+
+  if (selectError) {
+    console.error("Failed to check alert preference:", selectError);
+    return { success: false, error: "Failed to process unsubscribe request" };
+  }
+
+  if (!existing) {
+    // No preference exists, nothing to unsubscribe from
+    return {
+      success: true,
+      data: { indicator_id: payload.indicatorId },
+    };
+  }
+
+  if (!existing.email_enabled) {
+    // Already unsubscribed
+    return {
+      success: true,
+      data: { indicator_id: payload.indicatorId },
+    };
+  }
+
+  // Update alert preference to disable email alerts
+  const { error: updateError } = await supabase
+    .from("alert_preferences")
+    .update({ email_enabled: false })
+    .eq("id", existing.id);
+
+  if (updateError) {
+    console.error("Failed to update alert preference:", updateError);
+    return { success: false, error: "Failed to process unsubscribe request" };
+  }
+
+  return {
+    success: true,
+    data: { indicator_id: payload.indicatorId },
+  };
 }

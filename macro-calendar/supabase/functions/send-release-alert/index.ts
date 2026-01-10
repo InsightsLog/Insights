@@ -58,13 +58,70 @@ const supabase = createClient(
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("EMAIL_FROM") || "alerts@macrocalendar.com";
 const APP_URL = Deno.env.get("APP_URL") || "https://macrocalendar.com";
+const UNSUBSCRIBE_TOKEN_SECRET = Deno.env.get("UNSUBSCRIBE_TOKEN_SECRET");
 
 /**
- * Format a release for email display
+ * Payload for unsubscribe token.
+ */
+interface UnsubscribeTokenPayload {
+  userId: string;
+  indicatorId: string;
+  exp: number;
+}
+
+/**
+ * Generate a signed unsubscribe token.
+ * Matches the implementation in src/lib/unsubscribe-token.ts
+ */
+function generateUnsubscribeToken(
+  userId: string,
+  indicatorId: string,
+  expirationDays = 90
+): string {
+  if (!UNSUBSCRIBE_TOKEN_SECRET) {
+    throw new Error("UNSUBSCRIBE_TOKEN_SECRET environment variable is required");
+  }
+
+  const exp = Date.now() + expirationDays * 24 * 60 * 60 * 1000;
+  const payload: UnsubscribeTokenPayload = { userId, indicatorId, exp };
+
+  // Encode payload as base64url
+  const payloadJson = JSON.stringify(payload);
+  const encoder = new TextEncoder();
+  const payloadBytes = encoder.encode(payloadJson);
+  const payloadBase64 = btoa(String.fromCharCode(...payloadBytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+
+  // Sign payload with HMAC-SHA256
+  const key = encoder.encode(UNSUBSCRIBE_TOKEN_SECRET);
+  const dataToSign = encoder.encode(payloadBase64);
+  
+  // Use Web Crypto API for HMAC
+  return crypto.subtle
+    .importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
+    .then((cryptoKey) =>
+      crypto.subtle.sign("HMAC", cryptoKey, dataToSign)
+    )
+    .then((signature) => {
+      const signatureBytes = new Uint8Array(signature);
+      const signatureBase64 = btoa(String.fromCharCode(...signatureBytes))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+      return `${payloadBase64}.${signatureBase64}`;
+    });
+}
+
+/**
+ * Format a release for email display with personalized unsubscribe link
  */
 function formatReleaseForEmail(
   indicator: Indicator,
-  release: Release
+  release: Release,
+  userId: string,
+  unsubscribeToken: string
 ): { subject: string; html: string; text: string } {
   const releaseDate = new Date(release.release_at).toLocaleDateString("en-US", {
     weekday: "long",
@@ -150,7 +207,9 @@ function formatReleaseForEmail(
 
   <div style="background: #e9ecef; padding: 20px; border-radius: 0 0 12px 12px; text-align: center; font-size: 14px; color: #6c757d;">
     <p style="margin: 0 0 10px 0;">You're receiving this because you enabled email alerts for ${indicator.name}.</p>
-    <a href="${APP_URL}/watchlist" style="color: #667eea;">Manage your alerts</a>
+    <a href="${APP_URL}/watchlist" style="color: #667eea; margin-right: 15px;">Manage your alerts</a>
+    <span style="color: #adb5bd;">|</span>
+    <a href="${APP_URL}/unsubscribe?token=${unsubscribeToken}" style="color: #667eea; margin-left: 15px;">Unsubscribe</a>
   </div>
 </body>
 </html>`;
@@ -173,6 +232,7 @@ View indicator details: ${APP_URL}/indicator/${indicator.id}
 ---
 You're receiving this because you enabled email alerts for ${indicator.name}.
 Manage your alerts: ${APP_URL}/watchlist
+Unsubscribe: ${APP_URL}/unsubscribe?token=${unsubscribeToken}
 `;
 
   return { subject, html, text };
@@ -300,13 +360,7 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${subscribers.length} subscriber(s) to notify`);
 
-    // Format email content
-    const { subject, html, text } = formatReleaseForEmail(
-      indicator as Indicator,
-      release
-    );
-
-    // Send emails to all subscribers
+    // Send emails to all subscribers with personalized unsubscribe tokens
     const results = await Promise.all(
       (subscribers as unknown as AlertSubscriber[]).map(async (sub) => {
         const email = sub.profiles.email;
@@ -315,8 +369,32 @@ Deno.serve(async (req) => {
           return { user_id: sub.user_id, success: false, error: "No email" };
         }
 
-        const result = await sendEmail(email, subject, html, text);
-        return { user_id: sub.user_id, email, ...result };
+        try {
+          // Generate unsubscribe token for this specific user and indicator
+          const unsubscribeToken = await generateUnsubscribeToken(
+            sub.user_id,
+            release.indicator_id
+          );
+
+          // Format email with personalized unsubscribe link
+          const { subject, html, text } = formatReleaseForEmail(
+            indicator as Indicator,
+            release,
+            sub.user_id,
+            unsubscribeToken
+          );
+
+          const result = await sendEmail(email, subject, html, text);
+          return { user_id: sub.user_id, email, ...result };
+        } catch (error) {
+          console.error(`Failed to send email to ${email}:`, error);
+          return {
+            user_id: sub.user_id,
+            email,
+            success: false,
+            error: String(error),
+          };
+        }
       })
     );
 
