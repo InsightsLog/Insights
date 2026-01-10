@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.1] - 2026-01-10
+
+### Email Alerts
+- **Added:** Alert preferences server actions (`src/app/actions/alerts.ts`) (T201)
+  - `getAlertPreferences()` - Fetch all alert preferences for the current user
+  - `updateAlertPreference(indicatorId, emailEnabled)` - Create or update alert preference
+  - `toggleEmailAlert(indicatorId)` - Toggle email alert state for an indicator
+  - Input validation with Zod UUID schema
+  - Authentication checks with proper error handling
+  - Foreign key violation handling for non-existent indicators
+  - Upsert pattern for updateAlertPreference using conflict resolution
+- **Added:** Unit tests for alert actions with 19 test cases covering all actions and edge cases
+
 ## [1.2.0] - 2026-01-08 - L2 Kickoff
 
 ### Project Transition

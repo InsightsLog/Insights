@@ -13,7 +13,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - RLS: users can only CRUD their own preferences
   - Test: insert preference row; verify RLS blocks other users
 
-- [ ] T201 Add alert preferences server actions
+- [x] T201 Add alert preferences server actions
   - File: src/app/actions/alerts.ts
   - Actions: getAlertPreferences, updateAlertPreference, toggleEmailAlert
   - Test: actions modify alert_preferences table correctly
