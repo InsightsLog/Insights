@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Role-Based Admin Access
+- **Added:** user_roles table migration (`006_create_user_roles.sql`) (T210)
+  - Schema: id, user_id, role, granted_at, granted_by
+  - Roles: 'admin' or 'user' enforced via check constraint
+  - Unique constraint on user_id (one role per user)
+  - Foreign key to profiles with CASCADE delete for user_id
+  - Foreign key to profiles with SET NULL for granted_by (tracks who granted the role)
+  - RLS policies: only admins can read/write user_roles table
+  - `is_admin()` helper function for checking admin status in RLS policies
+- **Added:** Test file (`006_test_user_roles.sql`) with verification queries for T210
+
 ### Bug Fixes
 - **Fixed:** Email alert Edge Function not sending emails when release inserted
   - Fixed `generateUnsubscribeToken` function type mismatch in Edge Function
