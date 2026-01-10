@@ -40,7 +40,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
 
 ## 1) Role-Based Admin Access
 
-- [ ] T210 Add user_roles table
+- [x] T210 Add user_roles table
   - Migration: user_roles(id, user_id, role, granted_at, granted_by)
   - Roles: 'admin', 'user' (default)
   - RLS: only admins can read/write user_roles
