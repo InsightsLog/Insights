@@ -74,7 +74,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
 
 ## 2) Rate Limiting & Abuse Protection
 
-- [ ] T220 Add rate limiting middleware
+- [x] T220 Add rate limiting middleware
   - File: src/middleware.ts (extend existing)
   - Use Upstash Redis or similar for distributed rate limiting
   - Limits: 60 requests/minute for public, 30/minute for watchlist actions

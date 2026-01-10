@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### Rate Limiting & Abuse Protection
+- **Added:** Rate limiting middleware (T220)
+  - Extended `src/middleware.ts` to implement distributed rate limiting using Upstash Redis
+  - Public routes: 60 requests per minute limit
+  - Stricter routes (`/watchlist`, `/api/admin`): 30 requests per minute limit
+  - Returns HTTP 429 with `Retry-After` header when limit exceeded
+  - Rate limit headers added to all responses: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+  - Uses sliding window algorithm for smooth rate limiting
+  - Identifies clients by IP address using `@vercel/functions` ipAddress helper
+  - Falls back to `x-forwarded-for` and `x-real-ip` headers for non-Vercel deployments
+  - Graceful degradation: rate limiting disabled when Upstash Redis not configured
+- **Added:** Environment variables for rate limiting (`src/lib/env.ts`)
+  - `UPSTASH_REDIS_REST_URL` - Upstash Redis REST API URL (optional)
+  - `UPSTASH_REDIS_REST_TOKEN` - Upstash Redis REST API token (optional)
+  - `getRateLimitEnv()` function returns null if not configured
+- **Added:** Unit tests for rate limiting environment functions (5 tests)
+- **Dependencies:** Added `@upstash/ratelimit`, `@upstash/redis`, `@vercel/functions`
+
 ### Role-Based Admin Access
 - **Added:** Role management UI in admin dashboard (T214)
   - `RoleManager.tsx` component for granting/revoking admin roles
