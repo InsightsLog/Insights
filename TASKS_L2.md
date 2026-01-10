@@ -58,7 +58,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - Keep secret as fallback during migration period
   - Test: admin user can upload; non-admin user gets 403
 
-- [ ] T213 Add admin dashboard page
+- [x] T213 Add admin dashboard page
   - Route: /admin
   - Shows: recent uploads, audit log, user management
   - Requires admin role

@@ -3,6 +3,18 @@
 ## [Unreleased]
 
 ### Role-Based Admin Access
+- **Added:** Admin dashboard page at `/admin` (T213)
+  - Displays recent uploads from audit log with user emails and file details
+  - Shows user management table with email, role, and join date
+  - Shows full audit log with all actions (upload, role_change, delete)
+  - Server actions in `src/app/actions/admin.ts`:
+    - `getRecentUploads(limit)` - Fetch recent upload entries from audit log
+    - `getRecentAuditLog(limit)` - Fetch all recent audit log entries
+    - `getUsers(limit)` - Fetch users with their roles from user_roles table
+    - `getAdminDashboardData()` - Combined fetch for all dashboard data
+  - Admin role protection: non-admin users are redirected to home page
+  - Quick link to admin upload page from dashboard
+  - Unit tests for admin server actions (14 tests)
 - **Added:** user_roles table migration (`006_create_user_roles.sql`) (T210)
   - Schema: id, user_id, role, granted_at, granted_by
   - Roles: 'admin' or 'user' enforced via check constraint
