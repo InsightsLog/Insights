@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Testing & Development
+- **Updated:** Test seed data now uses dynamic dates (`001_test_seed.sql`)
+  - Release dates calculated using PostgreSQL date functions (CURRENT_TIMESTAMP + INTERVAL)
+  - Eliminates need to manually update hardcoded dates when testing
+  - Includes 5 scheduled releases spread across the next 7 days (1, 2, 3, 5, and 6 days from execution)
+  - Includes 2 past releases for historical testing (6 and 12 hours ago)
+  - Dates remain accurate regardless of when seed script is executed
+
 ## [1.2.3] - 2026-01-10
 
 ### Email Alerts

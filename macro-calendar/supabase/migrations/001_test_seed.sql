@@ -1,7 +1,7 @@
 -- Test seed data for manual testing
 -- Description: Sample data to verify inserts work correctly
 -- Instructions: Execute after running 001_create_tables.sql
--- Note: Update release_at dates to be within 7 days of current date when testing
+-- Note: Dates are dynamically calculated to be within the next 7 days from execution time
 
 -- Clear existing test data (safe for re-runs)
 DELETE FROM releases WHERE indicator_id IN (
@@ -43,13 +43,13 @@ VALUES
         'https://www.bls.gov/ces/'
     );
 
--- Insert sample releases (dates set for January 5-12, 2026 testing window)
+-- Insert sample releases (dates dynamically calculated for the next 7 days from execution)
 INSERT INTO releases (indicator_id, release_at, period, forecast, previous, actual, revised, unit)
 VALUES 
-    -- Scheduled release (no actual, no revised)
+    -- Scheduled release in 1 day (no actual, no revised)
     (
         '550e8400-e29b-41d4-a716-446655440000',
-        '2026-01-06 13:30:00+00',
+        CURRENT_TIMESTAMP + INTERVAL '1 day' + INTERVAL '13 hours 30 minutes',
         'Dec 2025',
         '2.8%',
         '2.7%',
@@ -57,10 +57,10 @@ VALUES
         NULL,
         '%'
     ),
-    -- Scheduled release (no actual, no revised)
+    -- Scheduled release in 2 days (no actual, no revised)
     (
         '550e8400-e29b-41d4-a716-446655440001',
-        '2026-01-07 10:00:00+00',
+        CURRENT_TIMESTAMP + INTERVAL '2 days' + INTERVAL '10 hours',
         'Q4 2025',
         '0.3%',
         '0.4%',
@@ -68,10 +68,10 @@ VALUES
         NULL,
         '%'
     ),
-    -- Scheduled release (no actual, no revised)
+    -- Scheduled release in 3 days (no actual, no revised)
     (
         '550e8400-e29b-41d4-a716-446655440002',
-        '2026-01-08 13:30:00+00',
+        CURRENT_TIMESTAMP + INTERVAL '3 days' + INTERVAL '13 hours 30 minutes',
         'Dec 2025',
         '180K',
         '227K',
@@ -79,10 +79,32 @@ VALUES
         NULL,
         'K'
     ),
-    -- Released with actual but no revised
+    -- Scheduled release in 5 days (no actual, no revised)
     (
         '550e8400-e29b-41d4-a716-446655440000',
-        '2026-01-05 08:30:00+00',
+        CURRENT_TIMESTAMP + INTERVAL '5 days' + INTERVAL '14 hours',
+        'Jan 2026',
+        '2.9%',
+        '2.8%',
+        NULL,
+        NULL,
+        '%'
+    ),
+    -- Scheduled release in 6 days (no actual, no revised)
+    (
+        '550e8400-e29b-41d4-a716-446655440002',
+        CURRENT_TIMESTAMP + INTERVAL '6 days' + INTERVAL '12 hours',
+        'Jan 2026',
+        '200K',
+        '180K',
+        NULL,
+        NULL,
+        'K'
+    ),
+    -- Released 6 hours ago with actual but no revised
+    (
+        '550e8400-e29b-41d4-a716-446655440000',
+        CURRENT_TIMESTAMP - INTERVAL '6 hours',
         'Nov 2025',
         '2.7%',
         '2.6%', 
@@ -90,10 +112,10 @@ VALUES
         NULL,
         '%'
     ),
-    -- Released with actual AND revised (for T025 testing)
+    -- Released 12 hours ago with actual AND revised (for T025 testing)
     (
         '550e8400-e29b-41d4-a716-446655440001',
-        '2026-01-05 09:00:00+00',
+        CURRENT_TIMESTAMP - INTERVAL '12 hours',
         'Q3 2025',
         '0.4%',
         '0.3%',
