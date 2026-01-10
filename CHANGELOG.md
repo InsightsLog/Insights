@@ -2,13 +2,6 @@
 
 ## [Unreleased]
 
-### Email Alerts
-- **Fixed:** Bell icon (AlertToggle) now visible on indicator detail pages
-  - Added AlertToggle component to indicator detail page header
-  - Bell icon appears next to watchlist button for authenticated users
-  - Users can now enable/disable email alerts directly from indicator pages
-  - Alert preference status is fetched and displayed on page load
-
 ### Testing & Development
 - **Updated:** Test seed data now uses dynamic dates (`001_test_seed.sql`)
   - Release dates calculated using PostgreSQL date functions (CURRENT_TIMESTAMP + INTERVAL)
