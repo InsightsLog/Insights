@@ -1,6 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
-import { getServerEnv } from "@/lib/env";
+
+/**
+ * Get the Supabase service role key.
+ * Validates the key exists and throws a clear error if missing.
+ */
+function getServiceRoleKey(): string {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY environment variable is required");
+  }
+  return key;
+}
 
 /**
  * Creates a Supabase client with service role permissions.
@@ -18,11 +29,11 @@ import { getServerEnv } from "@/lib/env";
  * @returns Supabase client with service role permissions
  */
 export function createSupabaseServiceClient() {
-  const { SUPABASE_SERVICE_ROLE_KEY } = getServerEnv();
+  const serviceRoleKey = getServiceRoleKey();
 
   return createClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
+    serviceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
