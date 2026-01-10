@@ -1,9 +1,11 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/auth";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { WatchlistButton } from "@/app/components/WatchlistButton";
+import { AlertToggle } from "@/app/components/AlertToggle";
 
 // Zod schema for indicator validation
 const indicatorSchema = z.object({
@@ -76,6 +78,33 @@ async function getIndicator(id: string): Promise<DataResult<Indicator>> {
   }
 
   return { success: true, data: validated.data };
+}
+
+/**
+ * Fetches the alert preference status for the current user and indicator.
+ * Returns false if user is not authenticated or preference doesn't exist.
+ */
+async function getAlertPreferenceStatus(indicatorId: string): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+
+  // Check if user is authenticated
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return false;
+  }
+
+  // Fetch alert preference for this indicator
+  const { data } = await supabase
+    .from("alert_preferences")
+    .select("email_enabled")
+    .eq("user_id", user.id)
+    .eq("indicator_id", indicatorId)
+    .maybeSingle();
+
+  return data?.email_enabled ?? false;
 }
 
 /**
@@ -189,8 +218,12 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
 
   const indicator = result.data;
   
-  // Fetch historical releases for this indicator
-  const releasesResult = await getHistoricalReleases(id);
+  // Fetch user authentication status and alert preference in parallel with historical releases
+  const [user, emailAlertEnabled, releasesResult] = await Promise.all([
+    getCurrentUser(),
+    getAlertPreferenceStatus(id),
+    getHistoricalReleases(id),
+  ]);
 
   return (
     <main className="min-h-screen bg-gray-50 p-8">
@@ -209,7 +242,15 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
             <h1 className="text-2xl font-bold text-gray-900">
               {indicator.name}
             </h1>
-            <WatchlistButton indicatorId={indicator.id} />
+            <div className="flex items-center gap-3">
+              {user && (
+                <AlertToggle
+                  indicatorId={indicator.id}
+                  initialEmailEnabled={emailAlertEnabled}
+                />
+              )}
+              <WatchlistButton indicatorId={indicator.id} />
+            </div>
           </div>
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
             <div>
