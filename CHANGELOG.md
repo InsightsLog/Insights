@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Email Alerts
+- **Fixed:** Unsubscribe failing with "An unexpected error occurred" when `ADMIN_UPLOAD_SECRET` env var not set
+  - `createSupabaseServiceClient()` now only validates the `SUPABASE_SERVICE_ROLE_KEY` it needs
+  - Previously it validated all server env vars via `getServerEnv()`, causing failures when unrelated vars were missing
 - **Fixed:** User sign-out issue when using unsubscribe link (T204)
   - Created service role Supabase client (`src/lib/supabase/service-role.ts`) to bypass RLS without authentication
   - Updated `unsubscribeWithToken()` action to use service role client instead of regular server client
