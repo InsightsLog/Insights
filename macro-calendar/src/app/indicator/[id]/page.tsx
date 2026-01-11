@@ -33,7 +33,10 @@ const releaseSchema = z.object({
   previous: z.string().nullable(),
   revised: z.string().nullable(),
   unit: z.string().nullable(),
-  revision_history: z.array(revisionRecordSchema).default([]),
+  // .catch([]) handles null, undefined, or invalid data gracefully.
+  // Unlike .default([]) which only handles undefined, .catch([])
+  // handles any validation failure (e.g., null from database).
+  revision_history: z.array(revisionRecordSchema).catch([]),
 });
 
 type Indicator = z.infer<typeof indicatorSchema>;

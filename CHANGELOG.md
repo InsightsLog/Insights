@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Bug Fixes
+- **Fixed:** "Received invalid data format from database" error on indicator detail page
+  - Made `revision_history` Zod schema more resilient using `.catch([])` to handle null values
+
 ### Revision Tracking
 - **Added:** RevisionHistory component to display revision timeline (T231)
   - Component: `src/app/components/RevisionHistory.tsx`
