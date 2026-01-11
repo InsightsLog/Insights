@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Revision Tracking
+- **Added:** Revision history tracking for releases (T230)
+  - New column `revision_history` (JSONB, default `[]`) added to releases table
+  - Migration: `010_add_revision_history.sql`
+  - Format: `[{previous_actual, new_actual, revised_at}]`
+  - Automatic trigger appends to revision_history when `actual` value is updated
+  - Initial actual value set (null → value) is not tracked as revision
+  - Same value updates are not tracked (actual must change)
+  - Partial index for efficient queries on releases with revisions
+  - Test file: `010_test_revision_history.sql` with verification queries
+
 ### Rate Limiting & Abuse Protection
 - **Added:** Request logging for abuse detection (T222)
   - New database table `request_logs` with migration (`009_create_request_logs.sql`)
