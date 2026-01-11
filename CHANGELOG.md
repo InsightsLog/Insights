@@ -3,6 +3,11 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **Fixed:** "Received invalid data format from database" error on calendar and watchlist pages
+  - Updated Zod schemas to handle Supabase embedded relation response format
+  - Supabase returns embedded relations as arrays even for many-to-one joins
+  - Created `embeddedIndicatorSchema` that accepts both array and single object formats
+  - Applied to `/` (calendar page) and `/watchlist` page
 - **Fixed:** "Received invalid data format from database" error on indicator detail page
   - Made `revision_history` Zod schema more resilient using `.catch([])` to handle null values
 
