@@ -328,7 +328,6 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
             </h2>
             <RevisionHistory
               revisions={releasesResult.data.flatMap((release) => release.revision_history)}
-              unit={releasesResult.data[0]?.unit}
             />
           </section>
         )}

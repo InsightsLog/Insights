@@ -97,7 +97,7 @@ export function RevisionHistory({ revisions, unit }: RevisionHistoryProps) {
       <ol className="relative border-l border-zinc-300 dark:border-zinc-600">
         {sortedRevisions.map((revision, index) => (
           <li
-            key={`${revision.revised_at}-${index}`}
+            key={revision.revised_at}
             className="mb-6 ml-6 last:mb-0"
             data-testid={`revision-item-${index}`}
           >
