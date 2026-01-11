@@ -3,6 +3,26 @@
 ## [Unreleased]
 
 ### Rate Limiting & Abuse Protection
+- **Added:** API key generation for authenticated users (T221)
+  - New database table `api_keys` with migration (`008_create_api_keys.sql`)
+  - Schema: id, user_id, key_hash, name, created_at, last_used_at, revoked_at
+  - RLS policies: users can only manage their own API keys
+  - Index on key_hash for efficient API authentication lookups
+  - Server actions in `src/app/actions/api-keys.ts`:
+    - `createApiKey(name)` - Generate secure random key, store SHA-256 hash, return plain key once
+    - `revokeApiKey(keyId)` - Soft delete by setting revoked_at timestamp
+    - `deleteApiKey(keyId)` - Hard delete key from database
+    - `getApiKeys()` - List user's API keys (without exposing the key)
+    - `validateApiKey(key)` - Validate API key for authentication, update last_used_at
+  - Settings page at `/settings/api-keys` for key management:
+    - Create new keys with custom names
+    - View list of all keys with creation date, last used, and status
+    - Revoke active keys (soft delete)
+    - Delete revoked keys (hard delete)
+    - Plain key shown only once after creation with copy button
+    - Usage instructions with example Authorization header
+  - Unit tests for all API key actions (26 tests)
+  - Key format: `mc_{32 hex characters}` (40 chars total)
 - **Added:** Rate limiting middleware (T220)
   - Extended `src/middleware.ts` to implement distributed rate limiting using Upstash Redis
   - Public routes: 60 requests per minute limit
