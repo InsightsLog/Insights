@@ -180,6 +180,35 @@ Test files (`*_test_*.sql`) are for verification only.
 | Bug fix | Source files + `CHANGELOG.md` |
 | Out-of-scope idea | Append to `BACKLOG.md` |
 
+## MCP Tools (MANDATORY)
+
+**You MUST use MCP tools before starting work in these areas:**
+
+### GitHub MCP - Use FIRST for:
+- **CI/build failures** → `list_workflow_runs` + `get_job_logs`
+- **Issue/PR context** → `search_issues` or `pull_request_read`
+- **Code patterns** → `search_code` before implementing
+
+### Supabase MCP - Use FIRST for:
+- **Migration work** → `list_tables` to verify schema
+- **Auth/RLS/Functions** → `search_docs` for Supabase docs
+- **Database errors** → `get_logs` for diagnostics
+- **Schema checks** → `execute_sql` (SELECT only)
+
+### Vercel MCP - Use FIRST for:
+- **Deployment issues** → `list_deployments` + `get_deployment`
+- **Env var changes** → `list_environment_variables`
+- **Domain config** → `list_project_domains`
+
+### Context7 (Library Docs) - Use FIRST for:
+- **Next.js features** → `resolve-library-id` "next.js" then `get-library-docs`
+- **Supabase APIs** → Lookup auth, RLS, functions, storage patterns
+- **React patterns** → Server Components, hooks, best practices
+- **Zod validation** → Schema patterns and API examples
+- **Any library usage** → Always check official docs before implementing
+
+**Rule**: Never guess about CI failures, schema, deployments, or library APIs. Check MCP tools first.
+
 ## Definition of Done
 
 Before marking a task complete:
