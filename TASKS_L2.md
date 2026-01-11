@@ -86,7 +86,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - Actions: createApiKey, revokeApiKey
   - Test: can create/revoke API keys; revoked keys don't work
 
-- [ ] T222 Add request logging for abuse detection
+- [x] T222 Add request logging for abuse detection
   - Log: IP, user_id (if auth), endpoint, timestamp, response_code
   - Store in Supabase or external logging service
   - Test: requests are logged with all required fields

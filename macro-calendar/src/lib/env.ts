@@ -74,3 +74,25 @@ export function getRateLimitEnv(): { url: string; token: string } | null {
 
   return null;
 }
+
+/**
+ * Request logging environment variables schema.
+ * Optional: If not set (or set to 'false'), request logging is disabled.
+ * Used by middleware for abuse detection (T222).
+ */
+const requestLoggingEnvSchema = z.object({
+  ENABLE_REQUEST_LOGGING: z.string().optional(),
+});
+
+/**
+ * Check if request logging is enabled.
+ * Returns true if ENABLE_REQUEST_LOGGING is set to 'true'.
+ * Requires SUPABASE_SERVICE_ROLE_KEY to be set for actual logging.
+ */
+export function isRequestLoggingEnabled(): boolean {
+  const parsed = requestLoggingEnvSchema.parse({
+    ENABLE_REQUEST_LOGGING: process.env.ENABLE_REQUEST_LOGGING,
+  });
+
+  return parsed.ENABLE_REQUEST_LOGGING === "true";
+}

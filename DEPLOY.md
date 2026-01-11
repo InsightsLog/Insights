@@ -26,6 +26,12 @@ This document provides step-by-step instructions for deploying the Macro Calenda
    - `supabase/migrations/001_create_tables.sql` — Creates `indicators` and `releases` tables with RLS
    - `supabase/migrations/002_create_profiles.sql` — Creates `profiles` table for user accounts
    - `supabase/migrations/003_create_watchlist.sql` — Creates `watchlist` table for saved indicators
+   - `supabase/migrations/004_create_alert_preferences.sql` — Creates `alert_preferences` table for email alerts
+   - `supabase/migrations/005_create_release_alert_webhook.sql` — Enables pg_net extension for webhooks
+   - `supabase/migrations/006_create_user_roles.sql` — Creates `user_roles` table for admin access
+   - `supabase/migrations/007_create_audit_log.sql` — Creates `audit_log` table for admin action tracking
+   - `supabase/migrations/008_create_api_keys.sql` — Creates `api_keys` table for API authentication
+   - `supabase/migrations/009_create_request_logs.sql` — Creates `request_logs` table for abuse detection
    - (Optional) `supabase/migrations/001_test_seed.sql` — Adds sample indicator/release data
 3. For each migration file: copy the SQL content, paste into SQL Editor, and click "Run"
 4. **Important**: All migrations must be run for full functionality. Missing migrations will cause runtime errors.
@@ -100,13 +106,15 @@ In the Vercel project settings, add these environment variables:
 | `UNSUBSCRIBE_TOKEN_SECRET` | Random secret for unsubscribe tokens | Generate with: `openssl rand -hex 32` |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST API URL (optional) | Upstash Console → Redis Database → REST API |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST API token (optional) | Upstash Console → Redis Database → REST API |
+| `ENABLE_REQUEST_LOGGING` | Enable request logging (optional) | Set to `true` to enable, leave unset or `false` to disable |
 
 **Important notes:**
 - Both `NEXT_PUBLIC_` variables are required for the app to run (validated by `src/lib/env.ts`)
 - The `NEXT_PUBLIC_` prefix exposes these to the browser (safe for anon key)
-- `SUPABASE_SERVICE_ROLE_KEY` is server-only and used for operations that bypass RLS (e.g., unsubscribe)
+- `SUPABASE_SERVICE_ROLE_KEY` is server-only and used for operations that bypass RLS (e.g., unsubscribe, request logging)
 - `UNSUBSCRIBE_TOKEN_SECRET` is server-only and used to sign email unsubscribe tokens
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are optional; rate limiting is disabled if not set
+- `ENABLE_REQUEST_LOGGING` is optional; request logging is disabled by default (requires `SUPABASE_SERVICE_ROLE_KEY`)
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
 ### 2.4 Deploy
