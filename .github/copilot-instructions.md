@@ -151,6 +151,9 @@ Migrations are in `macro-calendar/supabase/migrations/`. Run in order:
 5. `005_create_release_alert_webhook.sql` - webhook trigger
 6. `006_create_user_roles.sql` - admin roles with RLS
 7. `007_create_audit_log.sql` - audit logging
+8. `008_create_api_keys.sql` - API keys for authenticated users
+9. `009_create_request_logs.sql` - request logging for abuse detection
+10. `010_add_revision_history.sql` - revision history tracking for releases
 
 Test files (`*_test_*.sql`) are for verification only.
 
