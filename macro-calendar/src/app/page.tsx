@@ -12,6 +12,14 @@ const indicatorSchema = z.object({
   category: z.string(),
 });
 
+// Supabase returns embedded relations as arrays even for many-to-one relationships.
+// This schema handles both array format (from Supabase) and single object format,
+// transforming arrays to extract the first element.
+const embeddedIndicatorSchema = z.union([
+  indicatorSchema,
+  z.array(indicatorSchema).transform((arr) => arr[0] ?? null),
+]).nullable();
+
 const releaseWithIndicatorSchema = z.object({
   id: z.string().uuid(),
   release_at: z.string(),
@@ -20,7 +28,7 @@ const releaseWithIndicatorSchema = z.object({
   forecast: z.string().nullable(),
   previous: z.string().nullable(),
   revised: z.string().nullable(),
-  indicator: indicatorSchema.nullable(),
+  indicator: embeddedIndicatorSchema,
 });
 
 const filterOptionsSchema = z.object({

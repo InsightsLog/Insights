@@ -10,16 +10,27 @@ export const metadata: Metadata = {
   description: "View your saved macroeconomic indicators",
 };
 
+// Zod schema for indicator
+const indicatorSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  country_code: z.string(),
+  category: z.string(),
+});
+
+// Supabase returns embedded relations as arrays even for many-to-one relationships.
+// This schema handles both array format (from Supabase) and single object format,
+// transforming arrays to extract the first element.
+const embeddedIndicatorSchema = z.union([
+  indicatorSchema,
+  z.array(indicatorSchema).transform((arr) => arr[0] ?? null),
+]).nullable();
+
 // Zod schema for watchlist item with indicator and next release
 const watchlistItemSchema = z.object({
   id: z.string().uuid(),
   indicator_id: z.string().uuid(),
-  indicator: z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    country_code: z.string(),
-    category: z.string(),
-  }).nullable(),
+  indicator: embeddedIndicatorSchema,
   next_release: z.object({
     release_at: z.string(),
     period: z.string(),
