@@ -83,7 +83,7 @@ async function getIndicator(id: string): Promise<DataResult<Indicator>> {
     console.error("Indicator validation failed:", validated.error);
     return {
       success: false,
-      error: "Received invalid data format from database.",
+      error: "Unable to load indicator: received invalid data format.",
     };
   }
 
@@ -118,7 +118,7 @@ async function getHistoricalReleases(indicatorId: string): Promise<DataResult<Re
     console.error("Releases validation failed:", validated.error);
     return {
       success: false,
-      error: "Received invalid data format from database.",
+      error: "Unable to load releases: received invalid data format.",
     };
   }
 

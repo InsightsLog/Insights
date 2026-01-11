@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **Improved:** Error messages for database validation failures
+  - Changed generic "Received invalid data format from database" to context-specific messages
+  - Calendar page: "Unable to load filter options: received invalid data format." and "Unable to load releases: received invalid data format."
+  - Watchlist page: "Unable to load watchlist: received invalid data format."
+  - Indicator detail page: "Unable to load indicator: received invalid data format." and "Unable to load releases: received invalid data format."
+  - Detailed Zod validation errors continue to be logged to console for debugging
 - **Fixed:** "Received invalid data format from database" error on indicator detail page
   - Made `revision_history` Zod schema more resilient using `.catch([])` to handle null values
 

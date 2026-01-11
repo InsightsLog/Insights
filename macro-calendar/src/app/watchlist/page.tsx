@@ -86,7 +86,7 @@ async function getUserWatchlist(): Promise<DataResult<WatchlistItem[]>> {
       console.error("Watchlist data validation failed:", zodError);
       return {
         success: false,
-        error: "Received invalid data format from database.",
+        error: "Unable to load watchlist: received invalid data format.",
       };
     }
   }
@@ -147,7 +147,7 @@ async function getUserWatchlist(): Promise<DataResult<WatchlistItem[]>> {
     console.error("Watchlist data validation failed:", zodError);
     return {
       success: false,
-      error: "Received invalid data format from database.",
+      error: "Unable to load watchlist: received invalid data format.",
     };
   }
 }

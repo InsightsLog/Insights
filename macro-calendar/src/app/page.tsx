@@ -77,7 +77,7 @@ async function getFilterOptions(): Promise<DataResult<FilterOptions>> {
     console.error("Filter options validation failed:", zodError);
     return {
       success: false,
-      error: "Received invalid data format from database."
+      error: "Unable to load filter options: received invalid data format."
     };
   }
 }
@@ -182,7 +182,7 @@ async function getUpcomingReleases(filters: {
     console.error("Release data validation failed:", zodError);
     return {
       success: false,
-      error: "Received invalid data format from database."
+      error: "Unable to load releases: received invalid data format."
     };
   }
 }
