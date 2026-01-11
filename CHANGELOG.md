@@ -3,6 +3,16 @@
 ## [Unreleased]
 
 ### Revision Tracking
+- **Added:** RevisionHistory component to display revision timeline (T231)
+  - Component: `src/app/components/RevisionHistory.tsx`
+  - Shows timeline of revisions with old → new values for each release
+  - Empty state displays "No revisions have been made to this release"
+  - Sorted chronologically (oldest to newest) for timeline view
+  - Displays timestamp, previous value (red), and new value (green) for each revision
+  - Optional unit display after values
+  - Accessible with proper ARIA labels and semantic markup
+  - Integrated into indicator detail page (`/indicator/[id]`)
+  - Unit tests for utility functions (15 tests)
 - **Added:** Revision history tracking for releases (T230)
   - New column `revision_history` (JSONB, default `[]`) added to releases table
   - Migration: `010_add_revision_history.sql`
