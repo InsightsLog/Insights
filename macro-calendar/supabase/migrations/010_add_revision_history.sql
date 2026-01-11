@@ -11,9 +11,10 @@ ADD COLUMN IF NOT EXISTS revision_history JSONB NOT NULL DEFAULT '[]'::jsonb;
 -- Add comment for documentation
 COMMENT ON COLUMN releases.revision_history IS 'Array of revision records: [{previous_actual, new_actual, revised_at}]';
 
--- Create index for querying releases with revisions
+-- Create partial index for efficient queries on releases with revisions
+-- This allows fast lookups of revised releases using: SELECT * FROM releases WHERE jsonb_array_length(revision_history) > 0
 CREATE INDEX IF NOT EXISTS idx_releases_has_revisions 
-ON releases ((jsonb_array_length(revision_history) > 0))
+ON releases (id)
 WHERE jsonb_array_length(revision_history) > 0;
 
 -- Create trigger function to append to revision_history when actual is updated
