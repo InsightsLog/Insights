@@ -3,7 +3,8 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { ipAddress } from "@vercel/functions";
 import { NextResponse, type NextRequest, type NextFetchEvent } from "next/server";
-import { env, getRateLimitEnv } from "@/lib/env";
+import { env, getRateLimitEnv, isRequestLoggingEnabled } from "@/lib/env";
+import { logRequest, createLogEntry } from "@/lib/request-logger";
 
 /**
  * Routes that should skip session refresh in middleware.
@@ -153,6 +154,7 @@ function createRateLimitResponse(reset: number, limit: number): NextResponse {
  * Middleware that:
  * 1. Applies rate limiting (T220) - 60/min public, 30/min for watchlist
  * 2. Refreshes Supabase auth session on each request
+ * 3. Logs requests for abuse detection (T222)
  * 
  * Note: This is lightweight middleware - it only refreshes session cookies.
  * Actual authentication/authorization checks should happen in server-side code.
@@ -161,6 +163,7 @@ function createRateLimitResponse(reset: number, limit: number): NextResponse {
  */
 export async function middleware(request: NextRequest, context: NextFetchEvent) {
   const pathname = request.nextUrl.pathname;
+  const clientIp = getClientIdentifier(request);
 
   // --- Rate Limiting (T220) ---
   // Check rate limit before processing the request
@@ -168,16 +171,21 @@ export async function middleware(request: NextRequest, context: NextFetchEvent) 
   let rateLimitInfo: { limit: number; remaining: number; reset: number } | null = null;
 
   if (limiters) {
-    const identifier = getClientIdentifier(request);
     const useStrictLimit = shouldUseStrictRateLimit(pathname);
     const limiter = useStrictLimit ? limiters.strict : limiters.public;
 
-    const { success, pending, reset, limit, remaining } = await limiter.limit(identifier);
+    const { success, pending, reset, limit, remaining } = await limiter.limit(clientIp);
 
     // Handle analytics in background (important for edge runtime)
     context.waitUntil(pending);
 
     if (!success) {
+      // Log rate-limited request (T222)
+      if (isRequestLoggingEnabled()) {
+        context.waitUntil(
+          logRequest(createLogEntry(clientIp, pathname, 429, null))
+        );
+      }
       return createRateLimitResponse(reset, limit);
     }
 
@@ -205,6 +213,12 @@ export async function middleware(request: NextRequest, context: NextFetchEvent) 
   // Skip session refresh for routes that don't require it
   // This prevents cookie manipulation that could interfere with the user's session
   if (shouldSkipSessionRefresh(pathname)) {
+    // Log request without user ID for skipped routes (T222)
+    if (isRequestLoggingEnabled()) {
+      context.waitUntil(
+        logRequest(createLogEntry(clientIp, pathname, 200, null))
+      );
+    }
     return supabaseResponse;
   }
 
@@ -251,7 +265,15 @@ export async function middleware(request: NextRequest, context: NextFetchEvent) 
   // - getUser() makes a request to Supabase Auth to refresh the token
   // - getClaims() only validates the JWT locally and does NOT refresh tokens
   // See: https://supabase.com/docs/guides/auth/server-side/creating-a-client
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // --- Request Logging (T222) ---
+  // Log request with user ID if authenticated
+  if (isRequestLoggingEnabled()) {
+    context.waitUntil(
+      logRequest(createLogEntry(clientIp, pathname, 200, user?.id ?? null))
+    );
+  }
 
   return supabaseResponse;
 }

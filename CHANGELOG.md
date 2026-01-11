@@ -3,6 +3,24 @@
 ## [Unreleased]
 
 ### Rate Limiting & Abuse Protection
+- **Added:** Request logging for abuse detection (T222)
+  - New database table `request_logs` with migration (`009_create_request_logs.sql`)
+  - Schema: id, ip, user_id, endpoint, response_code, created_at
+  - No RLS: admin-only access via service role (security monitoring data)
+  - Indexes for IP-based queries, user lookups, endpoint analysis, and error patterns
+  - Request logger module (`src/lib/request-logger.ts`):
+    - `logRequest(entry)` - Async request logging (designed for `waitUntil()`)
+    - `createLogEntry(ip, endpoint, responseCode, userId)` - Helper to create log entries
+    - Uses cached Supabase client for efficient logging
+    - Graceful error handling (logging failures never break the app)
+  - Updated middleware to log requests with:
+    - Client IP address (from Vercel headers or fallbacks)
+    - User ID (if authenticated)
+    - Endpoint (request pathname)
+    - Response code (200 for successful middleware pass-through, 429 for rate-limited)
+  - Environment variable: `ENABLE_REQUEST_LOGGING` (set to 'true' to enable)
+  - `isRequestLoggingEnabled()` function in env.ts for checking logging status
+  - Unit tests for request logger module (14 tests)
 - **Added:** API key generation for authenticated users (T221)
   - New database table `api_keys` with migration (`008_create_api_keys.sql`)
   - Schema: id, user_id, key_hash, name, created_at, last_used_at, revoked_at
