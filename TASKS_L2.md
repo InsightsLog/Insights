@@ -80,7 +80,7 @@ L2 focuses on alerts, security enhancements, and API foundations.
   - Limits: 60 requests/minute for public, 30/minute for watchlist actions
   - Test: exceeding limit returns 429 with Retry-After header
 
-- [ ] T221 Add API key generation for authenticated users
+- [x] T221 Add API key generation for authenticated users
   - Migration: api_keys(id, user_id, key_hash, name, created_at, last_used_at, revoked_at)
   - Route: /settings/api-keys
   - Actions: createApiKey, revokeApiKey
