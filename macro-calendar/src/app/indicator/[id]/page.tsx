@@ -4,6 +4,7 @@ import { z } from "zod";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { WatchlistButton } from "@/app/components/WatchlistButton";
+import { RevisionHistory } from "@/app/components/RevisionHistory";
 
 // Zod schema for indicator validation
 const indicatorSchema = z.object({
@@ -13,6 +14,13 @@ const indicatorSchema = z.object({
   category: z.string(),
   source_name: z.string().nullable(),
   source_url: z.string().nullable(),
+});
+
+// Zod schema for revision record validation
+const revisionRecordSchema = z.object({
+  previous_actual: z.string(),
+  new_actual: z.string(),
+  revised_at: z.string(),
 });
 
 // Zod schema for historical release validation
@@ -25,6 +33,7 @@ const releaseSchema = z.object({
   previous: z.string().nullable(),
   revised: z.string().nullable(),
   unit: z.string().nullable(),
+  revision_history: z.array(revisionRecordSchema).default([]),
 });
 
 type Indicator = z.infer<typeof indicatorSchema>;
@@ -87,7 +96,7 @@ async function getHistoricalReleases(indicatorId: string): Promise<DataResult<Re
 
   const { data, error } = await supabase
     .from("releases")
-    .select("id, release_at, period, actual, forecast, previous, revised, unit")
+    .select("id, release_at, period, actual, forecast, previous, revised, unit, revision_history")
     .eq("indicator_id", indicatorId)
     .order("release_at", { ascending: false })
     .limit(200);
@@ -310,6 +319,19 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
             </div>
           )}
         </section>
+
+        {/* Revision History Section */}
+        {releasesResult.success && (
+          <section className="bg-white rounded-lg shadow p-6 mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Revision History
+            </h2>
+            <RevisionHistory
+              revisions={releasesResult.data.flatMap((release) => release.revision_history)}
+              unit={releasesResult.data[0]?.unit}
+            />
+          </section>
+        )}
       </div>
     </main>
   );
