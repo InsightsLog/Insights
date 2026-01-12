@@ -13,6 +13,16 @@
 - **Added:** Test file for webhook_endpoints verification (`011_test_webhook_endpoints.sql`)
   - Verification queries for table structure, constraints, indexes, and RLS policies
   - Manual RLS test steps documented for user isolation verification
+- **Added:** Webhook server actions (`src/app/actions/webhooks.ts`) (T301)
+  - `listWebhooks()` - Fetch all webhook endpoints for the current user (secrets masked)
+  - `createWebhook(input)` - Create webhook endpoint with URL validation and auto-generated secret
+  - `updateWebhook(id, input)` - Update webhook URL, events, or enabled status
+  - `deleteWebhook(id)` - Delete webhook endpoint permanently
+  - `testWebhook(id)` - Send test payload with HMAC-SHA256 signature to verify endpoint
+  - URL validation: HTTPS required, localhost blocked in production
+  - Event types: 'release.published', 'release.revised'
+  - Secret format: `whsec_{32 hex characters}` (38 chars total)
+  - Comprehensive test coverage (35 tests)
 
 ### Revision Tracking
 - **Added:** RevisionBadge component to indicate revised releases on calendar (T232)
