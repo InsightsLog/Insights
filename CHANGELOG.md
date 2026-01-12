@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.0.0] - L2 Release - 2026-01-12
 
 ### Revision Tracking
 - **Added:** RevisionBadge component to indicate revised releases on calendar (T232)

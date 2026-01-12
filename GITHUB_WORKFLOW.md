@@ -10,8 +10,9 @@ Milestones track feature scope aligned with the [ROADMAP.md](ROADMAP.md).
 |-----------|-------------|--------|
 | **L0** | Public calendar, search/filter, admin upload | ✅ Shipped |
 | **L1** | Auth with magic-link, watchlists, calendar filter | ✅ Shipped |
-| **L2** | Email alerts, role-based admin, rate limiting, revision tracking | 🚧 In Progress |
-| **L3** | Webhooks, full API, billing | 📋 Planned |
+| **L2** | Email alerts, role-based admin, rate limiting, revision tracking | ✅ Shipped |
+| **L3** | Webhooks, full API, billing, organizations | 🚧 In Progress |
+| **L4** | Mobile app, calendar integrations, advanced analytics | 📋 Planned |
 
 ### Creating Milestones in GitHub
 
@@ -19,8 +20,9 @@ Milestones track feature scope aligned with the [ROADMAP.md](ROADMAP.md).
 2. Create milestones:
    - **L0 - Public Calendar** (Due: Dec 2025, Closed)
    - **L1 - Auth + Watchlists** (Due: Jan 2026, Closed)
-   - **L2 - Alerts + Admin** (Due: TBD)
+   - **L2 - Alerts + Admin** (Due: Jan 2026, Closed)
    - **L3 - API + Billing** (Due: TBD)
+   - **L4 - Mobile + Integrations** (Due: TBD)
 
 ## Labels
 
@@ -60,8 +62,9 @@ Use labels to categorize issues and PRs for quick filtering.
 | Label | Color | Description |
 |-------|-------|-------------|
 | `L1` | `#c5def5` (light blue) | Part of L1 milestone (shipped) |
-| `L2` | `#bfdadc` (teal) | Part of L2 milestone |
+| `L2` | `#bfdadc` (teal) | Part of L2 milestone (shipped) |
 | `L3` | `#d4c5f9` (purple) | Part of L3 milestone |
+| `L4` | `#f9d0c4` (peach) | Part of L4 milestone |
 | `breaking` | `#b60205` (dark red) | Breaking change |
 | `security` | `#d73a4a` (red) | Security-related |
 
@@ -74,6 +77,9 @@ Use labels to categorize issues and PRs for quick filtering.
 | `area: calendar` | `#e4e669` (lime) | Calendar/releases |
 | `area: admin` | `#e4e669` (lime) | Admin upload |
 | `area: alerts` | `#e4e669` (lime) | Email/webhook alerts |
+| `area: api` | `#e4e669` (lime) | Public REST API |
+| `area: billing` | `#e4e669` (lime) | Payments/subscriptions |
+| `area: orgs` | `#e4e669` (lime) | Organizations/teams |
 | `area: infra` | `#e4e669` (lime) | CI/CD, deployment |
 
 ## Issue Workflow

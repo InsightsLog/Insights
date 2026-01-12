@@ -3,8 +3,8 @@
 You are working in a production-bound repo. Follow these rules:
 
 ## Scope
-- If asked to do something outside L2, stop and propose an issue for L3 instead.
-- L2 scope: email alerts, role-based admin, rate limiting, revision tracking
+- If asked to do something outside L3, stop and propose an issue for L4 instead.
+- L3 scope: webhooks, public REST API, billing & quotas, multi-tenant admin, data export
 
 ## Workflow
 - Small changes only: one task per PR.
