@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.4] - 2026-01-12
+
+### Bug Fixes
+- **Fixed:** RLS policy violation when uploading releases via admin upload
+  - Admin upload route now uses service role client to bypass RLS
+  - Previously used anon key client which failed INSERT operations on `indicators` table
+  - Error message was: "Failed to insert new indicators: new row violates row-level security policy for table "indicators""
+- **Docs:** Expanded magic link redirect troubleshooting in DEPLOY.md
+  - Added guidance for custom domains (e.g., `econwatch.live` vs Vercel preview URL)
+  - Clarified that Supabase Site URL must match the desired production domain
+
 ## [2.0.3] - 2026-01-12
 
 ### Bug Fixes
