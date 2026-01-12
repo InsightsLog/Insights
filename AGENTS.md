@@ -19,34 +19,25 @@ You are working in a production-bound repo. Follow these rules:
 - Link PRs to issues with "Closes #123" or "Fixes #123"
 - Assign issues to milestones (L2, L3) based on scope
 
-## MCP Tools (MANDATORY)
+## MCP Tools
 
-You MUST use MCP (Model Context Protocol) tools for these operations. Do not skip them:
+Use MCP (Model Context Protocol) tools when available for these operations:
 
-### GitHub MCP - REQUIRED for:
-- **Before any CI/build fix**: Run `list_workflow_runs` + `get_job_logs` FIRST
-- **Before working on issue/PR**: Run `search_issues` or `pull_request_read` FIRST
-- **Finding existing patterns**: Use `search_code` before implementing similar features
-- **Never guess CI failures** - always check logs with MCP tools
+### GitHub MCP
+- **CI failures**: Use `list_workflow_runs` and `get_job_logs` to investigate build/test failures instead of guessing.
+- **PRs and issues**: Use `list_pull_requests`, `search_issues`, or `pull_request_read` to understand context.
+- **Code search**: Use `search_code` for finding patterns across the codebase.
 
-### Supabase MCP - REQUIRED for:
-- **Before creating migrations**: Run `list_tables` to verify current schema
-- **Before implementing auth/RLS/functions**: Run `search_docs` for Supabase best practices
-- **When debugging auth/DB errors**: Run `get_logs` FIRST before guessing
-- **Schema verification**: Use `execute_sql` (read-only) to check table structure
+### Supabase MCP
+- **Schema changes**: Use `list_tables` and `execute_sql` to verify table structure before writing migrations.
+- **Documentation**: Use `search_docs` to look up Supabase features (auth, RLS, functions, etc.) before implementing.
+- **Debugging**: Use `get_logs` to investigate auth, storage, or edge function errors.
+- **Edge Functions**: Use for email alert triggers and webhook handling (L2 feature).
 
-### Vercel MCP - REQUIRED for:
-- **Before deployment troubleshooting**: Run `list_deployments` + `get_deployment` FIRST
-- **Before adding env vars**: Run `list_environment_variables` to check current state
-- **Domain issues**: Run `list_project_domains` before making changes
-
-### Context7 MCP - REQUIRED for:
-- **Before using library APIs**: Run `resolve-library-id` then `get-library-docs` for Next.js, React, Supabase, Zod, etc.
-- **When implementing new features**: Check official docs via Context7 instead of guessing API signatures
-- **For best practices**: Use `mode='info'` for guides, `mode='code'` for API examples
-- **Pagination**: If docs insufficient, try `page=2`, `page=3`, etc. with same topic
-
-**Rule**: If you start working on CI/deployment/schema/library features without checking MCP tools first, STOP and use the tools.
+### Vercel MCP
+- **Deployments**: Use `list_deployments` and `get_deployment` to check deployment status.
+- **Environment**: Use `list_environment_variables` to verify env vars are configured.
+- **Domains**: Use `list_project_domains` to check domain configuration.
 
 ## Coding standards
 - TypeScript everywhere.
