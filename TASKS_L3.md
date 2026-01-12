@@ -13,7 +13,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - RLS: users can only CRUD their own webhooks
   - Test: insert webhook endpoint; verify RLS blocks other users
 
-- [ ] T301 Add webhook server actions
+- [x] T301 Add webhook server actions
   - File: src/app/actions/webhooks.ts
   - Actions: createWebhook, updateWebhook, deleteWebhook, listWebhooks, testWebhook
   - Webhook URL validation (HTTPS required, no localhost in production)
