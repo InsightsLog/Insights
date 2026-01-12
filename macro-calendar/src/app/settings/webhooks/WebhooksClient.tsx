@@ -700,6 +700,21 @@ export function WebhooksClient() {
               <h3 className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">
                 Sample Payload
               </h3>
+              <p className="mb-2">
+                Real notifications use event types like{" "}
+                <code className="rounded bg-zinc-100 px-1 py-0.5 dark:bg-zinc-800">
+                  release.published
+                </code>{" "}
+                or{" "}
+                <code className="rounded bg-zinc-100 px-1 py-0.5 dark:bg-zinc-800">
+                  release.revised
+                </code>
+                . Test payloads use{" "}
+                <code className="rounded bg-zinc-100 px-1 py-0.5 dark:bg-zinc-800">
+                  test
+                </code>{" "}
+                as the event type.
+              </p>
               <pre className="overflow-x-auto rounded-md bg-zinc-100 p-3 text-sm dark:bg-zinc-800">
                 <code className="text-zinc-800 dark:text-zinc-200">
                   {JSON.stringify(
