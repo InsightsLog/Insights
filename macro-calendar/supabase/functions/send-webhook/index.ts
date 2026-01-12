@@ -84,6 +84,7 @@ const APP_URL = Deno.env.get("APP_URL") || "https://macrocalendar.com";
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000; // 1 second
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
+const MAX_RESPONSE_BODY_LENGTH = 1024; // Truncate response body for storage
 
 // Discord embed color - 0x58C7FF (blue) in decimal = 5818367
 const DISCORD_EMBED_COLOR = 5818367;
@@ -158,6 +159,45 @@ async function createSignature(
  */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Truncate a string to a maximum length, appending "..." if truncated.
+ */
+function truncateString(str: string, maxLength: number): string {
+  if (str.length <= maxLength) {
+    return str;
+  }
+  return str.slice(0, maxLength - 3) + "...";
+}
+
+/**
+ * Log a webhook delivery attempt to the webhook_deliveries table.
+ */
+async function logDeliveryAttempt(
+  webhookId: string,
+  eventType: string,
+  payload: object,
+  responseCode: number | null,
+  responseBody: string | null
+): Promise<void> {
+  try {
+    const { error } = await supabase.from("webhook_deliveries").insert({
+      webhook_id: webhookId,
+      event_type: eventType,
+      payload: payload,
+      response_code: responseCode,
+      response_body: responseBody
+        ? truncateString(responseBody, MAX_RESPONSE_BODY_LENGTH)
+        : null,
+    });
+
+    if (error) {
+      console.error("Failed to log webhook delivery:", error);
+    }
+  } catch (err) {
+    console.error("Error logging webhook delivery:", err);
+  }
 }
 
 /**
@@ -259,6 +299,7 @@ function createDiscordPayload(
 /**
  * Deliver webhook to a single endpoint with retry logic.
  * Returns delivery result with status and attempt count.
+ * Logs delivery attempt to webhook_deliveries table.
  */
 async function deliverWebhook(
   endpoint: WebhookEndpoint,
@@ -296,6 +337,7 @@ async function deliverWebhook(
 
   let lastError: string | undefined;
   let lastStatusCode: number | null = null;
+  let lastResponseBody: string | null = null;
 
   // Retry loop with exponential backoff
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -316,6 +358,13 @@ async function deliverWebhook(
       clearTimeout(timeoutId);
       lastStatusCode = response.status;
 
+      // Try to read response body for logging
+      try {
+        lastResponseBody = await response.text();
+      } catch {
+        lastResponseBody = null;
+      }
+
       // Success: 2xx response
       if (response.ok) {
         // Update last_triggered_at timestamp
@@ -323,6 +372,15 @@ async function deliverWebhook(
           .from("webhook_endpoints")
           .update({ last_triggered_at: new Date().toISOString() })
           .eq("id", endpoint.id);
+
+        // Log successful delivery
+        await logDeliveryAttempt(
+          endpoint.id,
+          eventType,
+          payload,
+          response.status,
+          lastResponseBody
+        );
 
         return {
           endpoint_id: endpoint.id,
@@ -341,11 +399,14 @@ async function deliverWebhook(
       if (error instanceof Error) {
         if (error.name === "AbortError") {
           lastError = "Request timeout";
+          lastResponseBody = "Request timed out";
         } else {
           lastError = error.message;
+          lastResponseBody = error.message;
         }
       } else {
         lastError = String(error);
+        lastResponseBody = String(error);
       }
     }
 
@@ -359,7 +420,15 @@ async function deliverWebhook(
     }
   }
 
-  // All retries failed
+  // All retries failed - log the final failure
+  await logDeliveryAttempt(
+    endpoint.id,
+    eventType,
+    payload,
+    lastStatusCode,
+    lastResponseBody ?? lastError ?? null
+  );
+
   return {
     endpoint_id: endpoint.id,
     success: false,

@@ -34,7 +34,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Retry logic with exponential backoff (3 attempts)
   - Test: publishing release triggers webhook to registered endpoints
 
-- [ ] T304 Add webhook_deliveries table for delivery tracking
+- [x] T304 Add webhook_deliveries table for delivery tracking
   - Migration: webhook_deliveries(id, webhook_id, event_type, payload, response_code, response_body, attempted_at)
   - No RLS (admin-only access via service role)
   - Test: delivery attempts logged with status codes
