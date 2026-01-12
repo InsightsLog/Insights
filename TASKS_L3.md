@@ -19,12 +19,12 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Webhook URL validation (HTTPS required, no localhost in production)
   - Test: actions modify webhook_endpoints table correctly
 
-- [ ] T302 Add webhook management UI
+- [x] T302 Add webhook management UI
   - Route: /settings/webhooks
-  - Component: WebhookManager.tsx
+  - Component: WebhooksClient.tsx
   - Create/edit/delete webhook endpoints
   - Test endpoint with sample payload
-  - Show delivery history (last 10 attempts)
+  - Show delivery history (last 10 attempts) - deferred to T304 (requires webhook_deliveries table)
   - Test: can create/edit/delete webhooks; test button sends sample payload
 
 - [ ] T303 Add webhook delivery Edge Function

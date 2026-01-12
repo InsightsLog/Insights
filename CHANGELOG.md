@@ -23,6 +23,17 @@
   - Event types: 'release.published', 'release.revised'
   - Secret format: `whsec_{32 hex characters}` (38 chars total)
   - Comprehensive test coverage (35 tests)
+- **Added:** Webhook management UI at `/settings/webhooks` (T302)
+  - Route: `/settings/webhooks` with authentication guard
+  - Component: `WebhooksClient.tsx`
+  - Create webhook form with URL input and event type selection
+  - Created secret shown only once (like API keys page) with copy button
+  - List view showing URL, status (Active/Disabled), events, secret preview, timestamps
+  - Edit mode for updating URL and event subscriptions
+  - Enable/Disable toggle for each webhook endpoint
+  - Delete with confirmation dialog
+  - Test button sends sample payload and displays status code and response time
+  - Usage documentation with signature verification instructions and sample payload
 
 ### Revision Tracking
 - **Added:** RevisionBadge component to indicate revised releases on calendar (T232)
