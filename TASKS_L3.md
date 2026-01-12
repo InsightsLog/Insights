@@ -7,7 +7,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
 
 ## 0) Webhook Notifications
 
-- [ ] T300 Add webhook_endpoints table
+- [x] T300 Add webhook_endpoints table
   - Migration: webhook_endpoints(id, user_id, url, secret, events, created_at, updated_at, last_triggered_at)
   - Events: array of event types ('release.published', 'release.revised')
   - RLS: users can only CRUD their own webhooks

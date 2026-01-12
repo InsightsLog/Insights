@@ -2,6 +2,18 @@
 
 ## [2.0.0] - L2 Release - 2026-01-12
 
+### Webhook Notifications (L3)
+- **Added:** webhook_endpoints table migration (`011_create_webhook_endpoints.sql`) (T300)
+  - Schema: id, user_id, url, secret, events, enabled, created_at, updated_at, last_triggered_at
+  - Events stored as text array with default `{release.published}`
+  - Supported event types: 'release.published', 'release.revised'
+  - RLS policies: users can only CRUD their own webhook endpoints
+  - Indexes for user_id, enabled webhooks, and events array (GIN)
+  - Auto-update trigger for updated_at column
+- **Added:** Test file for webhook_endpoints verification (`011_test_webhook_endpoints.sql`)
+  - Verification queries for table structure, constraints, indexes, and RLS policies
+  - Manual RLS test steps documented for user isolation verification
+
 ### Revision Tracking
 - **Added:** RevisionBadge component to indicate revised releases on calendar (T232)
   - Component: `src/app/components/RevisionBadge.tsx`
