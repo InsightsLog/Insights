@@ -27,7 +27,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Show delivery history (last 10 attempts) - deferred to T304 (requires webhook_deliveries table)
   - Test: can create/edit/delete webhooks; test button sends sample payload
 
-- [ ] T303 Add webhook delivery Edge Function
+- [x] T303 Add webhook delivery Edge Function
   - Supabase Edge Function: send-webhook
   - Triggered alongside email alerts when releases are published/revised
   - Signs payload with HMAC-SHA256 using endpoint secret

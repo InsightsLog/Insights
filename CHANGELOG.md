@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.2] - 2026-01-12
+
+### Webhook Delivery (L3)
+- **Added:** Webhook delivery Edge Function (`supabase/functions/send-webhook/index.ts`) (T303)
+  - Triggered alongside email alerts when releases are published or revised
+  - INSERT events trigger 'release.published' webhooks
+  - UPDATE events with actual value changes trigger 'release.revised' webhooks
+  - Signs payload with HMAC-SHA256 using endpoint secret
+  - Headers for standard webhooks: X-Webhook-Signature, X-Webhook-Event, X-Webhook-Id, User-Agent
+  - Retry logic with exponential backoff (3 attempts: 1s, 2s, 4s delays)
+  - Discord webhook support with formatted embeds (content + embeds structure)
+  - Updates `last_triggered_at` timestamp on successful delivery
+  - Queries all enabled webhook endpoints subscribed to event type
+- **Added:** Database webhook trigger migration (`012_create_webhook_delivery_trigger.sql`)
+  - Documentation for Dashboard webhook configuration
+  - Triggers on releases table INSERT and UPDATE events
+  - Timeout: 30000ms to allow for retries
+
 ## [2.0.1] - 2026-01-12
 
 ### Bug Fixes

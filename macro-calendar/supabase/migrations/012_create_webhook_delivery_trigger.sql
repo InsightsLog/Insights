@@ -1,0 +1,48 @@
+-- Migration: Create database webhook trigger for webhook delivery
+-- Description: Triggers send-webhook Edge Function when releases are inserted/updated (L3)
+-- Date: 2026-01-12
+-- Task: T303
+-- 
+-- NOTE: This Edge Function should be triggered alongside the send-release-alert function.
+-- The webhook configuration must also be set up in the Supabase Dashboard:
+-- 1. Navigate to Database > Webhooks
+-- 2. Create new webhook with:
+--    - Name: send-webhook
+--    - Table: releases
+--    - Events: INSERT, UPDATE
+--    - Type: Supabase Edge Functions
+--    - Function: send-webhook
+--    - Method: POST
+--    - Timeout: 30000ms (allows time for retries)
+--    - Headers: Content-Type: application/json
+--
+-- The Edge Function handles:
+-- - INSERT events trigger 'release.published' webhooks
+-- - UPDATE events with actual value changes trigger 'release.revised' webhooks
+-- - HMAC-SHA256 signing of payloads
+-- - Retry logic with exponential backoff (3 attempts)
+-- - Discord webhook format support
+
+-- RECOMMENDED APPROACH: Use Supabase Dashboard webhook configuration
+-- The Dashboard approach is preferred because:
+-- 1. No hardcoded secrets in SQL
+-- 2. Automatic service role auth handling
+-- 3. Easier configuration and management
+-- 4. Built-in retry logic and monitoring
+--
+-- To set up via Dashboard:
+-- 1. Go to Project Settings > Database > Webhooks
+-- 2. Click "Create a new webhook"
+-- 3. Configure:
+--    - Name: send-webhook
+--    - Table: public.releases  
+--    - Events: INSERT, UPDATE
+--    - Webhook type: Supabase Edge Functions
+--    - Edge Function: send-webhook
+--    - HTTP Method: POST
+--    - Timeout: 30000
+-- 4. Add header: Content-Type: application/json
+-- 5. Enable "Include Auth Header"
+
+-- Add comment documenting the webhook dependency
+COMMENT ON TABLE releases IS 'Scheduled and historical releases for economic indicators. INSERT events trigger send-release-alert Edge Function webhook (T203). INSERT/UPDATE events trigger send-webhook Edge Function (T303).';
