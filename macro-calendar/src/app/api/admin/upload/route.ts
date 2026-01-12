@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
 import { getServerEnv } from "@/lib/env";
 import { parseCSV } from "@/lib/csv-parser";
 import { checkAdminRole, logAuditAction } from "@/lib/supabase/auth";
@@ -169,7 +169,8 @@ export async function POST(request: NextRequest) {
 
     // Insert into Supabase using batched queries (T092)
     // Target: 2-3 total queries regardless of row count
-    const supabase = await createSupabaseServerClient();
+    // Use service role client to bypass RLS (admin has already been verified)
+    const supabase = createSupabaseServiceClient();
 
     // Step 1: Collect unique indicators from CSV rows
     const uniqueIndicators = new Map<string, {

@@ -258,19 +258,24 @@ This typically indicates incorrect Output Directory settings in Vercel:
 - Verify Next.js is using the correct build output
 - Clear Vercel build cache: **Settings** → **General** → **Clear Build Cache**
 
-### Magic Link Redirects to localhost:3000
-When clicking a magic link from the sign-in email, you're redirected to `http://localhost:3000/?code=XX` instead of your production URL.
+### Magic Link Redirects to localhost:3000 or Wrong Domain
+When clicking a magic link from the sign-in email, you're redirected to `http://localhost:3000/?code=XX` or a Vercel preview URL (e.g., `https://project-xxx.vercel.app`) instead of your production custom domain.
 
-**Root cause**: The **Site URL** in Supabase Authentication settings is set to `http://localhost:3000` instead of your production Vercel URL.
+**Root cause**: The **Site URL** in Supabase Authentication settings is not set to your production custom domain.
 
 **To fix:**
 1. Go to your Supabase project dashboard
 2. Navigate to **Authentication** → **URL Configuration**
-3. Update **Site URL** to your production URL (e.g., `https://your-project.vercel.app`)
-4. Ensure **Redirect URLs** includes `https://your-project.vercel.app/auth/callback`
+3. Update **Site URL** to your production custom domain (e.g., `https://econwatch.live` or `https://your-project.vercel.app`)
+4. Ensure **Redirect URLs** includes your custom domain callback URL (e.g., `https://econwatch.live/auth/callback`)
 5. Click **Save**
 
-**Why this happens**: Supabase Auth uses the Site URL to construct the base URL for magic links. Even though the app passes `emailRedirectTo` with the correct production URL, Supabase validates and constructs the final redirect URL based on the Site URL configuration. If it's set to localhost, the magic link will redirect to localhost.
+**Why this happens**: Supabase Auth uses the Site URL to construct the base URL for magic links. Even though the app passes `emailRedirectTo` with the correct production URL, Supabase validates and constructs the final redirect URL based on the Site URL configuration. If it's set to localhost or a Vercel preview URL, the magic link will redirect there instead of your custom domain.
+
+**Common scenarios**:
+- Site URL set to `http://localhost:3000` → magic links redirect to localhost
+- Site URL set to Vercel preview URL (e.g., `https://insights-tawny.vercel.app`) → magic links redirect to that URL instead of custom domain (`econwatch.live`)
+- After adding a custom domain, always update Site URL in Supabase to match
 
 **Note**: No code changes or redeployment are needed — this is purely a Supabase dashboard configuration issue.
 
