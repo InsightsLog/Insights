@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.0.3] - 2026-01-12
+
+### Webhook Delivery Tracking (L3)
+- **Added:** webhook_deliveries table for delivery tracking (`013_create_webhook_deliveries.sql`) (T304)
+  - Schema: id, webhook_id, event_type, payload, response_code, response_body, attempted_at
+  - Foreign key to webhook_endpoints with CASCADE delete
+  - Indexes for webhook_id, attempted_at, and composite webhook_id + time queries
+  - No RLS (admin-only access via service role)
+  - Response body truncated to 1024 characters when stored
+- **Added:** Test file for webhook_deliveries verification (`013_test_webhook_deliveries.sql`)
+  - Verification queries for table structure, constraints, indexes
+  - Confirms RLS is NOT enabled (admin-only table)
+  - Manual test steps for delivery logging verification
+- **Updated:** send-webhook Edge Function to log delivery attempts
+  - Logs successful deliveries with response code and body
+  - Logs failed deliveries after all retries exhausted
+  - Response body truncated to 1024 chars for storage efficiency
+  - Logging failures don't break webhook delivery
+
 ## [2.0.2] - 2026-01-12
 
 ### Webhook Delivery (L3)

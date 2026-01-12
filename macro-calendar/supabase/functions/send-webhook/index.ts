@@ -245,9 +245,48 @@ function createDiscordPayload(
   };
 }
 
+// Maximum length for response body stored in webhook_deliveries table
+const MAX_RESPONSE_BODY_LENGTH = 1024;
+
+/**
+ * Log a webhook delivery attempt to the webhook_deliveries table.
+ * Uses service role to bypass RLS (admin-only table).
+ */
+async function logDeliveryAttempt(
+  webhookId: string,
+  eventType: WebhookEventType,
+  payload: object,
+  responseCode: number | null,
+  responseBody: string | null
+): Promise<void> {
+  try {
+    // Truncate response body if too long
+    const truncatedBody =
+      responseBody && responseBody.length > MAX_RESPONSE_BODY_LENGTH
+        ? responseBody.slice(0, MAX_RESPONSE_BODY_LENGTH) + "...[truncated]"
+        : responseBody;
+
+    const { error } = await supabase.from("webhook_deliveries").insert({
+      webhook_id: webhookId,
+      event_type: eventType,
+      payload: payload,
+      response_code: responseCode,
+      response_body: truncatedBody,
+    });
+
+    if (error) {
+      console.error("Failed to log webhook delivery:", error);
+    }
+  } catch (err) {
+    // Don't fail the delivery if logging fails
+    console.error("Error logging webhook delivery:", err);
+  }
+}
+
 /**
  * Deliver webhook to a single endpoint with retry logic.
  * Returns delivery result with status and attempt count.
+ * Logs the final delivery attempt to webhook_deliveries table.
  */
 async function deliverWebhook(
   endpoint: WebhookEndpoint,
@@ -285,6 +324,7 @@ async function deliverWebhook(
 
   let lastError: string | undefined;
   let lastStatusCode: number | null = null;
+  let lastResponseBody: string | null = null;
 
   // Retry loop with exponential backoff
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -305,6 +345,13 @@ async function deliverWebhook(
       clearTimeout(timeoutId);
       lastStatusCode = response.status;
 
+      // Try to read response body for logging
+      try {
+        lastResponseBody = await response.text();
+      } catch {
+        lastResponseBody = null;
+      }
+
       // Success: 2xx response
       if (response.ok) {
         // Update last_triggered_at timestamp
@@ -312,6 +359,15 @@ async function deliverWebhook(
           .from("webhook_endpoints")
           .update({ last_triggered_at: new Date().toISOString() })
           .eq("id", endpoint.id);
+
+        // Log successful delivery
+        await logDeliveryAttempt(
+          endpoint.id,
+          eventType,
+          payload,
+          lastStatusCode,
+          lastResponseBody
+        );
 
         return {
           endpoint_id: endpoint.id,
@@ -336,6 +392,7 @@ async function deliverWebhook(
       } else {
         lastError = String(error);
       }
+      lastResponseBody = lastError;
     }
 
     // Wait before next retry (exponential backoff)
@@ -347,6 +404,15 @@ async function deliverWebhook(
       await sleep(backoffMs);
     }
   }
+
+  // Log failed delivery after all retries exhausted
+  await logDeliveryAttempt(
+    endpoint.id,
+    eventType,
+    payload,
+    lastStatusCode,
+    lastResponseBody
+  );
 
   // All retries failed
   return {
