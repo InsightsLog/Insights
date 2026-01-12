@@ -32,6 +32,9 @@ This document provides step-by-step instructions for deploying the Macro Calenda
    - `supabase/migrations/007_create_audit_log.sql` — Creates `audit_log` table for admin action tracking
    - `supabase/migrations/008_create_api_keys.sql` — Creates `api_keys` table for API authentication
    - `supabase/migrations/009_create_request_logs.sql` — Creates `request_logs` table for abuse detection
+   - `supabase/migrations/010_add_revision_history.sql` — Adds revision_history column to releases
+   - `supabase/migrations/011_create_webhook_endpoints.sql` — Creates `webhook_endpoints` table for webhooks
+   - `supabase/migrations/012_create_webhook_delivery_trigger.sql` — Documents webhook delivery trigger setup
    - (Optional) `supabase/migrations/001_test_seed.sql` — Adds sample indicator/release data
 3. For each migration file: copy the SQL content, paste into SQL Editor, and click "Run"
 4. **Important**: All migrations must be run for full functionality. Missing migrations will cause runtime errors.
@@ -363,11 +366,71 @@ The email alert system uses a Supabase Edge Function triggered by database webho
 - Check that EMAIL_FROM matches your verified domain
 - Review Resend dashboard for delivery status
 
-## 9. Rate Limiting (L2)
+## 9. Webhook Delivery (L3)
+
+User-configured webhooks are delivered via the `send-webhook` Edge Function when releases are published or revised.
+
+### 9.1 Deploy Edge Function
+
+1. Deploy the webhook delivery Edge Function:
+   ```bash
+   supabase functions deploy send-webhook --no-verify-jwt
+   ```
+
+### 9.2 Configure Database Webhook
+
+1. In Supabase Dashboard, go to **Database** → **Webhooks**
+2. Click **Create a new webhook**
+3. Configure the webhook:
+   - **Name**: `send-webhook`
+   - **Table**: `public.releases`
+   - **Events**: Check `INSERT` and `UPDATE`
+   - **Type**: `Supabase Edge Functions`
+   - **Edge Function**: Select `send-webhook`
+   - **Method**: `POST`
+   - **Timeout**: `30000` (30 seconds for retries)
+4. Add HTTP Headers:
+   - Click "Add new header"
+   - Add `Content-Type`: `application/json`
+   - Click "Add auth header with service key"
+5. Click **Create webhook**
+
+### 9.3 Event Types
+
+The Edge Function handles these event types:
+- **release.published**: Triggered on INSERT (new release)
+- **release.revised**: Triggered on UPDATE when `actual` value changes
+
+### 9.4 Webhook Delivery Details
+
+- Payloads are signed with HMAC-SHA256 using the endpoint's secret
+- Headers for standard webhooks: `X-Webhook-Signature`, `X-Webhook-Event`, `X-Webhook-Id`, `User-Agent`
+- Discord webhooks receive formatted embeds (no signature headers)
+- Retry logic: 3 attempts with exponential backoff (1s, 2s, 4s delays)
+- `last_triggered_at` is updated on successful delivery
+
+### 9.5 Troubleshooting Webhooks
+
+**Webhooks not delivered**
+- Check Edge Function logs in **Functions** → **send-webhook** → **Logs**
+- Verify the user has webhook endpoints enabled
+- Ensure the endpoint URL is reachable from Supabase
+
+**Webhook verification failing**
+- Verify signature is computed correctly: `sha256=<hex_hmac_sha256(payload, secret)>`
+- Check that `X-Webhook-Signature` header is present
+- Ensure the payload hasn't been modified
+
+**Retries exhausted**
+- Check the endpoint URL is valid and returns 2xx for successful delivery
+- 4xx errors (except 429) are not retried
+- Network errors and 5xx errors trigger retries
+
+## 10. Rate Limiting (L2)
 
 Rate limiting protects the API from abuse and ensures fair usage. It uses Upstash Redis for distributed rate limiting.
 
-### 9.1 Upstash Redis Setup
+### 10.1 Upstash Redis Setup
 
 1. Create an [Upstash](https://upstash.com) account
 2. Create a new Redis database:
@@ -378,7 +441,7 @@ Rate limiting protects the API from abuse and ensures fair usage. It uses Upstas
    - **UPSTASH_REDIS_REST_URL**: The REST API endpoint (e.g., `https://xxx.upstash.io`)
    - **UPSTASH_REDIS_REST_TOKEN**: The REST API token
 
-### 9.2 Configure Environment Variables
+### 10.2 Configure Environment Variables
 
 Add the Upstash Redis credentials to Vercel:
 
@@ -388,7 +451,7 @@ Add the Upstash Redis credentials to Vercel:
    - `UPSTASH_REDIS_REST_TOKEN`: Your Upstash REST API token
 3. Redeploy the application
 
-### 9.3 Rate Limits
+### 10.3 Rate Limits
 
 The following rate limits are enforced:
 
@@ -402,21 +465,21 @@ When a rate limit is exceeded:
 - `Retry-After` header indicates seconds until limit resets
 - `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` headers are included
 
-### 9.4 Graceful Degradation
+### 10.4 Graceful Degradation
 
 Rate limiting is **optional**. If the Upstash environment variables are not set:
 - The application continues to work normally
 - No rate limiting is applied
 - This is useful for local development or if Redis is unavailable
 
-### 9.5 Monitoring
+### 10.5 Monitoring
 
 Monitor rate limiting in the Upstash Console:
 - **Usage**: View request counts and rate limit hits
 - **Analytics**: Track patterns and identify potential abuse
 - **Alerts**: Set up notifications for unusual activity
 
-## 10. Maintenance
+## 11. Maintenance
 
 ### Regular Tasks
 - **Weekly**: Check Vercel analytics for traffic patterns and errors
