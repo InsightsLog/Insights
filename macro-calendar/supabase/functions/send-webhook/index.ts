@@ -64,12 +64,15 @@ type WebhookEventType = "release.published" | "release.revised";
 // Validate required environment variables
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const ENV_VARS_VALID = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+if (!ENV_VARS_VALID) {
   console.error("Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
 }
 
 // Create Supabase client with service role key for admin access
+// Note: Client is created even if env vars are missing to avoid module load errors,
+// but requests will fail if env vars are not properly set
 const supabase = createClient(
   SUPABASE_URL ?? "",
   SUPABASE_SERVICE_ROLE_KEY ?? ""
@@ -391,9 +394,9 @@ async function getWebhookEndpoints(
   // Filter endpoints that are subscribed to this event type
   const endpoints = (data as WebhookEndpoint[]) ?? [];
   const filtered = endpoints.filter((endpoint) => endpoint.events.includes(eventType));
-  
+
   console.log(`Filtered to ${filtered.length} endpoints subscribed to ${eventType}`);
-  
+
   return filtered;
 }
 
@@ -439,6 +442,17 @@ Deno.serve(async (req) => {
       status: 405,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  // Check environment variables before processing
+  if (!ENV_VARS_VALID) {
+    return new Response(
+      JSON.stringify({ error: "Server configuration error: missing environment variables" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {
