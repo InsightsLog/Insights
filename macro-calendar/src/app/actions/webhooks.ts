@@ -395,8 +395,59 @@ export async function deleteWebhook(webhookId: string): Promise<WebhookActionRes
 }
 
 /**
+ * Check if a URL is a Discord webhook.
+ * Discord webhooks have the format: https://discord.com/api/webhooks/... or https://discordapp.com/api/webhooks/...
+ */
+function isDiscordWebhook(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    return (
+      (hostname === "discord.com" || hostname === "discordapp.com") &&
+      parsed.pathname.startsWith("/api/webhooks/")
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Create a Discord-formatted test payload.
+ * Discord webhooks require `content` or `embeds` fields.
+ */
+function createDiscordTestPayload(): object {
+  return {
+    content: "🔔 **Macro Calendar Webhook Test**",
+    embeds: [
+      {
+        title: "Test Webhook Delivery",
+        description: "This is a test webhook delivery from Macro Calendar. Your webhook endpoint is configured correctly!",
+        color: 5814783, // Blue color
+        fields: [
+          {
+            name: "📊 Test Indicator",
+            value: "US • Test Category",
+            inline: true,
+          },
+          {
+            name: "📅 Release",
+            value: `Actual: 1.5%\nForecast: 1.4%\nPrevious: 1.3%`,
+            inline: true,
+          },
+        ],
+        footer: {
+          text: "Macro Calendar • Webhook Test",
+        },
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  };
+}
+
+/**
  * Test a webhook endpoint by sending a sample payload.
  * The sample payload mimics a real release notification.
+ * For Discord webhooks, uses Discord's expected format with embeds.
  *
  * @param webhookId - The ID of the webhook to test
  * @returns Success/failure result with response info
@@ -443,46 +494,57 @@ export async function testWebhook(
     return { success: false, error: "Failed to find webhook" };
   }
 
-  // Create sample test payload
-  const testPayload = {
-    event: "test",
-    timestamp: new Date().toISOString(),
-    data: {
-      message: "This is a test webhook delivery from Macro Calendar",
-      indicator: {
-        id: "00000000-0000-0000-0000-000000000000",
-        name: "Test Indicator",
-        country: "US",
-        category: "Test",
-      },
-      release: {
-        id: "00000000-0000-0000-0000-000000000001",
-        scheduled_at: new Date().toISOString(),
-        actual: "1.5%",
-        forecast: "1.4%",
-        previous: "1.3%",
-      },
-    },
+  // Check if this is a Discord webhook
+  const isDiscord = isDiscordWebhook(webhook.url);
+
+  // Create appropriate test payload based on webhook type
+  const testPayload = isDiscord
+    ? createDiscordTestPayload()
+    : {
+        event: "test",
+        timestamp: new Date().toISOString(),
+        data: {
+          message: "This is a test webhook delivery from Macro Calendar",
+          indicator: {
+            id: "00000000-0000-0000-0000-000000000000",
+            name: "Test Indicator",
+            country: "US",
+            category: "Test",
+          },
+          release: {
+            id: "00000000-0000-0000-0000-000000000001",
+            scheduled_at: new Date().toISOString(),
+            actual: "1.5%",
+            forecast: "1.4%",
+            previous: "1.3%",
+          },
+        },
+      };
+
+  const payloadString = JSON.stringify(testPayload);
+
+  // Build headers - Discord doesn't use custom webhook headers
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
   };
 
-  // Create HMAC signature for the payload
-  const { createHmac } = await import("crypto");
-  const payloadString = JSON.stringify(testPayload);
-  const signature = createHmac("sha256", webhook.secret)
-    .update(payloadString)
-    .digest("hex");
+  if (!isDiscord) {
+    // Create HMAC signature for non-Discord webhooks
+    const { createHmac } = await import("crypto");
+    const signature = createHmac("sha256", webhook.secret)
+      .update(payloadString)
+      .digest("hex");
+    headers["X-Webhook-Signature"] = `sha256=${signature}`;
+    headers["X-Webhook-Event"] = "test";
+    headers["User-Agent"] = "MacroCalendar-Webhook/1.0";
+  }
 
   // Send test request
   const startTime = Date.now();
   try {
     const response = await fetch(webhook.url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Webhook-Signature": `sha256=${signature}`,
-        "X-Webhook-Event": "test",
-        "User-Agent": "MacroCalendar-Webhook/1.0",
-      },
+      headers,
       body: payloadString,
       signal: AbortSignal.timeout(10000), // 10 second timeout
     });

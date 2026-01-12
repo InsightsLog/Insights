@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.1] - 2026-01-12
+
+### Bug Fixes
+- **Fixed:** Discord webhook test failing with 400 Bad Request (T302)
+  - Discord webhooks now receive properly formatted payloads with `content` and `embeds` fields
+  - Added `isDiscordWebhook()` function to detect Discord webhook URLs (discord.com and discordapp.com)
+  - Added `createDiscordTestPayload()` function to create Discord-compatible test messages
+  - Discord test messages show as formatted embeds with indicator details
+  - Non-Discord webhooks continue to use the standard payload format
+  - Custom webhook headers (X-Webhook-Signature, X-Webhook-Event, User-Agent) omitted for Discord
+  - Added 4 new unit tests for Discord webhook handling
+
 ## [2.0.0] - L2 Release - 2026-01-12
 
 ### Webhook Notifications (L3)
