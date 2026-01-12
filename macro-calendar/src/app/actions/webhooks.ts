@@ -394,6 +394,39 @@ export async function deleteWebhook(webhookId: string): Promise<WebhookActionRes
   return { success: true, data: undefined };
 }
 
+// Discord embed color (blue) - 0x58C7FF in decimal
+const DISCORD_EMBED_COLOR = 5818367;
+
+/**
+ * Discord webhook embed field structure.
+ */
+interface DiscordEmbedField {
+  name: string;
+  value: string;
+  inline?: boolean;
+}
+
+/**
+ * Discord webhook embed structure.
+ */
+interface DiscordEmbed {
+  title?: string;
+  description?: string;
+  color?: number;
+  fields?: DiscordEmbedField[];
+  footer?: { text: string };
+  timestamp?: string;
+}
+
+/**
+ * Discord webhook payload structure.
+ * @see https://discord.com/developers/docs/resources/webhook#execute-webhook
+ */
+interface DiscordWebhookPayload {
+  content?: string;
+  embeds?: DiscordEmbed[];
+}
+
 /**
  * Check if a URL is a Discord webhook.
  * Discord webhooks have the format: https://discord.com/api/webhooks/... or https://discordapp.com/api/webhooks/...
@@ -415,14 +448,14 @@ function isDiscordWebhook(url: string): boolean {
  * Create a Discord-formatted test payload.
  * Discord webhooks require `content` or `embeds` fields.
  */
-function createDiscordTestPayload(): object {
+function createDiscordTestPayload(): DiscordWebhookPayload {
   return {
     content: "🔔 **Macro Calendar Webhook Test**",
     embeds: [
       {
         title: "Test Webhook Delivery",
         description: "This is a test webhook delivery from Macro Calendar. Your webhook endpoint is configured correctly!",
-        color: 5814783, // Blue color
+        color: DISCORD_EMBED_COLOR,
         fields: [
           {
             name: "📊 Test Indicator",
