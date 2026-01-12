@@ -95,17 +95,17 @@ L2 focuses on alerts, security enhancements, and API foundations.
 
 ## 3) Revision Tracking
 
-- [ ] T230 Add revision history to releases table
+- [X] T230 Add revision history to releases table
   - Add column: revision_history jsonb default '[]'
   - Format: [{previous_actual, new_actual, revised_at}]
   - Test: updating actual value appends to revision_history
 
-- [ ] T231 Show revision diff on indicator detail page
+- [X] T231 Show revision diff on indicator detail page
   - Component: RevisionHistory.tsx
   - Shows timeline of revisions with old → new values
   - Test: revisions displayed correctly; empty state when no revisions
 
-- [ ] T232 Add revision badge to calendar row
+- [X] T232 Add revision badge to calendar row
   - Shows "Revised" badge when revision_history is non-empty
   - Tooltip shows latest revision details
   - Test: badge appears only for revised releases
@@ -114,15 +114,15 @@ L2 focuses on alerts, security enhancements, and API foundations.
 
 ## 4) Documentation & Polish
 
-- [ ] T240 Update SPEC.md with L2 user stories
+- [X] T240 Update SPEC.md with L2 user stories
   - Add email alerts, admin roles, rate limiting user stories
   - Test: spec reflects L2 features
 
-- [ ] T241 Update DEPLOY.md with L2 infrastructure
+- [X] T241 Update DEPLOY.md with L2 infrastructure
   - Add: Resend/SendGrid setup, Upstash Redis setup, Edge Functions deployment
   - Test: deployment docs accurate for L2 features
 
-- [ ] T242 Update CHANGELOG.md with L2 features
+- [X] T242 Update CHANGELOG.md with L2 features
   - Document all L2 additions
   - Test: changelog complete
 
