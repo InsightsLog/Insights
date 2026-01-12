@@ -392,7 +392,8 @@ async function deliverWebhook(
       } else {
         lastError = String(error);
       }
-      lastResponseBody = lastError;
+      // Store error message as response body for logging (prefixed to indicate it's not an HTTP response)
+      lastResponseBody = `[Error: ${lastError}]`;
     }
 
     // Wait before next retry (exponential backoff)
