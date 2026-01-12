@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Revision Tracking
+- **Added:** RevisionBadge component to indicate revised releases on calendar (T232)
+  - Component: `src/app/components/RevisionBadge.tsx`
+  - Shows amber "Revised" badge next to indicator name when `revision_history` is non-empty
+  - Hover tooltip displays latest revision details: previous value → new value, and revision date
+  - Badge only appears for releases with at least one revision
+  - Unit tests for `getLatestRevision` helper function (11 tests)
+  - Integrated into main calendar page (`/`)
+
 ### Bug Fixes
 - **Fixed:** "Received invalid data format from database" error on calendar and watchlist pages
   - Updated Zod schemas to handle Supabase embedded relation response format

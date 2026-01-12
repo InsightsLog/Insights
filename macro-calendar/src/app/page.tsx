@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { CalendarFilters } from "./components/CalendarFilters";
+import { RevisionBadge } from "./components/RevisionBadge";
 import { z } from "zod";
 import Link from "next/link";
 
@@ -20,6 +21,13 @@ const embeddedIndicatorSchema = z.union([
   z.array(indicatorSchema).transform((arr) => arr[0] ?? null),
 ]).nullable();
 
+// Zod schema for revision record validation
+const revisionRecordSchema = z.object({
+  previous_actual: z.string(),
+  new_actual: z.string(),
+  revised_at: z.string(),
+});
+
 const releaseWithIndicatorSchema = z.object({
   id: z.string().uuid(),
   release_at: z.string(),
@@ -28,6 +36,10 @@ const releaseWithIndicatorSchema = z.object({
   forecast: z.string().nullable(),
   previous: z.string().nullable(),
   revised: z.string().nullable(),
+  // .catch([]) handles null, undefined, or invalid data gracefully.
+  // Unlike .default([]) which only handles undefined, .catch([])
+  // handles any validation failure (e.g., null from database).
+  revision_history: z.array(revisionRecordSchema).catch([]),
   indicator: embeddedIndicatorSchema,
 });
 
@@ -142,6 +154,7 @@ async function getUpcomingReleases(filters: {
       forecast,
       previous,
       revised,
+      revision_history,
       indicator:indicators!inner (
         id,
         name,
@@ -354,16 +367,19 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                       {release.indicator?.country_code ?? "—"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {release.indicator ? (
-                        <Link
-                          href={`/indicator/${release.indicator.id}`}
-                          className="text-blue-600 hover:underline dark:text-blue-400"
-                        >
-                          {release.indicator.name}
-                        </Link>
-                      ) : (
-                        "Unknown"
-                      )}
+                      <div className="flex items-center gap-2">
+                        {release.indicator ? (
+                          <Link
+                            href={`/indicator/${release.indicator.id}`}
+                            className="text-blue-600 hover:underline dark:text-blue-400"
+                          >
+                            {release.indicator.name}
+                          </Link>
+                        ) : (
+                          "Unknown"
+                        )}
+                        <RevisionBadge revisions={release.revision_history} />
+                      </div>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
                       {release.period}
