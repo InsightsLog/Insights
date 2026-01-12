@@ -74,8 +74,28 @@ const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000; // 1 second
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 
-// Discord embed color (blue) - 0x58C7FF in decimal
+// Discord embed color - 0x58C7FF (blue) in decimal = 5818367
 const DISCORD_EMBED_COLOR = 5818367;
+
+/**
+ * Determine if a request should be retried based on status code.
+ * - 2xx: Success, no retry needed
+ * - 4xx (except 429): Client error, don't retry
+ * - 429: Rate limited, retry with backoff
+ * - 5xx: Server error, retry with backoff
+ */
+function shouldRetry(statusCode: number): boolean {
+  // Success - no retry needed
+  if (statusCode >= 200 && statusCode < 300) {
+    return false;
+  }
+  // Client errors (except rate limiting) - don't retry
+  if (statusCode >= 400 && statusCode < 500 && statusCode !== 429) {
+    return false;
+  }
+  // Server errors (5xx) and rate limiting (429) - retry
+  return true;
+}
 
 /**
  * Check if a URL is a Discord webhook.
@@ -301,14 +321,11 @@ async function deliverWebhook(
         };
       }
 
-      // Don't retry on client errors (4xx) except for 429 (rate limited)
-      if (response.status >= 400 && response.status < 500 && response.status !== 429) {
-        lastError = `HTTP ${response.status}`;
+      // Check if we should retry based on status code
+      lastError = `HTTP ${response.status}`;
+      if (!shouldRetry(response.status)) {
         break;
       }
-
-      // Retry on server errors (5xx) and rate limiting (429)
-      lastError = `HTTP ${response.status}`;
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === "AbortError") {
@@ -349,7 +366,8 @@ async function getWebhookEndpoints(
   eventType: WebhookEventType
 ): Promise<WebhookEndpoint[]> {
   // Query enabled webhook endpoints that include this event type
-  // PostgreSQL array contains operator: events @> ARRAY['release.published']
+  // Supabase .contains() generates PostgreSQL array contains operator: events @> ARRAY['release.published']
+  // This correctly checks if the events array includes the specified event type
   const { data, error } = await supabase
     .from("webhook_endpoints")
     .select("id, user_id, url, secret, events, enabled")
@@ -368,6 +386,11 @@ async function getWebhookEndpoints(
  * Determine the event type based on the database operation.
  * INSERT = release.published
  * UPDATE with actual value change = release.revised
+ *
+ * Note: A revision only triggers when:
+ * - The old actual value was not null (value existed before)
+ * - The new actual value is different from the old value
+ * - The new actual value is not null (value is not being cleared)
  */
 function determineEventType(
   payload: WebhookPayload
@@ -381,9 +404,12 @@ function determineEventType(
     const oldActual = payload.old_record?.actual;
     const newActual = payload.record.actual;
 
-    // If actual value changed from something to something else, it's a revision
-    // Note: Initial actual value being set (null -> value) is handled by INSERT
-    if (oldActual !== null && newActual !== oldActual) {
+    // A revision occurs when:
+    // 1. There was a previous actual value (oldActual !== null)
+    // 2. The new value is different from the old value
+    // 3. The new value is not null (we're not just clearing the value)
+    // Note: Initial actual value being set (null -> value) is handled by INSERT trigger
+    if (oldActual !== null && newActual !== null && newActual !== oldActual) {
       return "release.revised";
     }
   }
