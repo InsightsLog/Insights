@@ -10,6 +10,14 @@ In your Supabase SQL Editor, execute the migrations in the following order:
 2. `002_create_profiles.sql` - Creates profiles table and auth triggers
 3. `003_create_watchlist.sql` - Creates watchlist table with RLS
 4. `004_create_alert_preferences.sql` - Creates alert_preferences table with RLS
+5. `006_create_user_roles.sql` - Creates user_roles table for role-based access
+6. `007_create_audit_log.sql` - Creates audit_log table for admin action tracking
+7. `008_create_api_keys.sql` - Creates api_keys table for API key management
+8. `009_create_request_logs.sql` - Creates request_logs table for request logging
+9. `010_add_revision_history.sql` - Adds revision_history column to releases table
+10. `011_create_webhook_endpoints.sql` - Creates webhook_endpoints table with RLS
+11. `012_create_webhook_delivery_trigger.sql` - Documents webhook trigger configuration
+12. `013_create_webhook_deliveries.sql` - Creates webhook_deliveries table (no RLS)
 
 ### 2. Test the Schema (Optional)
 
@@ -72,6 +80,18 @@ Expected indexes:
 - Columns: id, user_id (FK), indicator_id (FK), email_enabled, created_at, updated_at
 - RLS: users can only CRUD their own alert preferences
 - Unique constraint: (user_id, indicator_id)
+
+### webhook_endpoints table
+- Stores user webhook endpoint configurations for release notifications
+- Columns: id, user_id (FK), url, secret, events, enabled, created_at, updated_at, last_triggered_at
+- RLS: users can only CRUD their own webhook endpoints
+- Events: array of event types ('release.published', 'release.revised')
+
+### webhook_deliveries table
+- Stores webhook delivery attempt logs for debugging and monitoring
+- Columns: id, webhook_id (FK), event_type, payload, response_code, response_body, attempted_at
+- No RLS: admin-only access via service role (delivery logs not exposed to users)
+- Cascade delete: when webhook_endpoint is deleted, its deliveries are also deleted
 
 ## Clean Up (Development Only)
 
