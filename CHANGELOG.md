@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.0.6] - 2026-01-12
+
+### Public REST API (L3)
+- **Added:** OpenAPI 3.0.3 specification for versioned REST API (T310)
+  - File: `src/lib/api/openapi.ts`
+  - Defines endpoints: `/api/v1/indicators`, `/api/v1/releases`, `/api/v1/calendar`
+  - Documents API key authentication (Bearer token)
+  - Specifies pagination, filtering, and error response formats
+  - Includes complete schema definitions for Indicator, Release, CalendarEvent
+- **Added:** Rate limit tiers documentation
+  - Free tier: 30 requests/minute, 1,000/month
+  - Pro tier: 60 requests/minute, 50,000/month
+  - Enterprise tier: 120 requests/minute, unlimited monthly
+- **Added:** API versioning strategy documented in OpenAPI spec
+  - Version prefix: `/api/v1/`
+  - URL path versioning with semantic versioning
+- **Added:** Unit tests for OpenAPI specification (39 tests)
+  - Validates spec structure, paths, schemas, and parameters
+  - Tests rate limit tiers and API version configuration
+  - Verifies documentation completeness
+
 ## [2.0.5] - 2026-01-12
 
 ### Webhook Delivery Tracking (L3)

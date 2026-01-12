@@ -43,7 +43,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
 
 ## 1) Public REST API
 
-- [ ] T310 Design API schema and versioning strategy
+- [x] T310 Design API schema and versioning strategy
   - Document API endpoints in OpenAPI/Swagger format
   - Version prefix: /api/v1/
   - Rate limits per API key tier
