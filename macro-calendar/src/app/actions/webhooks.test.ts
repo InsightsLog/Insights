@@ -637,6 +637,113 @@ describe("testWebhook", () => {
       expect(result.data.success).toBe(false);
     }
   });
+
+  it("sends Discord-formatted payload to Discord webhooks", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+    const mockWebhook = {
+      id: mockWebhookId,
+      url: "https://discord.com/api/webhooks/1234567890/abcdefghijklmnop",
+      secret: "whsec_1234567890abcdef1234567890abcdef",
+      enabled: true,
+    };
+    const mockSingle = vi.fn().mockResolvedValue({ data: mockWebhook, error: null });
+    const mockEqUser = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockEqId = vi.fn().mockReturnValue({ eq: mockEqUser });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqId });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    // Mock successful fetch response
+    const mockResponse = { status: 204, ok: true };
+    vi.mocked(global.fetch).mockResolvedValue(mockResponse as Response);
+
+    const result = await testWebhook(mockWebhookId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status_code).toBe(204);
+      expect(result.data.success).toBe(true);
+    }
+
+    // Verify fetch was called with Discord format (content and embeds)
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://discord.com/api/webhooks/1234567890/abcdefghijklmnop",
+      expect.objectContaining({
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+    );
+
+    // Verify payload contains Discord-specific fields
+    const callArgs = vi.mocked(global.fetch).mock.calls[0];
+    const requestBody = JSON.parse(callArgs[1]?.body as string);
+    expect(requestBody).toHaveProperty("content");
+    expect(requestBody).toHaveProperty("embeds");
+    expect(requestBody.embeds[0]).toHaveProperty("title");
+    expect(requestBody.embeds[0]).toHaveProperty("description");
+  });
+
+  it("sends Discord-formatted payload to discordapp.com webhooks", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+    const mockWebhook = {
+      id: mockWebhookId,
+      url: "https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnop",
+      secret: "whsec_1234567890abcdef1234567890abcdef",
+      enabled: true,
+    };
+    const mockSingle = vi.fn().mockResolvedValue({ data: mockWebhook, error: null });
+    const mockEqUser = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockEqId = vi.fn().mockReturnValue({ eq: mockEqUser });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqId });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    // Mock successful fetch response
+    const mockResponse = { status: 204, ok: true };
+    vi.mocked(global.fetch).mockResolvedValue(mockResponse as Response);
+
+    const result = await testWebhook(mockWebhookId);
+
+    expect(result.success).toBe(true);
+
+    // Verify payload contains Discord-specific fields
+    const callArgs = vi.mocked(global.fetch).mock.calls[0];
+    const requestBody = JSON.parse(callArgs[1]?.body as string);
+    expect(requestBody).toHaveProperty("content");
+    expect(requestBody).toHaveProperty("embeds");
+  });
+
+  it("does not treat non-Discord URLs as Discord webhooks", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+    const mockWebhook = {
+      id: mockWebhookId,
+      url: "https://discord.example.com/webhook",
+      secret: "whsec_1234567890abcdef1234567890abcdef",
+      enabled: true,
+    };
+    const mockSingle = vi.fn().mockResolvedValue({ data: mockWebhook, error: null });
+    const mockEqUser = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockEqId = vi.fn().mockReturnValue({ eq: mockEqUser });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqId });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    // Mock successful fetch response
+    const mockResponse = { status: 200, ok: true };
+    vi.mocked(global.fetch).mockResolvedValue(mockResponse as Response);
+
+    await testWebhook(mockWebhookId);
+
+    // Verify payload contains standard format, not Discord format
+    const callArgs = vi.mocked(global.fetch).mock.calls[0];
+    const requestBody = JSON.parse(callArgs[1]?.body as string);
+    expect(requestBody).toHaveProperty("event", "test");
+    expect(requestBody).toHaveProperty("data");
+    expect(requestBody).not.toHaveProperty("content");
+    expect(requestBody).not.toHaveProperty("embeds");
+  });
 });
 
 describe("URL validation", () => {
