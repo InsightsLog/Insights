@@ -63,6 +63,7 @@ export function RevisionBadge({ revisions }: RevisionBadgeProps) {
       onMouseLeave={handleMouseLeave}
       onFocus={handleMouseEnter}
       onBlur={handleMouseLeave}
+      tabIndex={0}
       data-testid="revision-badge-container"
     >
       <span
