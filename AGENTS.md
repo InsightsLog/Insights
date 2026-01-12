@@ -15,7 +15,7 @@ You are working in a production-bound repo. Follow these rules:
 
 ## GitHub Issues & PRs
 - Use issue templates when creating issues (Bug, Feature, Task)
-- Apply appropriate labels to issues and PRs (see [GITHUB_WORKFLOW.md](GITHUB_WORKFLOW.md))
+- Apply appropriate labels to issues and PRs
 - Link PRs to issues with "Closes #123" or "Fixes #123"
 - Assign issues to milestones (L2, L3) based on scope
 

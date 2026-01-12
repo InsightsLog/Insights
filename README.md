@@ -83,7 +83,6 @@ Insights/
 
 ## Contributing
 See [AGENTS.md](AGENTS.md) for coding standards and workflow rules.
-See [GITHUB_WORKFLOW.md](GITHUB_WORKFLOW.md) for GitHub Issues, Labels, and Milestones guide.
 
 ## License
 MIT
