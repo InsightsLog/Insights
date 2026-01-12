@@ -440,4 +440,4 @@ Monitor rate limiting in the Upstash Console:
 ---
 
 **Last Updated**: January 2026  
-**Version**: L2 (Alerts + Admin)
+**Version**: L2 (Alerts + Admin + Rate Limiting + Revision Tracking)

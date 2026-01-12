@@ -114,15 +114,15 @@ L2 focuses on alerts, security enhancements, and API foundations.
 
 ## 4) Documentation & Polish
 
-- [ ] T240 Update SPEC.md with L2 user stories
+- [x] T240 Update SPEC.md with L2 user stories
   - Add email alerts, admin roles, rate limiting user stories
   - Test: spec reflects L2 features
 
-- [ ] T241 Update DEPLOY.md with L2 infrastructure
+- [x] T241 Update DEPLOY.md with L2 infrastructure
   - Add: Resend/SendGrid setup, Upstash Redis setup, Edge Functions deployment
   - Test: deployment docs accurate for L2 features
 
-- [ ] T242 Update CHANGELOG.md with L2 features
+- [x] T242 Update CHANGELOG.md with L2 features
   - Document all L2 additions
   - Test: changelog complete
 

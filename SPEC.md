@@ -18,13 +18,26 @@ Add email alerts, role-based admin access, and enhanced security on top of the e
 6. As an admin, I can upload a CSV to add/update releases (secured by admin secret until L2 auth roles exist).
 
 ## L2 User Stories
+
+### Email Alerts
 1. As a signed-in user, I can enable email alerts for specific indicators on my watchlist.
 2. As a user with alerts enabled, I receive an email when a new release is published for that indicator.
 3. As a user, I can one-click unsubscribe from email alerts without logging in.
+
+### Role-Based Admin
 4. As an admin, I can grant or revoke admin access to other users.
 5. As an admin, I can view audit logs of all admin actions.
-6. As a signed-in user, I can see when an actual value was revised with the change history.
-7. As a visitor, I can see a "Revised" badge on calendar rows with revisions.
+6. As an admin, I can upload data using role-based authentication (replacing shared secret).
+
+### Rate Limiting & API Access
+7. As a signed-in user, I can generate API keys for programmatic access to the platform.
+8. As a user, I can manage (view, revoke, delete) my API keys from the settings page.
+9. As a visitor, I am protected from abuse by rate limits on public endpoints.
+10. As an admin, I can review request logs for abuse detection.
+
+### Revision Tracking
+11. As a signed-in user, I can see when an actual value was revised with the change history.
+12. As a visitor, I can see a "Revised" badge on calendar rows with revisions.
 
 ## Data Model (L2)
 
@@ -59,6 +72,25 @@ Add email alerts, role-based admin access, and enhanced security on top of the e
 - created_at (timestamptz, default now())
 - No RLS (admin-only access via service role)
 
+### Table: api_keys (new)
+- id (uuid, pk, default gen_random_uuid())
+- user_id (uuid, fk -> profiles.id)
+- key_hash (text, not null) — SHA-256 hash of API key
+- name (text, not null) — User-provided key name
+- created_at (timestamptz, default now())
+- last_used_at (timestamptz, nullable)
+- revoked_at (timestamptz, nullable)
+- RLS: users can only manage their own API keys
+
+### Table: request_logs (new)
+- id (uuid, pk, default gen_random_uuid())
+- ip (text, not null) — Client IP address
+- user_id (uuid, nullable, fk -> profiles.id)
+- endpoint (text, not null) — Request path
+- response_code (integer, not null)
+- created_at (timestamptz, default now())
+- No RLS (admin-only access via service role)
+
 ### Column Addition: releases.revision_history
 - revision_history (jsonb, default '[]')
 - Format: [{previous_actual, new_actual, revised_at}]
@@ -84,6 +116,13 @@ Add email alerts, role-based admin access, and enhanced security on top of the e
 - Revision history section (if any)
 - Shows timeline of actual value changes
 
+5) "/settings/api-keys" (new)
+- Create new API keys with custom names
+- View list of all keys (name, created date, last used, status)
+- Revoke active keys (soft delete)
+- Delete revoked keys (hard delete)
+- Plain key shown only once after creation
+
 ### Modified Components
 
 1) Calendar row (modified)
@@ -101,4 +140,5 @@ Add email alerts, role-based admin access, and enhanced security on top of the e
 - Vercel for app hosting
 - Supabase for DB + auth + Edge Functions
 - Resend or SendGrid for email delivery
-- Environment variables: existing + email service keys
+- Upstash Redis for distributed rate limiting
+- Environment variables: existing + email service keys + Redis credentials

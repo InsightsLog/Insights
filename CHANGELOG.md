@@ -478,7 +478,3 @@
   - Documented SQL injection safety via parameterized queries
   - Explained timezone handling assumptions
 - **Added:** Expanded root README with project overview, structure, quick start guide
-
-## Unreleased
-
-_(No unreleased changes)_
