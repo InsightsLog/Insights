@@ -127,8 +127,9 @@ export async function validateApiKeyFromHeader(
       .from("api_keys")
       .update({ last_used_at: new Date().toISOString() })
       .eq("key_hash", keyHash)
-  ).catch(() => {
-    // Intentionally ignored - fire and forget
+  ).catch((err) => {
+    // Log error for debugging but don't fail authentication
+    console.error("[API Auth] Failed to update last_used_at:", err);
   });
 
   return {
