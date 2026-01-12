@@ -61,10 +61,21 @@ interface WebhookEndpoint {
 // Webhook event types
 type WebhookEventType = "release.published" | "release.revised";
 
+// Validate required environment variables
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const ENV_VARS_VALID = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY;
+
+if (!ENV_VARS_VALID) {
+  console.error("Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+}
+
 // Create Supabase client with service role key for admin access
+// Note: Client is created even if env vars are missing to avoid module load errors,
+// but requests will fail if env vars are not properly set
 const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  SUPABASE_URL ?? "",
+  SUPABASE_SERVICE_ROLE_KEY ?? ""
 );
 
 const APP_URL = Deno.env.get("APP_URL") || "https://macrocalendar.com";
@@ -365,21 +376,28 @@ async function deliverWebhook(
 async function getWebhookEndpoints(
   eventType: WebhookEventType
 ): Promise<WebhookEndpoint[]> {
-  // Query enabled webhook endpoints that include this event type
-  // Supabase .contains() generates PostgreSQL array contains operator: events @> ARRAY['release.published']
-  // This correctly checks if the events array includes the specified event type
+  // Query all enabled webhook endpoints and filter by event type in code
+  // This approach is more reliable than using .contains() in Edge Functions
+  // because the PostgREST array containment operator can have edge cases
   const { data, error } = await supabase
     .from("webhook_endpoints")
     .select("id, user_id, url, secret, events, enabled")
-    .eq("enabled", true)
-    .contains("events", [eventType]);
+    .eq("enabled", true);
 
   if (error) {
     console.error("Failed to fetch webhook endpoints:", error);
     return [];
   }
 
-  return (data as WebhookEndpoint[]) ?? [];
+  console.log(`Fetched ${data?.length ?? 0} enabled webhook endpoints from database`);
+
+  // Filter endpoints that are subscribed to this event type
+  const endpoints = (data as WebhookEndpoint[]) ?? [];
+  const filtered = endpoints.filter((endpoint) => endpoint.events.includes(eventType));
+
+  console.log(`Filtered to ${filtered.length} endpoints subscribed to ${eventType}`);
+
+  return filtered;
 }
 
 /**
@@ -424,6 +442,17 @@ Deno.serve(async (req) => {
       status: 405,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  // Check environment variables before processing
+  if (!ENV_VARS_VALID) {
+    return new Response(
+      JSON.stringify({ error: "Server configuration error: missing environment variables" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {

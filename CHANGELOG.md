@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.3] - 2026-01-12
+
+### Bug Fixes
+- **Fixed:** send-webhook Edge Function fails to deliver webhooks
+  - Changed webhook endpoint query to fetch all enabled endpoints and filter by event type in code
+  - The Supabase JS `.contains()` array filter was not reliably returning results in the Edge Function environment
+  - Added environment variable validation for `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+  - Added debug logging to track webhook endpoint fetching and filtering
+  - Webhooks now correctly match endpoints subscribed to `release.published` and `release.revised` events
+
 ## [2.0.2] - 2026-01-12
 
 ### Webhook Delivery (L3)
