@@ -88,7 +88,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Seed plans: Free, Plus, Pro, Enterprise
   - Test: plans table populated with tiers
 
-- [ ] T321 Add subscriptions table
+- [x] T321 Add subscriptions table
   - Migration: subscriptions(id, user_id, plan_id, stripe_subscription_id, status, current_period_end, created_at)
   - Status: 'active', 'canceled', 'past_due', 'trialing'
   - RLS: users can only read their own subscription
