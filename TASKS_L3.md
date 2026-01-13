@@ -56,7 +56,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Requires valid API key in Authorization header
   - Test: API returns correct data; invalid key returns 401
 
-- [ ] T312 Add /api/v1/releases endpoint
+- [x] T312 Add /api/v1/releases endpoint
   - GET /api/v1/releases - List releases with pagination
   - GET /api/v1/releases/:id - Get single release with indicator
   - Query params: indicator_id, from_date, to_date, limit, offset
