@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.5.0] - 2026-01-13
+
+### Billing & Quotas (L3)
+- **Added:** Stripe payment integration for subscriptions (T322)
+  - Webhook endpoint: `POST /api/stripe/webhook` for handling Stripe events
+  - Handled events:
+    - `checkout.session.completed` - Creates/updates subscription when checkout completes
+    - `customer.subscription.updated` - Updates subscription status and billing period
+    - `customer.subscription.deleted` - Marks subscription as canceled
+  - Security: Webhook signature verification using STRIPE_WEBHOOK_SECRET
+  - Uses service role client to bypass RLS for subscription updates
+  - Graceful error handling - acknowledges events even on processing errors to prevent retries
+- **Added:** Stripe environment variables (`src/lib/env.ts`)
+  - `STRIPE_SECRET_KEY` - Server-side Stripe API key
+  - `STRIPE_WEBHOOK_SECRET` - Used to verify webhook signatures
+  - `getStripeEnv()` function returns null if not configured (graceful degradation)
+- **Added:** Unit tests for Stripe webhook handler (8 tests)
+  - Configuration error handling (missing env vars, missing signature)
+  - Signature verification (invalid signatures rejected)
+  - Event handling (checkout.session.completed, subscription.updated, subscription.deleted)
+  - Unhandled events acknowledged without error
+- **Dependency:** Added `stripe@20.1.2` for Stripe API integration
+
 ## [2.4.0] - 2026-01-13
 
 ### Billing & Quotas (L3)

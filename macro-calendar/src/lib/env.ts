@@ -96,3 +96,35 @@ export function isRequestLoggingEnabled(): boolean {
 
   return parsed.ENABLE_REQUEST_LOGGING === "true";
 }
+
+/**
+ * Stripe environment variables schema.
+ * Required for payment processing (T322).
+ * STRIPE_SECRET_KEY: Server-side Stripe API key
+ * STRIPE_WEBHOOK_SECRET: Used to verify Stripe webhook signatures
+ */
+const stripeEnvSchema = z.object({
+  STRIPE_SECRET_KEY: z.string().min(1, "STRIPE_SECRET_KEY is required"),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1, "STRIPE_WEBHOOK_SECRET is required"),
+});
+
+/**
+ * Get Stripe environment variables.
+ * Returns null if Stripe is not configured.
+ * Both keys must be set for Stripe integration to be enabled.
+ */
+export function getStripeEnv(): { secretKey: string; webhookSecret: string } | null {
+  const result = stripeEnvSchema.safeParse({
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  });
+
+  if (!result.success) {
+    return null;
+  }
+
+  return {
+    secretKey: result.data.STRIPE_SECRET_KEY,
+    webhookSecret: result.data.STRIPE_WEBHOOK_SECRET,
+  };
+}
