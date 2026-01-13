@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.2.0] - 2026-01-13
+
+### Public REST API (L3)
+- **Added:** API documentation page at `/docs/api` (T315)
+  - Interactive API explorer with endpoint selection
+  - Endpoints grouped by category (Indicators, Releases, Calendar)
+  - Parameter inputs with validation hints (min/max, defaults)
+  - Live code examples in multiple languages:
+    - cURL
+    - JavaScript/fetch
+    - Python/requests
+  - Collapsible documentation sections:
+    - Authentication guide with API key usage
+    - Rate limits per subscription tier (Free, Pro, Enterprise)
+    - Error handling with HTTP status codes
+  - Copy to clipboard functionality for code examples
+  - Link to download OpenAPI 3.0 specification
+  - Dark mode support
+- **Added:** `/api/openapi` endpoint to serve OpenAPI specification as JSON
+  - Static generation for optimal caching
+  - 1-hour cache headers for CDN optimization
+- **Added:** Unit tests for API docs components (15 tests)
+  - Endpoint extraction from OpenAPI spec
+  - Parameter resolution ($ref and inline)
+  - Code example generation (URL building, encoding)
+  - Rate limit tier validation
+
 ## [2.1.0] - 2026-01-13
 
 ### Public REST API (L3)

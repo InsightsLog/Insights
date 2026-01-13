@@ -73,7 +73,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Dashboard widget showing usage over time
   - Test: API calls are logged; dashboard displays usage
 
-- [ ] T315 Add API documentation page
+- [x] T315 Add API documentation page
   - Route: /docs/api
   - Interactive API explorer (Swagger UI or similar)
   - Code examples in multiple languages
