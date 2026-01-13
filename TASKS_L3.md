@@ -62,7 +62,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Query params: indicator_id, from_date, to_date, limit, offset
   - Test: API returns correct data; respects date filters
 
-- [ ] T313 Add /api/v1/calendar endpoint
+- [x] T313 Add /api/v1/calendar endpoint
   - GET /api/v1/calendar - Get upcoming releases (default next 7 days)
   - Query params: days, country, category
   - Test: API returns same data as web calendar
