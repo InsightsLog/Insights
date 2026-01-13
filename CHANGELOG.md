@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.3.0] - 2026-01-13
+
+### Billing & Quotas (L3)
+- **Added:** Plans table for subscription tiers (T320)
+  - Migration: `015_create_plans.sql`
+  - Schema: id, name, price_monthly, price_yearly, api_calls_limit, webhook_limit, features (JSONB)
+  - RLS: public read access (plans are public information), admin-only write via service role
+  - Seeded with four tiers:
+    - **Free:** $0/mo, 100 API calls/mo, 1 webhook endpoint
+    - **Plus:** $9.99/mo ($99.90/yr), 1,000 API calls/mo, 5 webhook endpoints
+    - **Pro:** $29.99/mo ($299.90/yr), 10,000 API calls/mo, 20 webhook endpoints
+    - **Enterprise:** $99.99/mo ($999.90/yr), 100,000 API calls/mo, 100 webhook endpoints
+  - Features JSONB includes: email_alerts, api_access, priority_support, data_export, dedicated_support, sla, support level
+- **Added:** Test file for plans verification (`015_test_plans.sql`)
+- **Updated:** Migration README with plans table documentation
+
 ## [2.2.1] - 2026-01-13
 
 ### Fixes

@@ -18,6 +18,8 @@ In your Supabase SQL Editor, execute the migrations in the following order:
 10. `011_create_webhook_endpoints.sql` - Creates webhook_endpoints table with RLS
 11. `012_create_webhook_delivery_trigger.sql` - Documents webhook trigger configuration
 12. `013_create_webhook_deliveries.sql` - Creates webhook_deliveries table (no RLS)
+13. `014_add_api_usage_tracking.sql` - Adds API usage tracking columns to request_logs
+14. `015_create_plans.sql` - Creates plans table with subscription tiers
 
 ### 2. Test the Schema (Optional)
 
@@ -25,6 +27,7 @@ To verify the schema:
 
 1. `001_test_seed.sql` - Test data for indicators and releases (uses dynamic dates, always within next 7 days)
 2. `004_test_alert_preferences.sql` - Verification queries for alert_preferences
+3. `015_test_plans.sql` - Verification queries for plans table
 
 ### 3. Verify Indexes
 
@@ -92,6 +95,12 @@ Expected indexes:
 - Columns: id, webhook_id (FK), event_type, payload, response_code, response_body, attempted_at
 - No RLS: admin-only access via service role (delivery logs not exposed to users)
 - Cascade delete: when webhook_endpoint is deleted, its deliveries are also deleted
+
+### plans table
+- Stores subscription plan definitions with pricing and feature limits
+- Columns: id, name, price_monthly, price_yearly, api_calls_limit, webhook_limit, features
+- RLS: public read access (plans are public information), admin-only write
+- Seeded with: Free, Plus, Pro, Enterprise tiers
 
 ## Clean Up (Development Only)
 
