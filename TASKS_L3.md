@@ -49,7 +49,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Rate limits per API key tier
   - Test: OpenAPI spec validates correctly
 
-- [ ] T311 Add /api/v1/indicators endpoint
+- [x] T311 Add /api/v1/indicators endpoint
   - GET /api/v1/indicators - List all indicators with pagination
   - GET /api/v1/indicators/:id - Get single indicator with latest releases
   - Query params: country, category, search, limit, offset

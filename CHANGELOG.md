@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.0.7] - 2026-01-12
+
+### Public REST API (L3)
+- **Added:** `/api/v1/indicators` endpoint for listing indicators (T311)
+  - `GET /api/v1/indicators` - List all indicators with pagination
+  - Query parameters: country, category, search, limit (1-100, default 20), offset
+  - Requires valid API key in `Authorization: Bearer mc_xxx` header
+  - Returns paginated response with `data` array and `pagination` metadata
+  - Country filter auto-uppercase conversion (e.g., `us` → `US`)
+  - Case-insensitive search on indicator names using ILIKE
+- **Added:** `/api/v1/indicators/:id` endpoint for single indicator details (T311)
+  - `GET /api/v1/indicators/:id` - Get indicator with latest releases
+  - Path parameter: `id` (UUID format required)
+  - Query parameters: include_releases (default true), releases_limit (1-100, default 10)
+  - Returns indicator details with optional `releases` array (most recent first)
+  - Includes revision_history for releases when present
+  - Returns 404 for non-existent indicators
+- **Added:** API key authentication module (`src/lib/api/auth.ts`)
+  - `validateApiKeyFromHeader(request)` - Validates API key from Authorization header
+  - `authenticateApiRequest(request)` - Wrapper returning error response or user ID
+  - `createApiErrorResponse(error, code, status)` - Standardized error responses
+  - Supports both `Bearer mc_xxx` and direct `mc_xxx` header formats
+  - Updates `last_used_at` timestamp on successful validation
+  - Returns proper 401 for missing, invalid, or revoked API keys
+- **Added:** Unit tests for indicators API (22 tests)
+  - Authentication tests (missing/invalid API key)
+  - Parameter validation tests (limit, offset, releases_limit, UUID format)
+  - Successful response tests (pagination, filters, releases inclusion)
+  - Error handling tests (database errors, not found)
+- **Added:** Unit tests for API auth module (13 tests)
+  - API key extraction and validation
+  - Error response creation
+  - Request authentication wrapper
+
 ## [2.0.6] - 2026-01-12
 
 ### Public REST API (L3)
