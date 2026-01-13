@@ -20,6 +20,7 @@ In your Supabase SQL Editor, execute the migrations in the following order:
 12. `013_create_webhook_deliveries.sql` - Creates webhook_deliveries table (no RLS)
 13. `014_add_api_usage_tracking.sql` - Adds API usage tracking columns to request_logs
 14. `015_create_plans.sql` - Creates plans table with subscription tiers
+15. `016_create_subscriptions.sql` - Creates subscriptions table for billing
 
 ### 2. Test the Schema (Optional)
 
@@ -28,6 +29,7 @@ To verify the schema:
 1. `001_test_seed.sql` - Test data for indicators and releases (uses dynamic dates, always within next 7 days)
 2. `004_test_alert_preferences.sql` - Verification queries for alert_preferences
 3. `015_test_plans.sql` - Verification queries for plans table
+4. `016_test_subscriptions.sql` - Verification queries for subscriptions table
 
 ### 3. Verify Indexes
 
@@ -101,6 +103,13 @@ Expected indexes:
 - Columns: id, name, price_monthly, price_yearly, api_calls_limit, webhook_limit, features
 - RLS: public read access (plans are public information), admin-only write
 - Seeded with: Free, Plus, Pro, Enterprise tiers
+
+### subscriptions table
+- Stores user subscriptions linking users to billing plans
+- Columns: id, user_id (FK to profiles), plan_id (FK to plans), stripe_subscription_id, status, current_period_end, created_at
+- Status values: 'active', 'canceled', 'past_due', 'trialing'
+- RLS: users can only read their own subscription (all writes via service role)
+- Foreign key behavior: CASCADE on user deletion, RESTRICT on plan deletion
 
 ## Clean Up (Development Only)
 

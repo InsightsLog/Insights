@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.4.0] - 2026-01-13
+
+### Billing & Quotas (L3)
+- **Added:** Subscriptions table for user billing (T321)
+  - Migration: `016_create_subscriptions.sql`
+  - Schema: id, user_id (FK to profiles), plan_id (FK to plans), stripe_subscription_id, status, current_period_end, created_at
+  - Status values: 'active', 'canceled', 'past_due', 'trialing' (enforced by CHECK constraint)
+  - Foreign key behavior: CASCADE on user deletion, RESTRICT on plan deletion (cannot delete plans with active subscriptions)
+  - RLS: users can only read their own subscription; all writes managed via service role (Stripe webhooks)
+  - Indexes: user_id, status, stripe_subscription_id for efficient queries
+- **Added:** Test file for subscriptions verification (`016_test_subscriptions.sql`)
+- **Updated:** Migration README with subscriptions table documentation
+
 ## [2.3.0] - 2026-01-13
 
 ### Billing & Quotas (L3)
