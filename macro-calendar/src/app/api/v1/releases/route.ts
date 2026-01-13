@@ -177,35 +177,43 @@ export async function GET(
     }
 
     const total = count ?? 0;
-    const releases: ReleaseWithIndicator[] = (data ?? []).map((rel) => {
-      // Supabase returns embedded relations as arrays or single objects
-      const indicatorData = Array.isArray(rel.indicators)
-        ? rel.indicators[0]
-        : rel.indicators;
+    const releases: ReleaseWithIndicator[] = (data ?? [])
+      .filter((rel) => {
+        // Skip any releases without indicator data (shouldn't happen with inner join, but guard anyway)
+        const indicatorData = Array.isArray(rel.indicators)
+          ? rel.indicators[0]
+          : rel.indicators;
+        return indicatorData != null;
+      })
+      .map((rel) => {
+        // Supabase returns embedded relations as arrays or single objects
+        const indicatorData = Array.isArray(rel.indicators)
+          ? rel.indicators[0]
+          : rel.indicators;
 
-      return {
-        id: rel.id,
-        indicator_id: rel.indicator_id,
-        release_at: rel.release_at,
-        period: rel.period,
-        actual: rel.actual,
-        forecast: rel.forecast,
-        previous: rel.previous,
-        revised: rel.revised,
-        unit: rel.unit,
-        revision_history: rel.revision_history as Revision[] | undefined,
-        created_at: rel.created_at,
-        indicator: {
-          id: indicatorData.id,
-          name: indicatorData.name,
-          country_code: indicatorData.country_code,
-          category: indicatorData.category,
-          source_name: indicatorData.source_name,
-          source_url: indicatorData.source_url,
-          created_at: indicatorData.created_at,
-        },
-      };
-    });
+        return {
+          id: rel.id,
+          indicator_id: rel.indicator_id,
+          release_at: rel.release_at,
+          period: rel.period,
+          actual: rel.actual,
+          forecast: rel.forecast,
+          previous: rel.previous,
+          revised: rel.revised,
+          unit: rel.unit,
+          revision_history: rel.revision_history as Revision[] | undefined,
+          created_at: rel.created_at,
+          indicator: {
+            id: indicatorData.id,
+            name: indicatorData.name,
+            country_code: indicatorData.country_code,
+            category: indicatorData.category,
+            source_name: indicatorData.source_name,
+            source_url: indicatorData.source_url,
+            created_at: indicatorData.created_at,
+          },
+        };
+      });
 
     const response: ReleasesListResponse = {
       data: releases,

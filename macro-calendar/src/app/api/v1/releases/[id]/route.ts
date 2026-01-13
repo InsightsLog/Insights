@@ -121,6 +121,16 @@ export async function GET(
       ? release.indicators[0]
       : release.indicators;
 
+    // Guard against missing indicator data (shouldn't happen with inner join, but be safe)
+    if (!indicatorData) {
+      console.error("Release has no indicator data:", release.id);
+      return createApiErrorResponse(
+        "Internal server error",
+        "INTERNAL_ERROR",
+        500
+      );
+    }
+
     const response: ReleaseWithIndicator = {
       id: release.id,
       indicator_id: release.indicator_id,
