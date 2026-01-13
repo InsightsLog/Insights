@@ -85,7 +85,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
 
 - [ ] T320 Add plans table
   - Migration: plans(id, name, price_monthly, price_yearly, api_calls_limit, webhook_limit, features)
-  - Seed plans: Free, Pro, Enterprise
+  - Seed plans: Free, Plus, Pro, Enterprise
   - Test: plans table populated with tiers
 
 - [ ] T321 Add subscriptions table
