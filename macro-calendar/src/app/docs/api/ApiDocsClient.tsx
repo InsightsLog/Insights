@@ -54,7 +54,8 @@ function getEndpoints(): EndpointInfo[] {
               name: refParam.name,
               in: refParam.in,
               description: refParam.description,
-              required: false,
+              // Query parameters from $ref are typically optional in this API spec
+              required: "required" in refParam ? refParam.required === true : false,
               type: refParam.schema.type,
               default: "default" in refParam.schema ? refParam.schema.default : undefined,
               minimum: "minimum" in refParam.schema ? refParam.schema.minimum : undefined,
@@ -62,11 +63,14 @@ function getEndpoints(): EndpointInfo[] {
             });
           }
         } else {
+          // For inline parameters, check required property
+          // Note: Path parameters should always have required: true per OpenAPI spec
+          const isRequired = "required" in param && param.required === true;
           params.push({
             name: param.name,
             in: param.in,
             description: param.description ?? "",
-            required: "required" in param ? param.required : false,
+            required: isRequired,
             type: param.schema.type,
             default: "default" in param.schema ? param.schema.default : undefined,
             minimum: "minimum" in param.schema ? param.schema.minimum : undefined,
@@ -75,12 +79,14 @@ function getEndpoints(): EndpointInfo[] {
         }
       }
 
+      // Validate operation has required fields
+      const tags = op.tags ?? [];
       endpoints.push({
         path: path as EndpointPath,
         method: "GET",
-        summary: op.summary,
-        description: op.description,
-        tag: op.tags[0],
+        summary: op.summary ?? "No summary available",
+        description: op.description ?? "No description available",
+        tag: tags[0] ?? "Other",
         operationId: op.operationId,
         parameters: params,
       });
@@ -159,8 +165,20 @@ type CodeLanguage = "curl" | "javascript" | "python";
  */
 export function ApiDocsClient() {
   const endpoints = getEndpoints();
+  
+  // Provide a fallback endpoint if none are available (should not happen with valid OpenAPI spec)
+  const defaultEndpoint: EndpointInfo = endpoints[0] ?? {
+    path: "/indicators" as EndpointPath,
+    method: "GET",
+    summary: "No endpoints available",
+    description: "The API specification could not be loaded.",
+    tag: "Other",
+    operationId: "unknown",
+    parameters: [],
+  };
+  
   const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointInfo>(
-    endpoints[0]
+    defaultEndpoint
   );
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
   const [codeLanguage, setCodeLanguage] = useState<CodeLanguage>("curl");
