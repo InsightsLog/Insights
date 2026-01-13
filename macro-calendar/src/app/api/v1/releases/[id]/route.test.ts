@@ -15,6 +15,11 @@ vi.mock("@/lib/supabase/service-role", () => ({
   createSupabaseServiceClient: vi.fn(),
 }));
 
+// Mock the usage logger (T314)
+vi.mock("@/lib/api/usage-logger", () => ({
+  logApiUsage: vi.fn(),
+}));
+
 // Import the mocked functions
 import { authenticateApiRequest } from "@/lib/api/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
@@ -48,7 +53,7 @@ describe("GET /api/v1/releases/:id", () => {
 
   describe("parameter validation", () => {
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
     });
 
     it("returns 400 when release ID is not a valid UUID", async () => {
@@ -69,7 +74,7 @@ describe("GET /api/v1/releases/:id", () => {
     const validUuid = "123e4567-e89b-12d3-a456-426614174000";
 
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
     });
 
     it("returns release with indicator", async () => {
@@ -292,7 +297,7 @@ describe("GET /api/v1/releases/:id", () => {
     const validUuid = "123e4567-e89b-12d3-a456-426614174000";
 
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
     });
 
     it("returns 404 when release is not found", async () => {

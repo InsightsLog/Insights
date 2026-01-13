@@ -19,6 +19,7 @@ import {
   createApiErrorResponse,
   type ApiErrorResponse,
 } from "@/lib/api/auth";
+import { logApiUsage } from "@/lib/api/usage-logger";
 
 /**
  * Zod schema for query parameters validation.
@@ -71,11 +72,17 @@ interface CalendarResponse {
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<CalendarResponse | ApiErrorResponse>> {
+  const startTime = Date.now();
+
   // Authenticate the request
   const authResult = await authenticateApiRequest(request);
   if (authResult instanceof NextResponse) {
+    // Log failed auth attempts (T314 - API usage tracking)
+    void logApiUsage(request, authResult.status, null, null, startTime);
     return authResult;
   }
+
+  const { userId, apiKeyId } = authResult;
 
   // Parse and validate query parameters
   const { searchParams } = new URL(request.url);
@@ -88,11 +95,13 @@ export async function GET(
   const parseResult = queryParamsSchema.safeParse(rawParams);
   if (!parseResult.success) {
     const firstError = parseResult.error.issues[0];
-    return createApiErrorResponse(
+    const response = createApiErrorResponse(
       `Invalid parameter: ${firstError?.path.join(".")} - ${firstError?.message}`,
       "INVALID_PARAMETER",
       400
     );
+    void logApiUsage(request, 400, userId, apiKeyId, startTime);
+    return response;
   }
 
   const { days, country, category } = parseResult.data;
@@ -136,11 +145,13 @@ export async function GET(
 
     if (error) {
       console.error("Failed to fetch calendar events:", error);
-      return createApiErrorResponse(
+      const response = createApiErrorResponse(
         "Internal server error",
         "INTERNAL_ERROR",
         500
       );
+      void logApiUsage(request, 500, userId, apiKeyId, startTime);
+      return response;
     }
 
     // Helper to extract indicator data from Supabase embedded relation response
@@ -179,7 +190,7 @@ export async function GET(
         };
       });
 
-    const response: CalendarResponse = {
+    const responseData: CalendarResponse = {
       data: events,
       meta: {
         from_date: fromDate,
@@ -188,13 +199,18 @@ export async function GET(
       },
     };
 
-    return NextResponse.json(response);
+    // Log successful API request (T314 - API usage tracking)
+    void logApiUsage(request, 200, userId, apiKeyId, startTime);
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Unexpected error fetching calendar:", error);
-    return createApiErrorResponse(
+    const response = createApiErrorResponse(
       "Internal server error",
       "INTERNAL_ERROR",
       500
     );
+    void logApiUsage(request, 500, userId, apiKeyId, startTime);
+    return response;
   }
 }

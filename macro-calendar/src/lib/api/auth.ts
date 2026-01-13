@@ -19,6 +19,8 @@ export interface ApiAuthResult {
   valid: boolean;
   /** User ID if valid, null otherwise */
   userId: string | null;
+  /** API key ID if valid, null otherwise (T314 - usage tracking) */
+  apiKeyId: string | null;
   /** Error message if invalid */
   error?: string;
   /** HTTP status code to return if invalid */
@@ -76,6 +78,7 @@ export async function validateApiKeyFromHeader(
     return {
       valid: false,
       userId: null,
+      apiKeyId: null,
       error: "Invalid or missing API key",
       status: 401,
     };
@@ -86,6 +89,7 @@ export async function validateApiKeyFromHeader(
     return {
       valid: false,
       userId: null,
+      apiKeyId: null,
       error: "Invalid or missing API key",
       status: 401,
     };
@@ -94,10 +98,10 @@ export async function validateApiKeyFromHeader(
   const keyHash = hashApiKey(apiKey);
   const supabase = createSupabaseServiceClient();
 
-  // Look up key by hash, ensure not revoked
+  // Look up key by hash, ensure not revoked (include id for usage tracking T314)
   const { data, error } = await supabase
     .from("api_keys")
-    .select("user_id, revoked_at")
+    .select("id, user_id, revoked_at")
     .eq("key_hash", keyHash)
     .single();
 
@@ -106,6 +110,7 @@ export async function validateApiKeyFromHeader(
     return {
       valid: false,
       userId: null,
+      apiKeyId: null,
       error: "Invalid or missing API key",
       status: 401,
     };
@@ -116,6 +121,7 @@ export async function validateApiKeyFromHeader(
     return {
       valid: false,
       userId: null,
+      apiKeyId: null,
       error: "API key has been revoked",
       status: 401,
     };
@@ -135,6 +141,7 @@ export async function validateApiKeyFromHeader(
   return {
     valid: true,
     userId: data.user_id,
+    apiKeyId: data.id,
   };
 }
 
@@ -168,14 +175,14 @@ export function createApiErrorResponse(
 
 /**
  * Wrapper function to authenticate API requests.
- * Returns an error response if authentication fails, or the user ID if successful.
+ * Returns an error response if authentication fails, or the user ID and API key ID if successful.
  *
  * @param request - The incoming NextRequest
- * @returns Either an error NextResponse or the authenticated user ID
+ * @returns Either an error NextResponse or the authenticated user ID and API key ID
  */
 export async function authenticateApiRequest(
   request: NextRequest
-): Promise<NextResponse<ApiErrorResponse> | { userId: string }> {
+): Promise<NextResponse<ApiErrorResponse> | { userId: string; apiKeyId: string }> {
   const authResult = await validateApiKeyFromHeader(request);
 
   if (!authResult.valid) {
@@ -186,5 +193,5 @@ export async function authenticateApiRequest(
     );
   }
 
-  return { userId: authResult.userId! };
+  return { userId: authResult.userId!, apiKeyId: authResult.apiKeyId! };
 }

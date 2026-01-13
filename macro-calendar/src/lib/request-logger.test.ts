@@ -121,13 +121,15 @@ describe("request-logger", () => {
         })
       );
 
-      // Verify insert was called with correct data
+      // Verify insert was called with correct data (including new T314 fields)
       expect(mockFrom).toHaveBeenCalledWith("request_logs");
       expect(mockInsert).toHaveBeenCalledWith({
         ip: "192.168.1.1",
         user_id: "user-123",
         endpoint: "/api/releases",
         response_code: 200,
+        api_key_id: null,
+        response_time_ms: null,
       });
     });
 
@@ -140,11 +142,14 @@ describe("request-logger", () => {
 
       await logRequest(entry);
 
+      // Verify insert includes new T314 fields
       expect(mockInsert).toHaveBeenCalledWith({
         ip: "10.0.0.1",
         user_id: null,
         endpoint: "/",
         response_code: 200,
+        api_key_id: null,
+        response_time_ms: null,
       });
     });
 
