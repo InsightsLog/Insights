@@ -143,19 +143,21 @@ export async function GET(
       );
     }
 
+    // Helper to extract indicator data from Supabase embedded relation response
+    // Supabase may return embedded relations as arrays or single objects
+    const getIndicatorData = (
+      rel: (typeof data)[number]
+    ): { id: string; name: string; country_code: string; category: string } | null => {
+      const indicatorData = Array.isArray(rel.indicators)
+        ? rel.indicators[0]
+        : rel.indicators;
+      return indicatorData ?? null;
+    };
+
     const events: CalendarEvent[] = (data ?? [])
-      .filter((rel) => {
-        // Skip any releases without indicator data (shouldn't happen with inner join)
-        const indicatorData = Array.isArray(rel.indicators)
-          ? rel.indicators[0]
-          : rel.indicators;
-        return indicatorData != null;
-      })
+      .filter((rel) => getIndicatorData(rel) != null)
       .map((rel) => {
-        // Supabase returns embedded relations as arrays or single objects
-        const indicatorData = Array.isArray(rel.indicators)
-          ? rel.indicators[0]
-          : rel.indicators;
+        const indicatorData = getIndicatorData(rel)!;
 
         // Check for revisions
         const hasRevisions =
