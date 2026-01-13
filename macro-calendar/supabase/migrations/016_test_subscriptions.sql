@@ -38,11 +38,11 @@ JOIN information_schema.key_column_usage kcu
 WHERE tc.table_name = 'subscriptions'
 ORDER BY tc.constraint_type, kcu.ordinal_position;
 
--- Expected constraints:
+-- Expected constraints (note: CHECK constraints are not shown in this query):
 -- subscriptions_pkey (PRIMARY KEY) on id
 -- subscriptions_user_id_fkey (FOREIGN KEY) on user_id -> profiles(id)
 -- subscriptions_plan_id_fkey (FOREIGN KEY) on plan_id -> plans(id)
--- subscriptions_status_check (CHECK) on status
+-- NOTE: The CHECK constraint on status is verified in the next query below
 
 -- =============================================================================
 -- VERIFY: Check constraint for status values
@@ -55,7 +55,9 @@ FROM pg_constraint
 WHERE conrelid = 'subscriptions'::regclass
   AND contype = 'c';
 
--- Expected: status IN ('active', 'canceled', 'past_due', 'trialing')
+-- Expected result (1 row):
+-- constraint_name: subscriptions_status_check
+-- constraint_definition: CHECK ((status = ANY (ARRAY['active'::text, 'canceled'::text, 'past_due'::text, 'trialing'::text])))
 
 -- =============================================================================
 -- VERIFY: Indexes exist
