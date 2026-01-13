@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.1] - 2026-01-13
+
+### Fixes
+- **Fixed:** API documentation page UX improvements
+  - Added `type="button"` attribute to all interactive buttons for proper accessibility
+  - Added visual feedback for copy button - shows "Copied!" with green styling for 2 seconds after copying
+  - All buttons now properly prevent accidental form submissions
+
 ## [2.2.0] - 2026-01-13
 
 ### Public REST API (L3)
