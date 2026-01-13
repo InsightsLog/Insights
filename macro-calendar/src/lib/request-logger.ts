@@ -10,6 +10,10 @@ export interface RequestLogEntry {
   user_id?: string | null;
   endpoint: string;
   response_code: number;
+  /** API key ID for API requests (T314 - API usage tracking) */
+  api_key_id?: string | null;
+  /** Response time in milliseconds (T314 - API usage tracking) */
+  response_time_ms?: number | null;
 }
 
 /**
@@ -20,6 +24,8 @@ interface RequestLogInsert {
   user_id: string | null;
   endpoint: string;
   response_code: number;
+  api_key_id: string | null;
+  response_time_ms: number | null;
 }
 
 /**
@@ -85,6 +91,8 @@ export async function logRequest(entry: RequestLogEntry): Promise<void> {
       user_id: entry.user_id ?? null,
       endpoint: entry.endpoint,
       response_code: entry.response_code,
+      api_key_id: entry.api_key_id ?? null,
+      response_time_ms: entry.response_time_ms ?? null,
     };
 
     const { error } = await client.from("request_logs").insert(insertData);
@@ -120,5 +128,35 @@ export function createLogEntry(
     endpoint,
     response_code: responseCode,
     user_id: userId,
+  };
+}
+
+/**
+ * Create an API request log entry with usage tracking data.
+ * Used specifically for API v1 endpoints to track per-key usage.
+ * 
+ * @param ip - Client IP address
+ * @param endpoint - Request path/endpoint (e.g., '/api/v1/indicators')
+ * @param responseCode - HTTP response status code
+ * @param userId - User ID associated with the API key
+ * @param apiKeyId - API key ID used for the request
+ * @param responseTimeMs - Response time in milliseconds
+ * @returns RequestLogEntry ready for logging with API usage data
+ */
+export function createApiLogEntry(
+  ip: string,
+  endpoint: string,
+  responseCode: number,
+  userId: string | null,
+  apiKeyId: string | null,
+  responseTimeMs: number
+): RequestLogEntry {
+  return {
+    ip,
+    endpoint,
+    response_code: responseCode,
+    user_id: userId,
+    api_key_id: apiKeyId,
+    response_time_ms: responseTimeMs,
   };
 }

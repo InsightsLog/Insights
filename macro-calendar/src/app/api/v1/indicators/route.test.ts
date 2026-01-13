@@ -15,6 +15,11 @@ vi.mock("@/lib/supabase/service-role", () => ({
   createSupabaseServiceClient: vi.fn(),
 }));
 
+// Mock the usage logger (T314)
+vi.mock("@/lib/api/usage-logger", () => ({
+  logApiUsage: vi.fn(),
+}));
+
 // Import the mocked functions
 import { authenticateApiRequest } from "@/lib/api/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
@@ -63,7 +68,7 @@ describe("GET /api/v1/indicators", () => {
   describe("parameter validation", () => {
     beforeEach(() => {
       // Mock successful authentication
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
     });
 
     it("returns 400 when limit is invalid", async () => {
@@ -106,7 +111,7 @@ describe("GET /api/v1/indicators", () => {
   describe("successful responses", () => {
     beforeEach(() => {
       // Mock successful authentication
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
     });
 
     it("returns paginated indicators list", async () => {
@@ -268,7 +273,7 @@ describe("GET /api/v1/indicators", () => {
 
   describe("error handling", () => {
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
     });
 
     it("returns 500 when database query fails", async () => {

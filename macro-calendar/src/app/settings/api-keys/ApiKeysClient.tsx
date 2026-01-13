@@ -9,6 +9,7 @@ import {
   deleteApiKey,
   type ApiKey,
 } from "@/app/actions/api-keys";
+import { ApiUsageDashboard } from "./ApiUsageDashboard";
 
 /**
  * Formats a date string to a human-readable format.
@@ -385,6 +386,11 @@ export function ApiKeysClient() {
               </table>
             </div>
           )}
+        </div>
+
+        {/* API Usage Dashboard (T314) */}
+        <div className="mt-8">
+          <ApiUsageDashboard />
         </div>
 
         {/* Usage info */}

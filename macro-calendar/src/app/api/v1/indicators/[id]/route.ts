@@ -21,6 +21,7 @@ import {
   createApiErrorResponse,
   type ApiErrorResponse,
 } from "@/lib/api/auth";
+import { logApiUsage } from "@/lib/api/usage-logger";
 
 /**
  * Zod schema for path parameter validation.
@@ -91,21 +92,29 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<IndicatorWithReleases | ApiErrorResponse>> {
+  const startTime = Date.now();
+
   // Authenticate the request
   const authResult = await authenticateApiRequest(request);
   if (authResult instanceof NextResponse) {
+    // Log failed auth attempts (T314 - API usage tracking)
+    void logApiUsage(request, authResult.status, null, null, startTime);
     return authResult;
   }
+
+  const { userId, apiKeyId } = authResult;
 
   // Validate path parameter
   const resolvedParams = await params;
   const pathParseResult = pathParamsSchema.safeParse({ id: resolvedParams.id });
   if (!pathParseResult.success) {
-    return createApiErrorResponse(
+    const response = createApiErrorResponse(
       "Invalid indicator ID format",
       "INVALID_PARAMETER",
       400
     );
+    void logApiUsage(request, 400, userId, apiKeyId, startTime);
+    return response;
   }
 
   const { id } = pathParseResult.data;
@@ -120,11 +129,13 @@ export async function GET(
   const queryParseResult = queryParamsSchema.safeParse(rawParams);
   if (!queryParseResult.success) {
     const firstError = queryParseResult.error.issues[0];
-    return createApiErrorResponse(
+    const response = createApiErrorResponse(
       `Invalid parameter: ${firstError?.path.join(".")} - ${firstError?.message}`,
       "INVALID_PARAMETER",
       400
     );
+    void logApiUsage(request, 400, userId, apiKeyId, startTime);
+    return response;
   }
 
   const { include_releases, releases_limit } = queryParseResult.data;
@@ -142,17 +153,21 @@ export async function GET(
     if (indicatorError) {
       // PGRST116 is "no rows returned"
       if (indicatorError.code === "PGRST116") {
-        return createApiErrorResponse("Indicator not found", "NOT_FOUND", 404);
+        const response = createApiErrorResponse("Indicator not found", "NOT_FOUND", 404);
+        void logApiUsage(request, 404, userId, apiKeyId, startTime);
+        return response;
       }
       console.error("Failed to fetch indicator:", indicatorError);
-      return createApiErrorResponse(
+      const response = createApiErrorResponse(
         "Internal server error",
         "INTERNAL_ERROR",
         500
       );
+      void logApiUsage(request, 500, userId, apiKeyId, startTime);
+      return response;
     }
 
-    const response: IndicatorWithReleases = {
+    const responseData: IndicatorWithReleases = {
       id: indicator.id,
       name: indicator.name,
       country_code: indicator.country_code,
@@ -174,9 +189,9 @@ export async function GET(
       if (releasesError) {
         console.error("Failed to fetch releases:", releasesError);
         // Continue without releases rather than failing the entire request
-        response.releases = [];
+        responseData.releases = [];
       } else {
-        response.releases = (releases ?? []).map((rel) => ({
+        responseData.releases = (releases ?? []).map((rel) => ({
           id: rel.id,
           indicator_id: rel.indicator_id,
           release_at: rel.release_at,
@@ -192,13 +207,18 @@ export async function GET(
       }
     }
 
-    return NextResponse.json(response);
+    // Log successful API request (T314 - API usage tracking)
+    void logApiUsage(request, 200, userId, apiKeyId, startTime);
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Unexpected error fetching indicator:", error);
-    return createApiErrorResponse(
+    const response = createApiErrorResponse(
       "Internal server error",
       "INTERNAL_ERROR",
       500
     );
+    void logApiUsage(request, 500, userId, apiKeyId, startTime);
+    return response;
   }
 }

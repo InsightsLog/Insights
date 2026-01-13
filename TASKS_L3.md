@@ -67,7 +67,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Query params: days, country, category
   - Test: API returns same data as web calendar
 
-- [ ] T314 Add API usage tracking
+- [x] T314 Add API usage tracking
   - Track API calls per key: endpoint, timestamp, response_time
   - Store in api_usage table or append to existing request_logs
   - Dashboard widget showing usage over time

@@ -1,5 +1,44 @@
 # Changelog
 
+## [2.1.0] - 2026-01-13
+
+### Public REST API (L3)
+- **Added:** API usage tracking for per-key statistics (T314)
+  - Database migration `014_add_api_usage_tracking.sql`:
+    - Added `api_key_id` column to `request_logs` table (FK to api_keys)
+    - Added `response_time_ms` column for performance monitoring
+    - Indexes for efficient usage queries by API key
+  - Request logger updates (`src/lib/request-logger.ts`):
+    - `RequestLogEntry` now supports `api_key_id` and `response_time_ms` fields
+    - New `createApiLogEntry()` function for API-specific logging
+  - API authentication updates (`src/lib/api/auth.ts`):
+    - `authenticateApiRequest()` now returns both `userId` and `apiKeyId`
+    - `ApiAuthResult` includes `apiKeyId` field for usage tracking
+  - API usage logger (`src/lib/api/usage-logger.ts`):
+    - `logApiUsage()` function logs API requests with response time
+    - Calculates response time from request start timestamp
+    - Extracts client IP and endpoint path from request
+  - All API v1 routes updated to log usage:
+    - `/api/v1/indicators` - List and single indicator endpoints
+    - `/api/v1/releases` - List and single release endpoints
+    - `/api/v1/calendar` - Calendar endpoint
+    - All responses logged with status code and response time
+    - Failed auth attempts also logged for security monitoring
+  - Server actions (`src/app/actions/api-usage.ts`):
+    - `getApiKeyUsage(keyId, days)` - Usage stats for specific API key
+    - `getAllApiKeysUsage(days)` - Aggregated stats for all user's keys
+    - Returns: total calls, successful/error calls, avg response time
+    - Daily usage breakdown for charts
+    - Endpoint usage breakdown with counts and avg response times
+    - Configurable period (1-90 days, default 30)
+  - Dashboard widget (`src/app/settings/api-keys/ApiUsageDashboard.tsx`):
+    - Shows total calls, successful, errors, and avg response time
+    - Daily usage bar chart (last 14 days)
+    - Top 5 endpoints by usage with response times
+    - Period selector (7, 30, or 90 days)
+  - Integrated into API Keys settings page (`/settings/api-keys`)
+- **Updated:** Test files with usage logger mocks for API route tests
+
 ## [2.0.9] - 2026-01-13
 
 ### Public REST API (L3)
