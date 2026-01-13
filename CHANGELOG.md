@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.0.8] - 2026-01-13
+
+### Public REST API (L3)
+- **Added:** `/api/v1/releases` endpoint for listing releases (T312)
+  - `GET /api/v1/releases` - List releases with pagination
+  - Query parameters: indicator_id, from_date, to_date, limit (1-100, default 20), offset
+  - Requires valid API key in `Authorization: Bearer mc_xxx` header
+  - Returns paginated response with `data` array and `pagination` metadata
+  - Each release includes embedded `indicator` object with full indicator details
+  - Date filters use ISO 8601 format (e.g., `2024-01-01T00:00:00Z`)
+  - Results ordered by release_at descending (most recent first)
+- **Added:** `/api/v1/releases/:id` endpoint for single release details (T312)
+  - `GET /api/v1/releases/:id` - Get single release with indicator
+  - Path parameter: `id` (UUID format required)
+  - Returns release details with embedded `indicator` object
+  - Includes revision_history when present
+  - Returns 404 for non-existent releases
+- **Added:** Unit tests for releases API (25 tests)
+  - Authentication tests (missing/invalid API key)
+  - Parameter validation tests (limit, offset, indicator_id UUID, date formats)
+  - Successful response tests (pagination, filters, indicator embedding)
+  - Error handling tests (database errors, not found)
+
 ## [2.0.7] - 2026-01-12
 
 ### Public REST API (L3)
