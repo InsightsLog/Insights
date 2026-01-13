@@ -185,6 +185,7 @@ export function ApiDocsClient() {
   const [expandedSection, setExpandedSection] = useState<string | null>(
     "authentication"
   );
+  const [copied, setCopied] = useState(false);
 
   const codeExamples = generateCodeExamples(selectedEndpoint, paramValues);
 
@@ -203,6 +204,8 @@ export function ApiDocsClient() {
 
   const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   // Group endpoints by tag
@@ -240,6 +243,7 @@ export function ApiDocsClient() {
         {/* Quick Start Guide */}
         <div className="mb-8 rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <button
+            type="button"
             onClick={() => toggleSection("authentication")}
             className="flex w-full items-center justify-between px-6 py-4 text-left"
           >
@@ -294,6 +298,7 @@ export function ApiDocsClient() {
         {/* Rate Limits */}
         <div className="mb-8 rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <button
+            type="button"
             onClick={() => toggleSection("ratelimits")}
             className="flex w-full items-center justify-between px-6 py-4 text-left"
           >
@@ -386,6 +391,7 @@ export function ApiDocsClient() {
         {/* Error Handling */}
         <div className="mb-8 rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <button
+            type="button"
             onClick={() => toggleSection("errors")}
             className="flex w-full items-center justify-between px-6 py-4 text-left"
           >
@@ -472,6 +478,7 @@ export function ApiDocsClient() {
                   </div>
                   {tagEndpoints.map((endpoint) => (
                     <button
+                      type="button"
                       key={endpoint.operationId}
                       onClick={() => handleEndpointSelect(endpoint)}
                       className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 ${
@@ -580,6 +587,7 @@ export function ApiDocsClient() {
                 <div className="flex gap-1">
                   {(["curl", "javascript", "python"] as const).map((lang) => (
                     <button
+                      type="button"
                       key={lang}
                       onClick={() => setCodeLanguage(lang)}
                       className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
@@ -604,11 +612,16 @@ export function ApiDocsClient() {
                   </code>
                 </pre>
                 <button
+                  type="button"
                   onClick={() => copyToClipboard(codeExamples[codeLanguage])}
-                  className="absolute right-2 top-2 rounded bg-zinc-200 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600"
+                  className={`absolute right-2 top-2 rounded px-2 py-1 text-xs transition-colors ${
+                    copied
+                      ? "bg-green-200 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                      : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600"
+                  }`}
                   title="Copy to clipboard"
                 >
-                  Copy
+                  {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
             </div>
