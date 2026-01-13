@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.9] - 2026-01-13
+
+### Public REST API (L3)
+- **Added:** `/api/v1/calendar` endpoint for upcoming releases (T313)
+  - `GET /api/v1/calendar` - Get upcoming releases for specified time period
+  - Query parameters: days (1-90, default 7), country, category
+  - Requires valid API key in `Authorization: Bearer mc_xxx` header
+  - Returns `data` array of CalendarEvent objects and `meta` object with date range info
+  - CalendarEvent includes: release_id, release_at, indicator_id, indicator_name, country_code, category, period, forecast, previous, actual, has_revisions
+  - Meta object includes: from_date, to_date, total_events
+  - Country filter auto-uppercase conversion (e.g., `us` → `US`)
+  - Results ordered by release_at ascending (chronological order)
+- **Added:** Unit tests for calendar API (14 tests)
+  - Authentication tests (missing/invalid API key)
+  - Parameter validation tests (days range, invalid values)
+  - Successful response tests (date filters, country/category filters, revision detection)
+  - Error handling tests (database errors)
+
 ## [2.0.8] - 2026-01-13
 
 ### Public REST API (L3)
