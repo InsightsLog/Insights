@@ -78,14 +78,14 @@ export function ApiUsageDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState(30);
-  const hasFetched = useRef(false);
+  const lastFetchedPeriod = useRef<number | null>(null);
 
   useEffect(() => {
-    // Avoid duplicate fetches on strict mode
-    if (hasFetched.current && period === 30) {
+    // Avoid duplicate fetches on strict mode for the same period
+    if (lastFetchedPeriod.current === period) {
       return;
     }
-    hasFetched.current = true;
+    lastFetchedPeriod.current = period;
 
     let cancelled = false;
 
@@ -112,9 +112,8 @@ export function ApiUsageDashboard() {
     };
   }, [period]);
 
-  // Handle period change
+  // Handle period change - just update state, useEffect will handle the fetch
   const handlePeriodChange = (newPeriod: number) => {
-    hasFetched.current = false;
     setPeriod(newPeriod);
   };
 

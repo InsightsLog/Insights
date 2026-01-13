@@ -164,7 +164,10 @@ export async function getApiKeyUsage(
   >();
 
   // Initialize all days in the period with zero counts
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+  // Use a counter-based loop to avoid date mutation issues with DST
+  const dayCount = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+  for (let i = 0; i < dayCount; i++) {
+    const d = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
     const dateKey = d.toISOString().split("T")[0];
     dailyMap.set(dateKey, { count: 0, responseTimes: [] });
   }
@@ -352,7 +355,10 @@ export async function getAllApiKeysUsage(
   >();
 
   // Initialize all days in the period
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+  // Use a counter-based loop to avoid date mutation issues with DST
+  const dayCount = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+  for (let i = 0; i < dayCount; i++) {
+    const d = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
     const dateKey = d.toISOString().split("T")[0];
     dailyMap.set(dateKey, { count: 0, responseTimes: [] });
   }
