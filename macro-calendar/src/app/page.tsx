@@ -289,8 +289,8 @@ export default async function CalendarPage({ searchParams }: PageProps) {
         )}
 
         {/* Mobile scroll hint */}
-        <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400 sm:hidden">
-          ← Scroll horizontally to see all columns →
+        <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400 sm:hidden" aria-hidden="true">
+          Scroll horizontally to see all columns
         </p>
 
         <div className="-mx-2 overflow-x-auto sm:mx-0 sm:rounded-lg sm:border sm:border-zinc-200 sm:dark:border-zinc-800">

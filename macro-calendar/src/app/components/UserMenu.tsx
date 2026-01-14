@@ -72,7 +72,10 @@ export function UserMenu({ initialUser }: UserMenuProps) {
   if (currentUser && displayEmail) {
     return (
       <div className="flex items-center gap-2 sm:gap-3">
-        <span className="max-w-[150px] truncate text-xs text-zinc-600 dark:text-zinc-400 sm:max-w-none sm:text-sm">
+        <span 
+          className="max-w-[150px] truncate text-xs text-zinc-600 dark:text-zinc-400 sm:max-w-none sm:text-sm"
+          title={displayEmail}
+        >
           {displayEmail}
         </span>
         <button
