@@ -3,6 +3,31 @@
 ## [Unreleased]
 
 ### Additional Enhancements (L3)
+- **Added:** Calendar integrations for watchlist (T341)
+  - Generate iCal/ICS feed for watchlist releases
+  - Google Calendar one-click add for individual events
+  - iCal generation library (`src/lib/ical.ts`):
+    - RFC 5545 compliant iCalendar format
+    - Proper text escaping for special characters
+    - Line folding for long content
+    - UTC timezone support
+    - Google Calendar URL generation
+  - API endpoint:
+    - `GET /api/calendar/ical` - Download iCal feed for watchlist releases (auth required)
+  - Server actions in `src/app/actions/calendar.ts`:
+    - `exportWatchlistToICal()` - Export upcoming watchlist releases as iCal file
+    - `getWatchlistCalendarEvents()` - Get releases with Google Calendar URLs
+  - UI components:
+    - `CalendarIntegration` component with iCal download button
+    - `GoogleCalendarButton` component for one-click add to Google Calendar
+    - Calendar integration buttons added to watchlist page header
+    - Google Calendar link added to each release row in watchlist table
+  - iCal features:
+    - Includes indicator name, country, category in event title
+    - Event description includes period, forecast, and previous values
+    - 30-minute default event duration for economic releases
+    - Maximum 500 releases per iCal feed
+  - Unit tests for iCal utilities (47 tests) and calendar actions (11 tests)
 - **Added:** Data export functionality (T340)
   - Export watchlist releases to CSV/JSON format
   - Export historical data for individual indicators to CSV/JSON format

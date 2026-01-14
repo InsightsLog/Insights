@@ -5,6 +5,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { AlertToggle } from "@/app/components/AlertToggle";
 import { ExportButton } from "@/app/components/ExportButton";
+import { CalendarIntegration, GoogleCalendarButton } from "@/app/components/CalendarIntegration";
+import { generateGoogleCalendarUrl, releaseToCalendarEvent } from "@/lib/ical";
 
 export const metadata: Metadata = {
   title: "My Watchlist",
@@ -233,10 +235,13 @@ export default async function WatchlistPage() {
               </p>
             </div>
             {watchlistItems.length > 0 && (
-              <ExportButton
-                downloadUrl="/api/export/watchlist"
-                label="Export Releases"
-              />
+              <div className="flex flex-wrap items-start gap-3">
+                <CalendarIntegration />
+                <ExportButton
+                  downloadUrl="/api/export/watchlist"
+                  label="Export Releases"
+                />
+              </div>
             )}
           </div>
         </div>
@@ -326,9 +331,30 @@ export default async function WatchlistPage() {
                       {item.indicator?.category ?? "—"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {item.next_release
-                        ? formatReleaseTime(item.next_release.release_at)
-                        : "No upcoming release"}
+                      {item.next_release ? (
+                        <div className="flex items-center gap-2">
+                          <span>{formatReleaseTime(item.next_release.release_at)}</span>
+                          {item.indicator && (
+                            <GoogleCalendarButton
+                              googleCalendarUrl={generateGoogleCalendarUrl(
+                                releaseToCalendarEvent({
+                                  id: item.indicator_id,
+                                  release_at: item.next_release.release_at,
+                                  period: item.next_release.period,
+                                  forecast: null,
+                                  previous: null,
+                                  indicator_name: item.indicator.name,
+                                  country_code: item.indicator.country_code,
+                                  category: item.indicator.category,
+                                })
+                              )}
+                              eventTitle={`${item.indicator.name} (${item.indicator.country_code})`}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        "No upcoming release"
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
                       {item.next_release?.period ?? "—"}
