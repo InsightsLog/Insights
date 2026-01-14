@@ -6,6 +6,8 @@ import {
   createCheckoutSession,
   cancelSubscription,
   reactivateSubscription,
+  getUsageStatus,
+  checkAndTriggerUsageAlerts,
 } from "./billing";
 
 // Mock the createSupabaseServerClient function
@@ -667,6 +669,447 @@ describe("reactivateSubscription", () => {
     expect(result.success).toBe(true);
     expect(mockSubscriptions.update).toHaveBeenCalledWith("sub_123", {
       cancel_at_period_end: false,
+    });
+  });
+});
+
+describe("getUsageStatus (T325)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when not authenticated", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getUsageStatus();
+
+    expect(result).toEqual({
+      success: false,
+      error: "Not authenticated",
+    });
+  });
+
+  it("returns usage status with warning at 80% threshold", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    // Mock subscription query
+    const mockSubSingle = vi.fn().mockResolvedValue({
+      data: {
+        status: "active",
+        plans: { name: "Free", api_calls_limit: 100 },
+      },
+      error: null,
+    });
+    const mockSubIn = vi.fn().mockReturnValue({ single: mockSubSingle });
+    const mockSubEq = vi.fn().mockReturnValue({ in: mockSubIn });
+    const mockSubSelect = vi.fn().mockReturnValue({ eq: mockSubEq });
+
+    // Mock api_usage count query (80 out of 100 = 80%)
+    const mockGte = vi.fn().mockResolvedValue({ count: 80, error: null });
+    const mockUsageEq = vi.fn().mockReturnValue({ gte: mockGte });
+    const mockUsageSelect = vi.fn().mockReturnValue({ eq: mockUsageEq });
+
+    mockSupabase.from.mockReturnValueOnce({ select: mockSubSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockUsageSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getUsageStatus();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.usagePercent).toBe(80);
+      expect(result.data.shouldShowWarning).toBe(true);
+      expect(result.data.warningThreshold).toBe(80);
+      expect(result.data.planName).toBe("Free");
+    }
+  });
+
+  it("returns usage status with warning at 100% threshold", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    // Mock subscription query
+    const mockSubSingle = vi.fn().mockResolvedValue({
+      data: {
+        status: "active",
+        plans: { name: "Pro", api_calls_limit: 10000 },
+      },
+      error: null,
+    });
+    const mockSubIn = vi.fn().mockReturnValue({ single: mockSubSingle });
+    const mockSubEq = vi.fn().mockReturnValue({ in: mockSubIn });
+    const mockSubSelect = vi.fn().mockReturnValue({ eq: mockSubEq });
+
+    // Mock api_usage count query (10500 out of 10000 = >100%)
+    const mockGte = vi.fn().mockResolvedValue({ count: 10500, error: null });
+    const mockUsageEq = vi.fn().mockReturnValue({ gte: mockGte });
+    const mockUsageSelect = vi.fn().mockReturnValue({ eq: mockUsageEq });
+
+    mockSupabase.from.mockReturnValueOnce({ select: mockSubSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockUsageSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getUsageStatus();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // usagePercent is capped at 100
+      expect(result.data.usagePercent).toBe(100);
+      expect(result.data.shouldShowWarning).toBe(true);
+      expect(result.data.warningThreshold).toBe(100);
+    }
+  });
+
+  it("returns no warning when usage is below 80%", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    // Mock subscription query
+    const mockSubSingle = vi.fn().mockResolvedValue({
+      data: {
+        status: "active",
+        plans: { name: "Plus", api_calls_limit: 1000 },
+      },
+      error: null,
+    });
+    const mockSubIn = vi.fn().mockReturnValue({ single: mockSubSingle });
+    const mockSubEq = vi.fn().mockReturnValue({ in: mockSubIn });
+    const mockSubSelect = vi.fn().mockReturnValue({ eq: mockSubEq });
+
+    // Mock api_usage count query (500 out of 1000 = 50%)
+    const mockGte = vi.fn().mockResolvedValue({ count: 500, error: null });
+    const mockUsageEq = vi.fn().mockReturnValue({ gte: mockGte });
+    const mockUsageSelect = vi.fn().mockReturnValue({ eq: mockUsageEq });
+
+    mockSupabase.from.mockReturnValueOnce({ select: mockSubSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockUsageSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getUsageStatus();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.usagePercent).toBe(50);
+      expect(result.data.shouldShowWarning).toBe(false);
+      expect(result.data.warningThreshold).toBeNull();
+    }
+  });
+
+  it("uses Free tier defaults when no subscription exists", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    // Mock subscription query (no subscription)
+    const mockSubSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const mockSubIn = vi.fn().mockReturnValue({ single: mockSubSingle });
+    const mockSubEq = vi.fn().mockReturnValue({ in: mockSubIn });
+    const mockSubSelect = vi.fn().mockReturnValue({ eq: mockSubEq });
+
+    // Mock api_usage count query (85 out of 100 = 85%)
+    const mockGte = vi.fn().mockResolvedValue({ count: 85, error: null });
+    const mockUsageEq = vi.fn().mockReturnValue({ gte: mockGte });
+    const mockUsageSelect = vi.fn().mockReturnValue({ eq: mockUsageEq });
+
+    mockSupabase.from.mockReturnValueOnce({ select: mockSubSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockUsageSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getUsageStatus();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.limit).toBe(100); // Free tier default
+      expect(result.data.planName).toBe("Free");
+      expect(result.data.shouldShowWarning).toBe(true);
+      expect(result.data.warningThreshold).toBe(80);
+    }
+  });
+});
+
+describe("checkAndTriggerUsageAlerts (T325)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset fetch mock
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  it("returns empty alertsSent when usage is below thresholds", async () => {
+    const mockFrom = vi.fn().mockImplementation((table) => {
+      if (table === "subscriptions") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    status: "active",
+                    plans: { name: "Free", api_calls_limit: 100 },
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "profiles") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { email: "test@example.com" },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "api_usage") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              gte: vi.fn().mockResolvedValue({
+                count: 50, // 50% usage
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "usage_alerts_sent") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({
+                data: [],
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+
+    mockCreateSupabaseServiceClient.mockReturnValue({
+      from: mockFrom,
+    } as never);
+
+    const result = await checkAndTriggerUsageAlerts(mockUserId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.alertsSent).toEqual([]);
+    }
+  });
+
+  it("sends alerts for crossed thresholds", async () => {
+    // Mock successful fetch response
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const mockFrom = vi.fn().mockImplementation((table) => {
+      if (table === "subscriptions") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    status: "active",
+                    plans: { name: "Free", api_calls_limit: 100 },
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "profiles") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { email: "test@example.com" },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "api_usage") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              gte: vi.fn().mockResolvedValue({
+                count: 90, // 90% usage - should trigger 80 and 90 alerts
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "usage_alerts_sent") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({
+                data: [], // No alerts sent yet
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+
+    mockCreateSupabaseServiceClient.mockReturnValue({
+      from: mockFrom,
+    } as never);
+
+    // Set required env vars
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
+
+    const result = await checkAndTriggerUsageAlerts(mockUserId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.alertsSent).toContain(80);
+      expect(result.data.alertsSent).toContain(90);
+    }
+    // Should have called fetch for both thresholds
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("skips already sent alerts", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const mockFrom = vi.fn().mockImplementation((table) => {
+      if (table === "subscriptions") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    status: "active",
+                    plans: { name: "Free", api_calls_limit: 100 },
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "profiles") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { email: "test@example.com" },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "api_usage") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              gte: vi.fn().mockResolvedValue({
+                count: 95, // 95% usage
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "usage_alerts_sent") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({
+                data: [{ threshold: 80 }, { threshold: 90 }], // 80 and 90 already sent
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+
+    mockCreateSupabaseServiceClient.mockReturnValue({
+      from: mockFrom,
+    } as never);
+
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
+
+    const result = await checkAndTriggerUsageAlerts(mockUserId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // Only 80 and 90 crossed but already sent, so nothing new to send
+      expect(result.data.alertsSent).toEqual([]);
+    }
+    // Should not have called fetch
+    expect(mockFetch).toHaveBeenCalledTimes(0);
+  });
+
+  it("returns error when user profile not found", async () => {
+    const mockFrom = vi.fn().mockImplementation((table) => {
+      if (table === "subscriptions") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: { code: "PGRST116" },
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "profiles") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: { code: "PGRST116" },
+              }),
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+
+    mockCreateSupabaseServiceClient.mockReturnValue({
+      from: mockFrom,
+    } as never);
+
+    const result = await checkAndTriggerUsageAlerts(mockUserId);
+
+    expect(result).toEqual({
+      success: false,
+      error: "User profile not found",
     });
   });
 });

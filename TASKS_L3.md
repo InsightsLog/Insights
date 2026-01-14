@@ -113,7 +113,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Reset counters monthly
   - Test: exceeding quota returns 429; reset works
 
-- [ ] T325 Add usage alerts
+- [x] T325 Add usage alerts
   - Email when usage reaches 80%, 90%, 100% of quota
   - Dashboard warning banner when approaching limit
   - Test: alerts sent at correct thresholds

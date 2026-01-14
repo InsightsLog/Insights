@@ -454,3 +454,245 @@ export async function reactivateSubscription(): Promise<
     return { success: false, error: `Failed to reactivate subscription: ${message}` };
   }
 }
+
+/**
+ * Usage alert thresholds (percentage of quota).
+ */
+const USAGE_ALERT_THRESHOLDS = [80, 90, 100] as const;
+
+/**
+ * Get usage status for the current user.
+ * Returns current usage percentage and whether alerts should be shown.
+ * Task: T325 - Add usage alerts
+ */
+export async function getUsageStatus(): Promise<
+  BillingActionResult<{
+    usagePercent: number;
+    currentUsage: number;
+    limit: number;
+    planName: string;
+    resetAt: string;
+    shouldShowWarning: boolean;
+    warningThreshold: number | null;
+  }>
+> {
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Get the billing period boundaries
+  const now = new Date();
+  const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+  const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0));
+
+  // Fetch user's subscription with plan details
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select(
+      `
+      status,
+      plans (
+        name,
+        api_calls_limit
+      )
+    `
+    )
+    .eq("user_id", user.id)
+    .in("status", ["active", "trialing"])
+    .single();
+
+  // Determine the plan limit
+  let limit = 100; // Default Free tier limit
+  let planName = "Free";
+
+  if (subscription?.plans) {
+    const planData = Array.isArray(subscription.plans)
+      ? subscription.plans[0]
+      : subscription.plans;
+
+    if (planData) {
+      limit = planData.api_calls_limit;
+      planName = planData.name;
+    }
+  }
+
+  // Count API calls for this billing period
+  const { count, error: countError } = await supabase
+    .from("api_usage")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("timestamp", periodStart.toISOString());
+
+  if (countError && countError.code !== "42P01") {
+    return { success: false, error: "Failed to fetch usage data" };
+  }
+
+  const currentUsage = count ?? 0;
+  const usagePercent = Math.min((currentUsage / limit) * 100, 100);
+
+  // Determine if warning should be shown and which threshold
+  let shouldShowWarning = false;
+  let warningThreshold: number | null = null;
+
+  for (const threshold of USAGE_ALERT_THRESHOLDS) {
+    if (usagePercent >= threshold) {
+      shouldShowWarning = true;
+      warningThreshold = threshold;
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      usagePercent,
+      currentUsage,
+      limit,
+      planName,
+      resetAt: periodEnd.toISOString(),
+      shouldShowWarning,
+      warningThreshold,
+    },
+  };
+}
+
+/**
+ * Check usage and trigger alerts if thresholds are crossed.
+ * Called after API requests to check if alert emails should be sent.
+ * Task: T325 - Add usage alerts
+ *
+ * @param userId - User ID to check usage for
+ */
+export async function checkAndTriggerUsageAlerts(
+  userId: string
+): Promise<BillingActionResult<{ alertsSent: number[] }>> {
+  const serviceClient = createSupabaseServiceClient();
+
+  // Get the billing period boundaries
+  const now = new Date();
+  const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+  const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0));
+
+  // Fetch user's subscription with plan details
+  const { data: subscription } = await serviceClient
+    .from("subscriptions")
+    .select(
+      `
+      status,
+      plans (
+        name,
+        api_calls_limit
+      )
+    `
+    )
+    .eq("user_id", userId)
+    .in("status", ["active", "trialing"])
+    .single();
+
+  // Determine the plan limit
+  let limit = 100; // Default Free tier limit
+  let planName = "Free";
+
+  if (subscription?.plans) {
+    const planData = Array.isArray(subscription.plans)
+      ? subscription.plans[0]
+      : subscription.plans;
+
+    if (planData) {
+      limit = planData.api_calls_limit;
+      planName = planData.name;
+    }
+  }
+
+  // Get user's email from profiles
+  const { data: profile, error: profileError } = await serviceClient
+    .from("profiles")
+    .select("email")
+    .eq("id", userId)
+    .single();
+
+  if (profileError || !profile?.email) {
+    return { success: false, error: "User profile not found" };
+  }
+
+  // Count API calls for this billing period
+  const { count } = await serviceClient
+    .from("api_usage")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("timestamp", periodStart.toISOString());
+
+  const currentUsage = count ?? 0;
+  const usagePercent = (currentUsage / limit) * 100;
+
+  // Check which alerts have already been sent
+  const { data: sentAlerts } = await serviceClient
+    .from("usage_alerts_sent")
+    .select("threshold")
+    .eq("user_id", userId)
+    .eq("billing_period_start", periodStart.toISOString());
+
+  const sentThresholds = new Set(sentAlerts?.map((a) => a.threshold) ?? []);
+
+  // Determine which alerts need to be sent
+  const alertsToSend: number[] = [];
+  for (const threshold of USAGE_ALERT_THRESHOLDS) {
+    if (usagePercent >= threshold && !sentThresholds.has(threshold)) {
+      alertsToSend.push(threshold);
+    }
+  }
+
+  if (alertsToSend.length === 0) {
+    return { success: true, data: { alertsSent: [] } };
+  }
+
+  // Send alerts via Edge Function
+  // Use server-side SUPABASE_URL env var to prevent URL manipulation
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const edgeFunctionUrl = process.env.SUPABASE_EDGE_FUNCTION_URL || 
+    `${supabaseUrl}/functions/v1`;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  const alertsSent: number[] = [];
+
+  for (const threshold of alertsToSend) {
+    try {
+      const response = await fetch(`${edgeFunctionUrl}/send-usage-alert`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({
+          userId,
+          email: profile.email,
+          threshold,
+          currentUsage,
+          limit,
+          planName,
+          resetAt: periodEnd.toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        alertsSent.push(threshold);
+      } else {
+        console.error(
+          `Failed to send usage alert for threshold ${threshold}:`,
+          await response.text()
+        );
+      }
+    } catch (error) {
+      console.error(`Error sending usage alert for threshold ${threshold}:`, error);
+    }
+  }
+
+  return { success: true, data: { alertsSent } };
+}
