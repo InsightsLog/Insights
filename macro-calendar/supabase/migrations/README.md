@@ -21,6 +21,8 @@ In your Supabase SQL Editor, execute the migrations in the following order:
 13. `014_add_api_usage_tracking.sql` - Adds API usage tracking columns to request_logs
 14. `015_create_plans.sql` - Creates plans table with subscription tiers
 15. `016_create_subscriptions.sql` - Creates subscriptions table for billing
+16. `017_create_usage_alerts_sent.sql` - Creates usage_alerts_sent table for tracking alerts
+17. `018_create_organizations.sql` - Creates organizations table for multi-tenant admin
 
 ### 2. Test the Schema (Optional)
 
@@ -30,6 +32,8 @@ To verify the schema:
 2. `004_test_alert_preferences.sql` - Verification queries for alert_preferences
 3. `015_test_plans.sql` - Verification queries for plans table
 4. `016_test_subscriptions.sql` - Verification queries for subscriptions table
+5. `017_test_usage_alerts_sent.sql` - Verification queries for usage_alerts_sent table
+6. `018_test_organizations.sql` - Verification queries for organizations table
 
 ### 3. Verify Indexes
 
@@ -110,6 +114,13 @@ Expected indexes:
 - Status values: 'active', 'canceled', 'past_due', 'trialing'
 - RLS: users can only read their own subscription (all writes via service role)
 - Foreign key behavior: CASCADE on user deletion, RESTRICT on plan deletion
+
+### organizations table
+- Stores organizations for multi-tenant team features
+- Columns: id, name, slug (unique, URL-friendly), owner_id (FK to profiles), created_at
+- RLS: owners can CRUD their own organizations
+- Foreign key behavior: CASCADE on owner deletion
+- Unique constraint: slug (for URL-friendly organization identifiers)
 
 ## Clean Up (Development Only)
 

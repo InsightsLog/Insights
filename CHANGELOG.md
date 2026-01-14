@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Multi-Tenant Admin (L3)
+- **Added:** Organizations table for multi-tenant team features (T330)
+  - Migration: `018_create_organizations.sql`
+  - Schema: id, name, slug (unique, URL-friendly), owner_id (FK to profiles), created_at
+  - Foreign key behavior: CASCADE on owner deletion (removes organization when owner is deleted)
+  - RLS policies:
+    - Users can read their own organizations
+    - Users can create organizations (must be the owner)
+    - Owners can update their own organizations
+    - Owners can delete their own organizations
+  - Indexes: slug (for URL lookups), owner_id (for user's organizations)
+- **Added:** Test file for organizations verification (`018_test_organizations.sql`)
+
 ### Billing & Quotas (L3)
 - **Added:** Usage alerts for approaching quota limits (T325)
   - Email alerts sent when API usage reaches 80%, 90%, and 100% of monthly quota
