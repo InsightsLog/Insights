@@ -1052,8 +1052,13 @@ export async function createOrgCheckoutSession(
         typeof existingStripeSubscription.customer === "string"
           ? existingStripeSubscription.customer
           : existingStripeSubscription.customer?.id;
-    } catch {
-      // Subscription may be deleted, proceed without customer ID
+    } catch (err) {
+      // Subscription may be deleted in Stripe, proceed without customer ID
+      // This is expected when subscription was canceled/deleted
+      console.warn(
+        "Could not retrieve existing Stripe subscription for customer lookup:",
+        err instanceof Error ? err.message : "Unknown error"
+      );
     }
   }
 

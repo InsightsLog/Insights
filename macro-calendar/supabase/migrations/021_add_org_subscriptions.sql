@@ -59,9 +59,15 @@ CREATE POLICY "Users can read own or org subscription"
 
 -- Helper function to check if user is billing admin for an organization
 -- Uses SECURITY DEFINER to bypass RLS when checking organization_members table
+-- Returns FALSE if auth.uid() is null or target_org_id is null (safe default)
 CREATE OR REPLACE FUNCTION is_org_billing_admin(target_org_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
+    -- Return false if org_id is null or user is not authenticated
+    IF target_org_id IS NULL OR auth.uid() IS NULL THEN
+        RETURN FALSE;
+    END IF;
+    
     RETURN EXISTS (
         SELECT 1 FROM organization_members
         WHERE org_id = target_org_id
