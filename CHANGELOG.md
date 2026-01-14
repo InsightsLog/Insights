@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+### Navigation & UX (L3)
+- **Added:** Settings dropdown menu in header for authenticated users
+  - Accessible via settings gear icon next to user email
+  - Links to API Documentation, API Keys, Webhooks, Billing, and Watchlist
+  - Dropdown closes when clicking outside
+  - Proper ARIA attributes for accessibility (role="menu", aria-haspopup, aria-expanded)
+  - Dark mode support
+- **Added:** API Docs link for unauthenticated users in header
+  - Visible next to Sign In button for easy discovery
+
+### Documentation & Planning
+- **Updated:** ROADMAP.md - L3 marked as Shipped, L4 added with data acquisition priorities
+- **Added:** TASKS_L4.md with comprehensive plans for:
+  - T400: Free live global data acquisition strategy
+  - T401: Free historical global data acquisition strategy
+  - Detailed source documentation for FRED, BLS, ECB, World Bank, IMF, OECD
+  - Implementation phases and technical architecture
+- **Updated:** BACKLOG.md - L3 marked complete, L4 priorities documented
+
 ### Additional Enhancements (L3)
 - **Added:** Mobile-responsive improvements and PWA support (T342)
   - PWA manifest (`public/manifest.json`) for app-like mobile experience:
