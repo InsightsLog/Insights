@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "./components/Header";
+import { UsageBanner } from "./components/UsageBanner";
 import { getCurrentUser } from "@/lib/supabase/auth";
 
 const geistSans = Geist({
@@ -69,6 +70,8 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header initialUser={user} />
+        {/* Usage warning banner - only shown for authenticated users approaching limits */}
+        {user && <UsageBanner />}
         {children}
       </body>
     </html>

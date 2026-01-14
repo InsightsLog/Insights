@@ -3,6 +3,18 @@
 ## [Unreleased]
 
 ### Billing & Quotas (L3)
+- **Added:** Usage alerts for approaching quota limits (T325)
+  - Email alerts sent when API usage reaches 80%, 90%, and 100% of monthly quota
+  - Usage warning banner displayed in dashboard when approaching limit:
+    - Amber banner at 80% usage
+    - Orange banner at 90% usage
+    - Red banner at 100% usage (quota exceeded)
+  - Banner includes usage progress bar, current usage count, and link to upgrade
+  - Banner can be dismissed per session
+  - Edge Function `send-usage-alert` handles email delivery with styled templates
+  - Database table `usage_alerts_sent` prevents duplicate alerts per billing period
+  - Server actions: `getUsageStatus()`, `checkAndTriggerUsageAlerts(userId)`
+  - Unit tests for usage alert functionality (12 new tests)
 - **Added:** API usage quota enforcement (T324)
   - Middleware checks API call count against user's plan limit before each API request
   - Returns HTTP 429 with upgrade prompt when monthly quota exceeded
