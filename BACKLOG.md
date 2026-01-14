@@ -2,17 +2,36 @@
 
 Items discovered during development that are out of current scope.
 
-## L3 (In Progress)
-See TASKS_L3.md for detailed task definitions:
-- Webhook/push notifications for instant release alerts
-- Full REST API with API keys and versioning
-- Billing integration (Stripe) and usage quotas
-- Multi-tenant admin dashboard
-- Data export (CSV, JSON, iCal)
+## L3 (Shipped)
+All L3 items have been completed. See TASKS_L3.md for detailed task definitions:
+- ✓ Webhook/push notifications for instant release alerts
+- ✓ Full REST API with API keys and versioning
+- ✓ Billing integration (Stripe) and usage quotas
+- ✓ Multi-tenant admin dashboard
+- ✓ Data export (CSV, JSON, iCal)
+- ✓ Calendar integrations (iCal feed, Google Calendar)
+- ✓ Settings navigation dropdown in header
+
+## L4 Priority Tasks (In Progress)
+
+### Priority 1: Free Global Data Acquisition
+These are the highest priority items for L4:
+
+1. **Plan for Complete Live Global Data (Free)**
+   - Research and document free sources for real-time economic data
+   - Target sources: Central banks, government statistics offices, international organizations
+   - Implementation strategy for automated data ingestion
+   - See TASKS_L4.md T400 for detailed plan
+
+2. **Plan for Complete Historical Global Data (Free)**
+   - Research and document free sources for historical economic data
+   - Target: 10+ years of data for major indicators across all countries
+   - Implementation strategy for bulk data import and updates
+   - See TASKS_L4.md T401 for detailed plan
 
 ## L4+ Ideas
 - Mobile app (React Native)
-- Calendar integrations (Google Calendar, Outlook)
+- Calendar integrations (Outlook sync)
 - Historical data API for backtesting
 - Advanced analytics and charting
 - Custom alert conditions (threshold-based alerts)
