@@ -133,7 +133,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - RLS: org members can read; org admins can write
   - Test: members can be added; RLS works correctly
 
-- [ ] T332 Add organization management UI
+- [x] T332 Add organization management UI
   - Route: /org/:slug/settings
   - Invite members, assign roles, remove members
   - Transfer ownership
