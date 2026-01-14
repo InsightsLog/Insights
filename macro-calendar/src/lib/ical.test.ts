@@ -360,7 +360,14 @@ describe("releaseToCalendarEvent", () => {
     expect(event.location).toBe("US");
   });
 
-  it("includes URL when baseUrl is provided", () => {
+  it("uses indicator_id for URL when provided", () => {
+    const releaseWithIndicatorId = { ...release, indicator_id: "indicator-456" };
+    const event = releaseToCalendarEvent(releaseWithIndicatorId, "https://example.com");
+
+    expect(event.url).toBe("https://example.com/indicator/indicator-456");
+  });
+
+  it("falls back to release id for URL when indicator_id is not provided", () => {
     const event = releaseToCalendarEvent(release, "https://example.com");
 
     expect(event.url).toBe("https://example.com/indicator/release-123");

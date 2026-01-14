@@ -205,6 +205,7 @@ export function generateGoogleCalendarUrl(event: CalendarEventData): string {
  */
 export interface ReleaseWithIndicator {
   id: string;
+  indicator_id?: string;
   release_at: string;
   period: string;
   forecast: string | null;
@@ -238,6 +239,9 @@ export function releaseToCalendarEvent(
     descriptionParts.push(`Previous: ${release.previous}`);
   }
 
+  // Use indicator_id for URL if available, otherwise fall back to release id
+  const indicatorId = release.indicator_id ?? release.id;
+
   return {
     id: release.id,
     title: `${release.indicator_name} (${release.country_code})`,
@@ -246,6 +250,6 @@ export function releaseToCalendarEvent(
     // Economic releases are typically point-in-time, so 30 min duration
     endTime: new Date(new Date(release.release_at).getTime() + 30 * 60 * 1000),
     location: release.country_code,
-    url: baseUrl ? `${baseUrl}/indicator/${release.id}` : undefined,
+    url: baseUrl ? `${baseUrl}/indicator/${indicatorId}` : undefined,
   };
 }

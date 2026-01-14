@@ -63,7 +63,7 @@ export async function exportWatchlistToICal(): Promise<ICalExportResult> {
     .from("releases")
     .select(
       `
-      id, release_at, period, forecast, previous,
+      id, indicator_id, release_at, period, forecast, previous,
       indicator:indicators!inner(id, name, country_code, category)
     `
     )
@@ -82,6 +82,7 @@ export async function exportWatchlistToICal(): Promise<ICalExportResult> {
     const indicator = Array.isArray(r.indicator) ? r.indicator[0] : r.indicator;
     return {
       id: r.id,
+      indicator_id: indicator?.id ?? r.indicator_id,
       release_at: r.release_at,
       period: r.period,
       forecast: r.forecast,
@@ -170,7 +171,7 @@ export async function getWatchlistCalendarEvents(): Promise<
     .from("releases")
     .select(
       `
-      id, release_at, period, forecast, previous,
+      id, indicator_id, release_at, period, forecast, previous,
       indicator:indicators!inner(id, name, country_code, category)
     `
     )
@@ -192,6 +193,7 @@ export async function getWatchlistCalendarEvents(): Promise<
 
     const release: ReleaseWithIndicator = {
       id: r.id,
+      indicator_id: indicator?.id ?? r.indicator_id,
       release_at: r.release_at,
       period: r.period,
       forecast: r.forecast,

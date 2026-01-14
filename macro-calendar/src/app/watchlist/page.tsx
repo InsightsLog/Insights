@@ -338,7 +338,8 @@ export default async function WatchlistPage() {
                             <GoogleCalendarButton
                               googleCalendarUrl={generateGoogleCalendarUrl(
                                 releaseToCalendarEvent({
-                                  id: item.indicator_id,
+                                  id: item.id,
+                                  indicator_id: item.indicator.id,
                                   release_at: item.next_release.release_at,
                                   period: item.next_release.period,
                                   forecast: null,
