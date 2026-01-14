@@ -54,8 +54,10 @@ export function UserMenu({ initialUser }: UserMenuProps) {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - only attach listener when dropdown is open
   useEffect(() => {
+    if (!settingsOpen) return;
+    
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setSettingsOpen(false);
@@ -63,7 +65,7 @@ export function UserMenu({ initialUser }: UserMenuProps) {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [settingsOpen]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

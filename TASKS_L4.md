@@ -141,10 +141,12 @@ CREATE TABLE data_sources (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Link indicators to their data source
-ALTER TABLE indicators ADD COLUMN data_source_id UUID REFERENCES data_sources(id);
-ALTER TABLE indicators ADD COLUMN external_series_id TEXT; -- e.g., FRED series ID
+-- Link indicators to their data source (nullable columns for existing data compatibility)
+ALTER TABLE indicators ADD COLUMN IF NOT EXISTS data_source_id UUID REFERENCES data_sources(id);
+ALTER TABLE indicators ADD COLUMN IF NOT EXISTS external_series_id TEXT; -- e.g., FRED series ID
 ```
+
+**Note:** The ALTER TABLE statements use `IF NOT EXISTS` and nullable columns to ensure compatibility with existing data. These columns are optional - indicators without a data source will continue to work.
 
 #### Acceptance Criteria
 - [ ] FRED API integration delivers 10+ US economic indicators
@@ -263,16 +265,20 @@ Create a comprehensive strategy for acquiring 10+ years of historical economic d
 
 #### Storage Estimates
 
-| Source | Est. Records | Est. Storage |
-|--------|-------------|--------------|
-| FRED | 50,000 | 5 MB |
-| BLS | 30,000 | 3 MB |
-| ECB | 10,000 | 1 MB |
-| World Bank | 100,000 | 10 MB |
-| IMF | 50,000 | 5 MB |
-| **Total** | **240,000** | **~25 MB** |
+| Source | Est. Records | Est. Raw Data | Est. with Indexes |
+|--------|-------------|---------------|-------------------|
+| FRED | 50,000 | 5 MB | 15 MB |
+| BLS | 30,000 | 3 MB | 9 MB |
+| ECB | 10,000 | 1 MB | 3 MB |
+| World Bank | 100,000 | 10 MB | 30 MB |
+| IMF | 50,000 | 5 MB | 15 MB |
+| **Total** | **240,000** | **~25 MB** | **~75 MB** |
 
-Note: Supabase free tier allows 500 MB database storage, so this is well within limits.
+**Notes:**
+- Estimates assume ~100 bytes per raw record, but PostgreSQL overhead (TOAST, MVCC, page alignment) typically adds 2-3x
+- Index storage (on indicator_id, release_at, period) adds approximately 2x the raw data size
+- Supabase free tier allows 500 MB database storage, so even with overhead this is well within limits
+- Actual storage can be monitored via Supabase dashboard after initial import
 
 #### Implementation Tasks
 
