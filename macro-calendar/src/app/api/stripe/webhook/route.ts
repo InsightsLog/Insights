@@ -125,6 +125,7 @@ function getCurrentPeriodEnd(subscription: Stripe.Subscription): number {
 /**
  * Handle checkout.session.completed event.
  * Creates or updates a subscription when a user completes checkout.
+ * Supports both personal and organization subscriptions.
  */
 async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session
@@ -139,6 +140,12 @@ async function handleCheckoutCompleted(
   if (!userId) {
     return { success: false, error: "Missing user_id in session metadata" };
   }
+
+  // Check if this is an organization subscription
+  const orgId = session.metadata?.org_id;
+  const seatCount = session.metadata?.seat_count
+    ? parseInt(session.metadata.seat_count, 10)
+    : 1;
 
   const supabase = createSupabaseServiceClient();
   const stripe = getStripeClient();
@@ -166,23 +173,47 @@ async function handleCheckoutCompleted(
   // Get current period end from subscription items
   const currentPeriodEnd = getCurrentPeriodEnd(subscription);
 
-  // Upsert subscription record
-  const { error } = await supabase.from("subscriptions").upsert(
-    {
-      user_id: userId,
-      plan_id: planId,
-      stripe_subscription_id: subscriptionId,
-      status: mapStripeStatus(subscription.status),
-      current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
-    },
-    {
-      onConflict: "user_id",
-    }
-  );
+  // Upsert subscription record (organization or personal)
+  if (orgId) {
+    // Organization subscription
+    const { error } = await supabase.from("subscriptions").upsert(
+      {
+        user_id: userId,
+        org_id: orgId,
+        plan_id: planId,
+        stripe_subscription_id: subscriptionId,
+        status: mapStripeStatus(subscription.status),
+        current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+        seat_count: seatCount,
+      },
+      {
+        onConflict: "org_id",
+      }
+    );
 
-  if (error) {
-    console.error("Failed to upsert subscription:", error);
-    return { success: false, error: "Database error" };
+    if (error) {
+      console.error("Failed to upsert organization subscription:", error);
+      return { success: false, error: "Database error" };
+    }
+  } else {
+    // Personal subscription
+    const { error } = await supabase.from("subscriptions").upsert(
+      {
+        user_id: userId,
+        plan_id: planId,
+        stripe_subscription_id: subscriptionId,
+        status: mapStripeStatus(subscription.status),
+        current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+      },
+      {
+        onConflict: "user_id",
+      }
+    );
+
+    if (error) {
+      console.error("Failed to upsert subscription:", error);
+      return { success: false, error: "Database error" };
+    }
   }
 
   return { success: true };

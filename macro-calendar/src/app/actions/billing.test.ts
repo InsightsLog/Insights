@@ -1113,3 +1113,332 @@ describe("checkAndTriggerUsageAlerts (T325)", () => {
     });
   });
 });
+
+// =============================================================================
+// Organization Billing Tests (T334)
+// =============================================================================
+
+// Import additional actions for org billing
+import {
+  getTeamPlans,
+  getOrgSubscription,
+  isOrgBillingAdmin,
+  getOrgSeatCount,
+} from "./billing";
+
+// Test organization ID
+const mockOrgId = "b1c2d3e4-f5g6-7890-abcd-ef1234567890";
+
+describe("getTeamPlans (T334)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns only team plans", async () => {
+    const mockTeamPlans = [
+      {
+        id: "plan-5",
+        name: "Team Plus",
+        price_monthly: 1499,
+        price_yearly: 14990,
+        api_calls_limit: 5000,
+        webhook_limit: 10,
+        features: {},
+        is_team_plan: true,
+        seat_price_monthly: 799,
+        seat_price_yearly: 7990,
+        min_seats: 2,
+        max_seats: 25,
+      },
+    ];
+
+    const mockSupabase = createMockSupabase({ user: null });
+    const mockOrder = vi
+      .fn()
+      .mockResolvedValue({ data: mockTeamPlans, error: null });
+    const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getTeamPlans();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].is_team_plan).toBe(true);
+    }
+    expect(mockEq).toHaveBeenCalledWith("is_team_plan", true);
+  });
+
+  it("returns error on database failure", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    const mockOrder = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: { message: "DB error" } });
+    const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getTeamPlans();
+
+    expect(result).toEqual({
+      success: false,
+      error: "Failed to fetch team plans",
+    });
+  });
+});
+
+describe("getOrgSubscription (T334)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when not authenticated", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getOrgSubscription(mockOrgId);
+
+    expect(result).toEqual({
+      success: false,
+      error: "Not authenticated",
+    });
+  });
+
+  it("returns error when not a member of organization", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    // Membership check fails
+    const mockMemberSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const mockMemberEq2 = vi.fn().mockReturnValue({ single: mockMemberSingle });
+    const mockMemberEq = vi.fn().mockReturnValue({ eq: mockMemberEq2 });
+    const mockMemberSelect = vi.fn().mockReturnValue({ eq: mockMemberEq });
+
+    mockSupabase.from.mockReturnValue({ select: mockMemberSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getOrgSubscription(mockOrgId);
+
+    expect(result).toEqual({
+      success: false,
+      error: "Not a member of this organization",
+    });
+  });
+
+  it("returns null when organization has no subscription", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    // Membership check succeeds
+    const mockMemberSingle = vi.fn().mockResolvedValue({
+      data: { role: "member" },
+      error: null,
+    });
+    const mockMemberEq2 = vi.fn().mockReturnValue({ single: mockMemberSingle });
+    const mockMemberEq = vi.fn().mockReturnValue({ eq: mockMemberEq2 });
+    const mockMemberSelect = vi.fn().mockReturnValue({ eq: mockMemberEq });
+
+    // Subscription check returns no rows
+    const mockSubSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const mockSubEq = vi.fn().mockReturnValue({ single: mockSubSingle });
+    const mockSubSelect = vi.fn().mockReturnValue({ eq: mockSubEq });
+
+    mockSupabase.from.mockReturnValueOnce({ select: mockMemberSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockSubSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getOrgSubscription(mockOrgId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toBeNull();
+    }
+  });
+});
+
+describe("isOrgBillingAdmin (T334)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when not authenticated", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await isOrgBillingAdmin(mockOrgId);
+
+    expect(result).toEqual({
+      success: false,
+      error: "Not authenticated",
+    });
+  });
+
+  it("returns true for owner", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: { role: "owner" },
+      error: null,
+    });
+    const mockEq2 = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockEq = vi.fn().mockReturnValue({ eq: mockEq2 });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await isOrgBillingAdmin(mockOrgId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toBe(true);
+    }
+  });
+
+  it("returns true for billing_admin", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: { role: "billing_admin" },
+      error: null,
+    });
+    const mockEq2 = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockEq = vi.fn().mockReturnValue({ eq: mockEq2 });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await isOrgBillingAdmin(mockOrgId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toBe(true);
+    }
+  });
+
+  it("returns false for member", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: { role: "member" },
+      error: null,
+    });
+    const mockEq2 = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockEq = vi.fn().mockReturnValue({ eq: mockEq2 });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await isOrgBillingAdmin(mockOrgId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toBe(false);
+    }
+  });
+
+  it("returns false when not a member", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const mockEq2 = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockEq = vi.fn().mockReturnValue({ eq: mockEq2 });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await isOrgBillingAdmin(mockOrgId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toBe(false);
+    }
+  });
+});
+
+describe("getOrgSeatCount (T334)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when not authenticated", async () => {
+    const mockSupabase = createMockSupabase({ user: null });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getOrgSeatCount(mockOrgId);
+
+    expect(result).toEqual({
+      success: false,
+      error: "Not authenticated",
+    });
+  });
+
+  it("returns error when not a member of organization", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    // Membership check fails
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const mockEq2 = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockEq = vi.fn().mockReturnValue({ eq: mockEq2 });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockSupabase.from.mockReturnValue({ select: mockSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getOrgSeatCount(mockOrgId);
+
+    expect(result).toEqual({
+      success: false,
+      error: "Not a member of this organization",
+    });
+  });
+
+  it("returns seat count and member count successfully", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+
+    // Membership check succeeds
+    const mockMemberSingle = vi.fn().mockResolvedValue({
+      data: { role: "member" },
+      error: null,
+    });
+    const mockMemberEq2 = vi.fn().mockReturnValue({ single: mockMemberSingle });
+    const mockMemberEq = vi.fn().mockReturnValue({ eq: mockMemberEq2 });
+    const mockMemberSelect = vi.fn().mockReturnValue({ eq: mockMemberEq });
+
+    // Subscription seat count
+    const mockSubSingle = vi.fn().mockResolvedValue({
+      data: { seat_count: 5 },
+      error: null,
+    });
+    const mockSubEq = vi.fn().mockReturnValue({ single: mockSubSingle });
+    const mockSubSelect = vi.fn().mockReturnValue({ eq: mockSubEq });
+
+    // Member count
+    const mockCountEq = vi.fn().mockResolvedValue({ count: 3, error: null });
+    const mockCountSelect = vi.fn().mockReturnValue({ eq: mockCountEq });
+
+    mockSupabase.from.mockReturnValueOnce({ select: mockMemberSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockSubSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockCountSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await getOrgSeatCount(mockOrgId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.seats).toBe(5);
+      expect(result.data.members).toBe(3);
+    }
+  });
+});

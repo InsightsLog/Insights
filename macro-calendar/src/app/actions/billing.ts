@@ -26,6 +26,11 @@ export type Plan = {
   api_calls_limit: number;
   webhook_limit: number;
   features: Record<string, unknown>;
+  is_team_plan?: boolean;
+  seat_price_monthly?: number;
+  seat_price_yearly?: number;
+  min_seats?: number;
+  max_seats?: number;
 };
 
 /**
@@ -38,6 +43,8 @@ export type Subscription = {
   status: "active" | "canceled" | "past_due" | "trialing";
   current_period_end: string | null;
   stripe_subscription_id: string | null;
+  org_id?: string | null;
+  seat_count?: number;
 };
 
 /**
@@ -695,4 +702,625 @@ export async function checkAndTriggerUsageAlerts(
   }
 
   return { success: true, data: { alertsSent } };
+}
+
+// =============================================================================
+// Organization Billing Actions (T334)
+// =============================================================================
+
+/**
+ * Organization subscription information for display.
+ */
+export type OrgSubscription = Subscription & {
+  org_id: string;
+  seat_count: number;
+  member_count: number;
+};
+
+/**
+ * Get all available team plans.
+ * Task: T334 - Organization billing
+ */
+export async function getTeamPlans(): Promise<BillingActionResult<Plan[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: plans, error } = await supabase
+    .from("plans")
+    .select("*")
+    .eq("is_team_plan", true)
+    .order("price_monthly", { ascending: true });
+
+  if (error) {
+    return { success: false, error: "Failed to fetch team plans" };
+  }
+
+  return { success: true, data: plans ?? [] };
+}
+
+/**
+ * Get an organization's subscription with plan details.
+ * Returns null if no subscription exists for the organization.
+ * Task: T334 - Organization billing
+ *
+ * @param orgId - The organization ID
+ */
+export async function getOrgSubscription(
+  orgId: string
+): Promise<BillingActionResult<OrgSubscription | null>> {
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Verify user is a member of the organization
+  const { data: membership, error: memberError } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("org_id", orgId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (memberError || !membership) {
+    return { success: false, error: "Not a member of this organization" };
+  }
+
+  // Fetch organization subscription with plan details
+  const { data: subscription, error: subError } = await supabase
+    .from("subscriptions")
+    .select(
+      `
+      id,
+      plan_id,
+      status,
+      current_period_end,
+      stripe_subscription_id,
+      org_id,
+      seat_count,
+      plans (
+        id,
+        name,
+        price_monthly,
+        price_yearly,
+        api_calls_limit,
+        webhook_limit,
+        features,
+        is_team_plan,
+        seat_price_monthly,
+        seat_price_yearly,
+        min_seats,
+        max_seats
+      )
+    `
+    )
+    .eq("org_id", orgId)
+    .single();
+
+  if (subError) {
+    // PGRST116 means no rows returned - org has no subscription
+    if (subError.code === "PGRST116") {
+      return { success: true, data: null };
+    }
+    return { success: false, error: "Failed to fetch organization subscription" };
+  }
+
+  // Get current member count for the organization
+  const { count: memberCount, error: countError } = await supabase
+    .from("organization_members")
+    .select("*", { count: "exact", head: true })
+    .eq("org_id", orgId);
+
+  if (countError) {
+    return { success: false, error: "Failed to count organization members" };
+  }
+
+  // Transform the response to match our type
+  const plan = subscription.plans as unknown as Plan;
+  const result: OrgSubscription = {
+    id: subscription.id,
+    plan_id: subscription.plan_id,
+    plan,
+    status: subscription.status as Subscription["status"],
+    current_period_end: subscription.current_period_end,
+    stripe_subscription_id: subscription.stripe_subscription_id,
+    org_id: subscription.org_id,
+    seat_count: subscription.seat_count ?? 1,
+    member_count: memberCount ?? 1,
+  };
+
+  return { success: true, data: result };
+}
+
+/**
+ * Check if the current user is a billing admin for an organization.
+ * Billing admins include: owner, admin, and billing_admin roles.
+ * Task: T334 - Organization billing
+ *
+ * @param orgId - The organization ID
+ */
+export async function isOrgBillingAdmin(
+  orgId: string
+): Promise<BillingActionResult<boolean>> {
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Check user's role in the organization
+  const { data: membership, error: memberError } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("org_id", orgId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (memberError || !membership) {
+    return { success: true, data: false };
+  }
+
+  const billingRoles = ["owner", "admin", "billing_admin"];
+  const isBillingAdmin = billingRoles.includes(membership.role);
+
+  return { success: true, data: isBillingAdmin };
+}
+
+/**
+ * Get the seat count for an organization.
+ * Returns both the purchased seat count and the current member count.
+ * Task: T334 - Organization billing
+ *
+ * @param orgId - The organization ID
+ */
+export async function getOrgSeatCount(
+  orgId: string
+): Promise<BillingActionResult<{ seats: number; members: number }>> {
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Verify user is a member of the organization
+  const { data: membership, error: memberError } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("org_id", orgId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (memberError || !membership) {
+    return { success: false, error: "Not a member of this organization" };
+  }
+
+  // Get subscription seat count
+  const { data: subscription, error: subError } = await supabase
+    .from("subscriptions")
+    .select("seat_count")
+    .eq("org_id", orgId)
+    .single();
+
+  // Default to 0 seats if no subscription exists
+  const seats = subscription?.seat_count ?? 0;
+
+  // Get current member count
+  const { count: memberCount, error: countError } = await supabase
+    .from("organization_members")
+    .select("*", { count: "exact", head: true })
+    .eq("org_id", orgId);
+
+  if (countError) {
+    return { success: false, error: "Failed to count organization members" };
+  }
+
+  // If there's a subscription error but we got member count, still return
+  if (subError && subError.code !== "PGRST116") {
+    return { success: false, error: "Failed to fetch seat count" };
+  }
+
+  return { success: true, data: { seats, members: memberCount ?? 0 } };
+}
+
+/**
+ * Create a Stripe Checkout session for organization plan subscription.
+ * Task: T334 - Organization billing
+ *
+ * @param orgId - The organization ID
+ * @param planId - The plan ID to subscribe to
+ * @param seatCount - Number of seats to purchase
+ * @param billingInterval - Monthly or yearly billing
+ * @returns Checkout session URL
+ */
+export async function createOrgCheckoutSession(
+  orgId: string,
+  planId: string,
+  seatCount: number,
+  billingInterval: "monthly" | "yearly"
+): Promise<BillingActionResult<{ url: string }>> {
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Verify user is a billing admin for the organization
+  const isBillingAdminResult = await isOrgBillingAdmin(orgId);
+  if (!isBillingAdminResult.success) {
+    return { success: false, error: isBillingAdminResult.error };
+  }
+  if (!isBillingAdminResult.data) {
+    return { success: false, error: "Only billing admins can manage organization subscriptions" };
+  }
+
+  // Initialize Stripe
+  const stripe = getStripeClient();
+  if (!stripe) {
+    return { success: false, error: "Stripe is not configured" };
+  }
+
+  // Get the plan details
+  const { data: plan, error: planError } = await supabase
+    .from("plans")
+    .select("*")
+    .eq("id", planId)
+    .single();
+
+  if (planError || !plan) {
+    return { success: false, error: "Plan not found" };
+  }
+
+  // Verify this is a team plan
+  if (!plan.is_team_plan) {
+    return { success: false, error: "Only team plans can be used for organization subscriptions" };
+  }
+
+  // Validate seat count
+  const minSeats = plan.min_seats ?? 1;
+  const maxSeats = plan.max_seats ?? 100;
+  if (seatCount < minSeats) {
+    return { success: false, error: `Minimum ${minSeats} seats required for this plan` };
+  }
+  if (seatCount > maxSeats) {
+    return { success: false, error: `Maximum ${maxSeats} seats allowed for this plan` };
+  }
+
+  // Get the Stripe price ID from plan features or environment variables
+  const features = plan.features as Record<string, unknown>;
+  let priceId: string | undefined =
+    billingInterval === "yearly"
+      ? (features.stripe_price_id_yearly as string | undefined)
+      : (features.stripe_price_id_monthly as string | undefined);
+
+  // Fallback to environment variables if not configured in database
+  if (!priceId) {
+    const priceConfig = getStripePriceEnv();
+    const planKey = plan.name.toLowerCase().replace(/\s+/g, "_") as keyof StripePriceConfig;
+    const planPrices = priceConfig[planKey];
+    if (planPrices) {
+      priceId = billingInterval === "yearly" ? planPrices.yearly : planPrices.monthly;
+    }
+  }
+
+  if (!priceId) {
+    return {
+      success: false,
+      error: `No Stripe price configured for ${plan.name} (${billingInterval}). Configure Stripe prices for team plans.`,
+    };
+  }
+
+  // Get or create Stripe customer for the organization
+  let customerId: string | undefined;
+
+  // Check if org already has a subscription with a Stripe customer
+  const { data: existingSub } = await supabase
+    .from("subscriptions")
+    .select("stripe_subscription_id")
+    .eq("org_id", orgId)
+    .single();
+
+  if (existingSub?.stripe_subscription_id) {
+    // Retrieve the existing subscription to get customer ID
+    try {
+      const existingStripeSubscription = await stripe.subscriptions.retrieve(
+        existingSub.stripe_subscription_id
+      );
+      customerId =
+        typeof existingStripeSubscription.customer === "string"
+          ? existingStripeSubscription.customer
+          : existingStripeSubscription.customer?.id;
+    } catch (err) {
+      // Subscription may be deleted in Stripe, proceed without customer ID
+      // This is expected when subscription was canceled/deleted
+      console.warn(
+        "Could not retrieve existing Stripe subscription for customer lookup:",
+        err instanceof Error ? err.message : "Unknown error"
+      );
+    }
+  }
+
+  // Determine base URL for redirect
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
+
+  // Get organization slug for redirect
+  const { data: org, error: orgError } = await supabase
+    .from("organizations")
+    .select("slug")
+    .eq("id", orgId)
+    .single();
+
+  if (orgError || !org) {
+    return { success: false, error: "Organization not found" };
+  }
+
+  // Create checkout session with quantity for seats
+  try {
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price: priceId,
+          quantity: seatCount,
+        },
+      ],
+      success_url: `${baseUrl}/org/${org.slug}/settings/billing?success=true`,
+      cancel_url: `${baseUrl}/org/${org.slug}/settings/billing?canceled=true`,
+      metadata: {
+        org_id: orgId,
+        user_id: user.id,
+        seat_count: seatCount.toString(),
+      },
+    };
+
+    // Add customer if we have one
+    if (customerId) {
+      sessionParams.customer = customerId;
+    } else {
+      // Prefill email for new customers
+      sessionParams.customer_email = user.email;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    if (!session.url) {
+      return { success: false, error: "Failed to create checkout session" };
+    }
+
+    return { success: true, data: { url: session.url } };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, error: `Stripe error: ${message}` };
+  }
+}
+
+/**
+ * Cancel an organization subscription.
+ * The subscription will remain active until the current period ends.
+ * Task: T334 - Organization billing
+ *
+ * @param orgId - The organization ID
+ */
+export async function cancelOrgSubscription(
+  orgId: string
+): Promise<BillingActionResult<void>> {
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Verify user is a billing admin for the organization
+  const isBillingAdminResult = await isOrgBillingAdmin(orgId);
+  if (!isBillingAdminResult.success) {
+    return { success: false, error: isBillingAdminResult.error };
+  }
+  if (!isBillingAdminResult.data) {
+    return { success: false, error: "Only billing admins can cancel organization subscriptions" };
+  }
+
+  // Get current subscription
+  const { data: subscription, error: subError } = await supabase
+    .from("subscriptions")
+    .select("stripe_subscription_id, status")
+    .eq("org_id", orgId)
+    .single();
+
+  if (subError || !subscription) {
+    return { success: false, error: "No subscription found for this organization" };
+  }
+
+  if (subscription.status === "canceled") {
+    return { success: false, error: "Subscription is already canceled" };
+  }
+
+  if (!subscription.stripe_subscription_id) {
+    return { success: false, error: "No Stripe subscription to cancel" };
+  }
+
+  // Initialize Stripe
+  const stripe = getStripeClient();
+  if (!stripe) {
+    return { success: false, error: "Stripe is not configured" };
+  }
+
+  // Cancel at period end (not immediately)
+  try {
+    await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+      cancel_at_period_end: true,
+    });
+
+    // Update local subscription status
+    const serviceClient = createSupabaseServiceClient();
+    await serviceClient
+      .from("subscriptions")
+      .update({ status: "canceled" })
+      .eq("org_id", orgId);
+
+    return { success: true, data: undefined };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, error: `Failed to cancel subscription: ${message}` };
+  }
+}
+
+/**
+ * Update the seat count for an organization subscription.
+ * Task: T334 - Organization billing
+ *
+ * @param orgId - The organization ID
+ * @param newSeatCount - New number of seats
+ */
+export async function updateOrgSeats(
+  orgId: string,
+  newSeatCount: number
+): Promise<BillingActionResult<void>> {
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Verify user is a billing admin for the organization
+  const isBillingAdminResult = await isOrgBillingAdmin(orgId);
+  if (!isBillingAdminResult.success) {
+    return { success: false, error: isBillingAdminResult.error };
+  }
+  if (!isBillingAdminResult.data) {
+    return { success: false, error: "Only billing admins can update seats" };
+  }
+
+  // Get current subscription with plan details
+  const { data: subscription, error: subError } = await supabase
+    .from("subscriptions")
+    .select(
+      `
+      stripe_subscription_id,
+      status,
+      seat_count,
+      plans (
+        min_seats,
+        max_seats
+      )
+    `
+    )
+    .eq("org_id", orgId)
+    .single();
+
+  if (subError || !subscription) {
+    return { success: false, error: "No subscription found for this organization" };
+  }
+
+  if (subscription.status !== "active" && subscription.status !== "trialing") {
+    return { success: false, error: "Can only update seats for active subscriptions" };
+  }
+
+  // Validate seat count against plan limits
+  const planData = subscription.plans as unknown as { min_seats?: number; max_seats?: number } | null;
+  const minSeats = planData?.min_seats ?? 1;
+  const maxSeats = planData?.max_seats ?? 100;
+
+  if (newSeatCount < minSeats) {
+    return { success: false, error: `Minimum ${minSeats} seats required` };
+  }
+  if (newSeatCount > maxSeats) {
+    return { success: false, error: `Maximum ${maxSeats} seats allowed` };
+  }
+
+  // Get current member count to ensure we have enough seats
+  const { count: memberCount, error: countError } = await supabase
+    .from("organization_members")
+    .select("*", { count: "exact", head: true })
+    .eq("org_id", orgId);
+
+  if (countError) {
+    return { success: false, error: "Failed to count organization members" };
+  }
+
+  if (newSeatCount < (memberCount ?? 0)) {
+    return {
+      success: false,
+      error: `Cannot reduce seats below current member count (${memberCount}). Remove members first.`,
+    };
+  }
+
+  // Initialize Stripe
+  const stripe = getStripeClient();
+  if (!stripe) {
+    return { success: false, error: "Stripe is not configured" };
+  }
+
+  // Update subscription quantity in Stripe
+  if (subscription.stripe_subscription_id) {
+    try {
+      const stripeSubscription = await stripe.subscriptions.retrieve(
+        subscription.stripe_subscription_id
+      );
+
+      // Get the first subscription item to update
+      const subscriptionItem = stripeSubscription.items.data[0];
+      if (!subscriptionItem) {
+        return { success: false, error: "No subscription items found" };
+      }
+
+      await stripe.subscriptionItems.update(subscriptionItem.id, {
+        quantity: newSeatCount,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      return { success: false, error: `Failed to update seats in Stripe: ${message}` };
+    }
+  }
+
+  // Update local seat count
+  const serviceClient = createSupabaseServiceClient();
+  const { error: updateError } = await serviceClient
+    .from("subscriptions")
+    .update({ seat_count: newSeatCount })
+    .eq("org_id", orgId);
+
+  if (updateError) {
+    return { success: false, error: "Failed to update seat count" };
+  }
+
+  return { success: true, data: undefined };
 }

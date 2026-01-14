@@ -19,10 +19,11 @@ import {
 const ROLES = [
   { value: "owner", label: "Owner", description: "Full control, can transfer ownership" },
   { value: "admin", label: "Admin", description: "Can manage members and settings" },
+  { value: "billing_admin", label: "Billing Admin", description: "Can manage billing and subscriptions" },
   { value: "member", label: "Member", description: "Can view organization resources" },
 ] as const;
 
-type OrgMemberRole = "owner" | "admin" | "member";
+type OrgMemberRole = "owner" | "admin" | "billing_admin" | "member";
 
 /**
  * Formats a date string to a human-readable format.
@@ -339,6 +340,7 @@ export function OrganizationSettingsClient({
                     disabled={inviting}
                   >
                     <option value="member">Member</option>
+                    <option value="billing_admin">Billing Admin</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
@@ -421,6 +423,7 @@ export function OrganizationSettingsClient({
                           disabled={updatingRole}
                         >
                           <option value="member">Member</option>
+                          <option value="billing_admin">Billing Admin</option>
                           <option value="admin">Admin</option>
                         </select>
                         <button
@@ -453,10 +456,12 @@ export function OrganizationSettingsClient({
                                 ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
                                 : member.role === "admin"
                                 ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                                : member.role === "billing_admin"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                                 : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
                             }`}
                           >
-                            {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                            {member.role === "billing_admin" ? "Billing Admin" : member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                           </span>
                           {member.user_id === currentUserId && (
                             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
@@ -600,6 +605,8 @@ export function OrganizationSettingsClient({
                       ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
                       : role.value === "admin"
                       ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                      : role.value === "billing_admin"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                       : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
                   }`}
                 >

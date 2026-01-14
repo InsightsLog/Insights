@@ -3,6 +3,44 @@
 ## [Unreleased]
 
 ### Multi-Tenant Admin (L3)
+- **Added:** Organization billing support (T334)
+  - Organizations can now have their own subscriptions separate from personal subscriptions
+  - Seat-based pricing for team plans with configurable seat counts
+  - New billing_admin role for payment management without full admin access
+  - Migration `021_add_org_subscriptions.sql`:
+    - Added `org_id` column to subscriptions table (nullable for personal subscriptions)
+    - Added `seat_count` column for tracking purchased seats
+    - Added unique index on org_id for one subscription per organization
+    - Updated RLS policies for organization subscription access
+    - Added `is_org_billing_admin()` helper function for billing permissions
+    - Extended organization_members role check to include 'billing_admin'
+  - Migration `022_add_team_plans.sql`:
+    - Added team plan columns: is_team_plan, seat_price_monthly, seat_price_yearly, min_seats, max_seats
+    - Seeded three team plans: Team Plus, Team Pro, Team Enterprise
+    - Team Plus: $14.99/mo base + $7.99/seat, 5K API calls, 10 webhooks
+    - Team Pro: $49.99/mo base + $19.99/seat, 50K API calls, 50 webhooks
+    - Team Enterprise: $149.99/mo base + $29.99/seat, 500K API calls, 200 webhooks
+  - Server actions in `src/app/actions/billing.ts`:
+    - `getTeamPlans()` - Fetch all available team plans
+    - `getOrgSubscription(orgId)` - Get organization's subscription with seat/member counts
+    - `isOrgBillingAdmin(orgId)` - Check if user can manage organization billing
+    - `getOrgSeatCount(orgId)` - Get purchased seats and current member count
+    - `createOrgCheckoutSession(orgId, planId, seatCount, interval)` - Create Stripe checkout for org
+    - `cancelOrgSubscription(orgId)` - Cancel organization subscription at period end
+    - `updateOrgSeats(orgId, newSeatCount)` - Update seat count with Stripe quantity sync
+  - Organization billing UI at `/org/[slug]/settings/billing`:
+    - Current plan display with seat usage bar
+    - Seat management for adding/removing seats
+    - Team plan selection with seat count calculator
+    - Billing admin permission check
+    - Cancel subscription with confirmation
+  - Updated OrganizationSettingsClient with billing_admin role:
+    - New role badge styling (green)
+    - Role selector includes billing_admin option
+    - Role descriptions updated
+  - Updated Stripe webhook to handle organization subscriptions:
+    - Reads org_id and seat_count from checkout session metadata
+    - Creates organization subscription with correct org_id and seat_count
 - **Added:** Organization-scoped watchlists (T333)
   - Migration: `020_add_org_watchlists.sql`
   - Added `org_id` column to watchlist table (nullable for personal watchlists)
