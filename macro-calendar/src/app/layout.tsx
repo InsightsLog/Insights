@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -16,12 +16,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 3,
+  themeColor: "#2563eb",
+};
+
 export const metadata: Metadata = {
   title: {
     default: "Macro Calendar",
     template: "%s | Macro Calendar",
   },
   description: "Public macroeconomic release calendar with searchable historical data",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Macro Calendar",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
   openGraph: {
     title: "Macro Calendar",
     description: "Public macroeconomic release calendar with searchable historical data",
