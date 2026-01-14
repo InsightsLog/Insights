@@ -3,6 +3,32 @@
 ## [Unreleased]
 
 ### Billing & Quotas (L3)
+- **Added:** API usage quota enforcement (T324)
+  - Middleware checks API call count against user's plan limit before each API request
+  - Returns HTTP 429 with upgrade prompt when monthly quota exceeded
+  - Response includes detailed quota information:
+    - Current usage count
+    - Plan limit
+    - Reset date (first of next month)
+    - Plan name
+  - Quota resets monthly on the first of each month (UTC)
+  - Default Free tier: 100 API calls/month
+  - Users without subscription default to Free tier limits
+  - Graceful degradation: API requests allowed if quota check fails (fail-open)
+- **Added:** Quota checking module (`src/lib/api/quota.ts`)
+  - `checkApiQuota(userId)` - Check if user has exceeded their monthly API quota
+  - `formatQuotaExceededMessage(result)` - Format user-friendly error message with upgrade prompt
+  - Queries user's subscription plan from `subscriptions` table
+  - Counts API calls from `request_logs` table for current billing period
+- **Updated:** API authentication module (`src/lib/api/auth.ts`)
+  - `authenticateApiRequest()` now checks quota after API key validation
+  - Returns 429 QUOTA_EXCEEDED error when quota is exceeded
+  - `ApiErrorResponse` type includes optional `quota` field with usage details
+  - `createApiErrorResponse()` accepts optional quota parameter for 429 responses
+- **Added:** Unit tests for quota enforcement (13 tests)
+  - Tests for `checkApiQuota()` with various scenarios
+  - Tests for `formatQuotaExceededMessage()` formatting
+  - Tests for quota enforcement in API authentication flow
 - **Added:** Billing page at `/settings/billing` (T323)
   - Displays current subscription plan with status badges (Active, Canceling, Past Due, Trial)
   - Shows API usage with progress bar and monthly quota

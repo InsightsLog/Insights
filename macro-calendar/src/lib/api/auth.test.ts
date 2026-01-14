@@ -11,9 +11,19 @@ vi.mock("@/lib/supabase/service-role", () => ({
   createSupabaseServiceClient: vi.fn(),
 }));
 
+// Mock the quota module (T324)
+vi.mock("@/lib/api/quota", () => ({
+  checkApiQuota: vi.fn(),
+  formatQuotaExceededMessage: vi.fn(),
+}));
+
 // Import the mocked function to control its behavior
 import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
 const mockCreateSupabaseServiceClient = vi.mocked(createSupabaseServiceClient);
+
+import { checkApiQuota, formatQuotaExceededMessage } from "@/lib/api/quota";
+const mockCheckApiQuota = vi.mocked(checkApiQuota);
+const mockFormatQuotaExceededMessage = vi.mocked(formatQuotaExceededMessage);
 
 describe("API Authentication", () => {
   beforeEach(() => {
@@ -225,6 +235,36 @@ describe("API Authentication", () => {
         code: "UNAUTHORIZED",
       });
     });
+
+    it("creates 429 quota exceeded response with quota info (T324)", async () => {
+      const quotaResult = {
+        allowed: false,
+        currentUsage: 100,
+        limit: 100,
+        resetAt: "2026-02-01T00:00:00.000Z",
+        planName: "Free",
+      };
+
+      const response = createApiErrorResponse(
+        "API quota exceeded",
+        "QUOTA_EXCEEDED",
+        429,
+        quotaResult
+      );
+
+      expect(response.status).toBe(429);
+      const body = await response.json();
+      expect(body).toEqual({
+        error: "API quota exceeded",
+        code: "QUOTA_EXCEEDED",
+        quota: {
+          current: 100,
+          limit: 100,
+          reset_at: "2026-02-01T00:00:00.000Z",
+          plan: "Free",
+        },
+      });
+    });
   });
 
   describe("authenticateApiRequest", () => {
@@ -241,7 +281,7 @@ describe("API Authentication", () => {
       }
     });
 
-    it("returns user ID for valid API key", async () => {
+    it("returns user ID and API key ID for valid API key within quota (T324)", async () => {
       const mockUpdate = vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ data: null, error: null }),
       });
@@ -252,6 +292,7 @@ describe("API Authentication", () => {
               eq: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({
                   data: {
+                    id: "key-123",
                     user_id: "user-789",
                     revoked_at: null,
                   },
@@ -268,14 +309,86 @@ describe("API Authentication", () => {
         from: mockFrom,
       } as never);
 
+      // Mock quota check to return allowed
+      mockCheckApiQuota.mockResolvedValue({
+        allowed: true,
+        currentUsage: 50,
+        limit: 100,
+        resetAt: "2026-02-01T00:00:00.000Z",
+        planName: "Free",
+      });
+
       const request = new NextRequest("http://localhost/api/v1/indicators", {
         headers: { Authorization: "Bearer mc_valid_api_key_here" },
       });
 
       const result = await authenticateApiRequest(request);
 
-      // Should return object with userId
-      expect(result).toEqual({ userId: "user-789" });
+      // Should return object with userId and apiKeyId
+      expect(result).toEqual({ userId: "user-789", apiKeyId: "key-123" });
+      expect(mockCheckApiQuota).toHaveBeenCalledWith("user-789");
+    });
+
+    it("returns 429 error when quota is exceeded (T324)", async () => {
+      const mockUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+      });
+      const mockFrom = vi.fn().mockImplementation((table) => {
+        if (table === "api_keys") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: "key-123",
+                    user_id: "user-quota-exceeded",
+                    revoked_at: null,
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+            update: mockUpdate,
+          };
+        }
+        return {};
+      });
+      mockCreateSupabaseServiceClient.mockReturnValue({
+        from: mockFrom,
+      } as never);
+
+      // Mock quota check to return not allowed
+      const quotaResult = {
+        allowed: false,
+        currentUsage: 100,
+        limit: 100,
+        resetAt: "2026-02-01T00:00:00.000Z",
+        planName: "Free",
+      };
+      mockCheckApiQuota.mockResolvedValue(quotaResult);
+      mockFormatQuotaExceededMessage.mockReturnValue(
+        "API quota exceeded. You have used 100 of 100 API calls."
+      );
+
+      const request = new NextRequest("http://localhost/api/v1/indicators", {
+        headers: { Authorization: "Bearer mc_valid_api_key_here" },
+      });
+
+      const result = await authenticateApiRequest(request);
+
+      // Should return a NextResponse with 429 status
+      expect(result).toHaveProperty("status");
+      if ("status" in result && typeof result.status === "number") {
+        expect(result.status).toBe(429);
+        const body = await (result as Response).json();
+        expect(body.code).toBe("QUOTA_EXCEEDED");
+        expect(body.quota).toEqual({
+          current: 100,
+          limit: 100,
+          reset_at: "2026-02-01T00:00:00.000Z",
+          plan: "Free",
+        });
+      }
     });
   });
 });

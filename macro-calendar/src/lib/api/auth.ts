@@ -5,11 +5,17 @@
  * It validates API keys from the Authorization header and returns the user ID.
  *
  * Task: T311 - Add /api/v1/indicators endpoint
+ * Task: T324 - Add usage quota enforcement
  */
 
 import { createHash } from "crypto";
 import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  checkApiQuota,
+  formatQuotaExceededMessage,
+  type QuotaCheckResult,
+} from "@/lib/api/quota";
 
 /**
  * Result of API key validation.
@@ -151,6 +157,13 @@ export async function validateApiKeyFromHeader(
 export interface ApiErrorResponse {
   error: string;
   code?: string;
+  /** Quota information for quota exceeded errors (T324) */
+  quota?: {
+    current: number;
+    limit: number;
+    reset_at: string;
+    plan: string;
+  };
 }
 
 /**
@@ -159,23 +172,36 @@ export interface ApiErrorResponse {
  * @param error - Error message
  * @param code - Optional error code (e.g., "UNAUTHORIZED")
  * @param status - HTTP status code (default 500)
+ * @param quota - Optional quota information for 429 responses (T324)
  * @returns NextResponse with JSON error body
  */
 export function createApiErrorResponse(
   error: string,
   code?: string,
-  status: number = 500
+  status: number = 500,
+  quota?: QuotaCheckResult
 ): NextResponse<ApiErrorResponse> {
   const body: ApiErrorResponse = { error };
   if (code) {
     body.code = code;
   }
+  if (quota) {
+    body.quota = {
+      current: quota.currentUsage,
+      limit: quota.limit,
+      reset_at: quota.resetAt,
+      plan: quota.planName,
+    };
+  }
   return NextResponse.json(body, { status });
 }
 
 /**
- * Wrapper function to authenticate API requests.
- * Returns an error response if authentication fails, or the user ID and API key ID if successful.
+ * Wrapper function to authenticate API requests and check quota.
+ * Returns an error response if authentication fails or quota is exceeded,
+ * or the user ID and API key ID if successful.
+ *
+ * Task: T324 - Added quota enforcement
  *
  * @param request - The incoming NextRequest
  * @returns Either an error NextResponse or the authenticated user ID and API key ID
@@ -185,7 +211,7 @@ export async function authenticateApiRequest(
 ): Promise<NextResponse<ApiErrorResponse> | { userId: string; apiKeyId: string }> {
   const authResult = await validateApiKeyFromHeader(request);
 
-  if (!authResult.valid) {
+  if (!authResult.valid || !authResult.userId || !authResult.apiKeyId) {
     return createApiErrorResponse(
       authResult.error ?? "Authentication failed",
       "UNAUTHORIZED",
@@ -193,5 +219,19 @@ export async function authenticateApiRequest(
     );
   }
 
-  return { userId: authResult.userId!, apiKeyId: authResult.apiKeyId! };
+  // At this point, userId and apiKeyId are guaranteed to exist
+  const { userId, apiKeyId } = authResult;
+
+  // Check API quota (T324)
+  const quotaResult = await checkApiQuota(userId);
+  if (!quotaResult.allowed) {
+    return createApiErrorResponse(
+      formatQuotaExceededMessage(quotaResult),
+      "QUOTA_EXCEEDED",
+      429,
+      quotaResult
+    );
+  }
+
+  return { userId, apiKeyId };
 }
