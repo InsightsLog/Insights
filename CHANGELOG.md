@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+### Additional Enhancements (L3)
+- **Added:** Data export functionality (T340)
+  - Export watchlist releases to CSV/JSON format
+  - Export historical data for individual indicators to CSV/JSON format
+  - API endpoints:
+    - `GET /api/export/watchlist?format=csv|json` - Export watchlist releases (auth required)
+    - `GET /api/export/indicators/:id?format=csv|json` - Export indicator history (public)
+  - Server actions in `src/app/actions/export.ts`:
+    - `exportWatchlistReleases(format)` - Export user's watchlist releases
+    - `exportIndicatorHistory(indicatorId, format)` - Export indicator historical data
+  - UI components:
+    - `ExportButton` component with CSV/JSON download buttons
+    - Export button added to watchlist page header (when watchlist has items)
+    - Export button added to indicator detail page historical releases section
+  - Export features:
+    - CSV format with proper escaping for special characters
+    - JSON format with structured data including metadata
+    - Filename includes indicator name (sanitized) and date
+    - Maximum 1,000 releases per export to prevent oversized files
+  - Unit tests for export actions (15 tests)
+
 ### Multi-Tenant Admin (L3)
 - **Added:** Organization billing support (T334)
   - Organizations can now have their own subscriptions separate from personal subscriptions

@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { WatchlistButton } from "@/app/components/WatchlistButton";
 import { RevisionHistory } from "@/app/components/RevisionHistory";
+import { ExportButton } from "@/app/components/ExportButton";
 
 // Zod schema for indicator validation
 const indicatorSchema = z.object({
@@ -254,9 +255,17 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
 
         {/* Historical Releases Table */}
         <section className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Historical Releases
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Historical Releases
+            </h2>
+            {releasesResult.success && releasesResult.data.length > 0 && (
+              <ExportButton
+                downloadUrl={`/api/export/indicators/${indicator.id}`}
+                label="Export History"
+              />
+            )}
+          </div>
           
           {!releasesResult.success ? (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">

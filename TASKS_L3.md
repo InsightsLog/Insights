@@ -154,7 +154,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
 
 ## 4) Additional Enhancements
 
-- [ ] T340 Add data export functionality
+- [x] T340 Add data export functionality
   - Export watchlist releases to CSV/JSON
   - Export historical data for indicators
   - Test: exports contain correct data
