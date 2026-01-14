@@ -139,7 +139,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Transfer ownership
   - Test: member management works; ownership transfer works
 
-- [ ] T333 Add organization-scoped watchlists
+- [x] T333 Add organization-scoped watchlists
   - Add org_id column to watchlist table (nullable for personal)
   - Shared watchlists visible to all org members
   - Test: org watchlist visible to members; personal watchlist private
