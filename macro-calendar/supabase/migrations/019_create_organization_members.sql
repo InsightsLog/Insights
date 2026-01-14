@@ -33,6 +33,8 @@ COMMENT ON COLUMN organization_members.joined_at IS 'Timestamp when user accepte
 ALTER TABLE organization_members ENABLE ROW LEVEL SECURITY;
 
 -- Helper function to check if the current user is an admin or owner of an organization
+-- Uses SECURITY DEFINER to bypass RLS when checking organization_members table
+-- This is necessary to prevent infinite recursion when the function is called from RLS policies
 CREATE OR REPLACE FUNCTION is_org_admin(target_org_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
