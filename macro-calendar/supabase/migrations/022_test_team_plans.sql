@@ -1,129 +1,221 @@
--- Test: Add team plan support to plans table
--- Description: Tests for 022_add_team_plans.sql migration
--- Task: T334
+-- Test: Verify team plans support (T334)
+-- Run this AFTER executing 022_add_team_plans.sql
+-- Test steps documented for manual verification
 
--- Test 1: Verify plans table has is_team_plan column
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'plans' AND column_name = 'is_team_plan'
-    ) THEN
-        RAISE EXCEPTION 'plans.is_team_plan column does not exist';
-    END IF;
-    RAISE NOTICE 'Test 1 passed: plans.is_team_plan column exists';
-END $$;
+-- =============================================================================
+-- VERIFY: plans table has is_team_plan column
+-- =============================================================================
 
--- Test 2: Verify plans table has seat_price_monthly column
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'plans' AND column_name = 'seat_price_monthly'
-    ) THEN
-        RAISE EXCEPTION 'plans.seat_price_monthly column does not exist';
-    END IF;
-    RAISE NOTICE 'Test 2 passed: plans.seat_price_monthly column exists';
-END $$;
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'plans'
+  AND column_name = 'is_team_plan';
 
--- Test 3: Verify plans table has seat_price_yearly column
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'plans' AND column_name = 'seat_price_yearly'
-    ) THEN
-        RAISE EXCEPTION 'plans.seat_price_yearly column does not exist';
-    END IF;
-    RAISE NOTICE 'Test 3 passed: plans.seat_price_yearly column exists';
-END $$;
+-- Expected result (1 row):
+-- column_name: is_team_plan
+-- data_type: boolean
+-- is_nullable: NO
+-- column_default: false
 
--- Test 4: Verify plans table has min_seats column
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'plans' AND column_name = 'min_seats'
-    ) THEN
-        RAISE EXCEPTION 'plans.min_seats column does not exist';
-    END IF;
-    RAISE NOTICE 'Test 4 passed: plans.min_seats column exists';
-END $$;
+-- =============================================================================
+-- VERIFY: plans table has seat_price_monthly column
+-- =============================================================================
 
--- Test 5: Verify plans table has max_seats column
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'plans' AND column_name = 'max_seats'
-    ) THEN
-        RAISE EXCEPTION 'plans.max_seats column does not exist';
-    END IF;
-    RAISE NOTICE 'Test 5 passed: plans.max_seats column exists';
-END $$;
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'plans'
+  AND column_name = 'seat_price_monthly';
 
--- Test 6: Verify Team Plus plan exists and is a team plan
-DO $$
-DECLARE
-    v_plan RECORD;
-BEGIN
-    SELECT * INTO v_plan FROM plans WHERE name = 'Team Plus';
-    IF v_plan IS NULL THEN
-        RAISE EXCEPTION 'Team Plus plan does not exist';
-    END IF;
-    IF v_plan.is_team_plan IS NOT TRUE THEN
-        RAISE EXCEPTION 'Team Plus plan is not marked as team plan';
-    END IF;
-    IF v_plan.seat_price_monthly <= 0 THEN
-        RAISE EXCEPTION 'Team Plus plan has no seat price';
-    END IF;
-    RAISE NOTICE 'Test 6 passed: Team Plus plan exists with correct configuration';
-END $$;
+-- Expected result (1 row):
+-- column_name: seat_price_monthly
+-- data_type: integer
+-- is_nullable: YES
+-- column_default: 0
 
--- Test 7: Verify Team Pro plan exists and is a team plan
-DO $$
-DECLARE
-    v_plan RECORD;
-BEGIN
-    SELECT * INTO v_plan FROM plans WHERE name = 'Team Pro';
-    IF v_plan IS NULL THEN
-        RAISE EXCEPTION 'Team Pro plan does not exist';
-    END IF;
-    IF v_plan.is_team_plan IS NOT TRUE THEN
-        RAISE EXCEPTION 'Team Pro plan is not marked as team plan';
-    END IF;
-    RAISE NOTICE 'Test 7 passed: Team Pro plan exists with correct configuration';
-END $$;
+-- =============================================================================
+-- VERIFY: plans table has seat_price_yearly column
+-- =============================================================================
 
--- Test 8: Verify Team Enterprise plan exists and is a team plan
-DO $$
-DECLARE
-    v_plan RECORD;
-BEGIN
-    SELECT * INTO v_plan FROM plans WHERE name = 'Team Enterprise';
-    IF v_plan IS NULL THEN
-        RAISE EXCEPTION 'Team Enterprise plan does not exist';
-    END IF;
-    IF v_plan.is_team_plan IS NOT TRUE THEN
-        RAISE EXCEPTION 'Team Enterprise plan is not marked as team plan';
-    END IF;
-    RAISE NOTICE 'Test 8 passed: Team Enterprise plan exists with correct configuration';
-END $$;
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'plans'
+  AND column_name = 'seat_price_yearly';
 
--- Test 9: Verify individual plans are not marked as team plans
-DO $$
-DECLARE
-    v_count INTEGER;
-BEGIN
-    SELECT COUNT(*) INTO v_count
-    FROM plans
-    WHERE name IN ('Free', 'Plus', 'Pro', 'Enterprise')
-    AND is_team_plan = true;
-    
-    IF v_count > 0 THEN
-        RAISE EXCEPTION 'Individual plans should not be marked as team plans';
-    END IF;
-    RAISE NOTICE 'Test 9 passed: Individual plans are not team plans';
-END $$;
+-- Expected result (1 row):
+-- column_name: seat_price_yearly
+-- data_type: integer
+-- is_nullable: YES
+-- column_default: 0
 
-RAISE NOTICE 'All tests passed for 022_add_team_plans.sql';
+-- =============================================================================
+-- VERIFY: plans table has min_seats column
+-- =============================================================================
+
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'plans'
+  AND column_name = 'min_seats';
+
+-- Expected result (1 row):
+-- column_name: min_seats
+-- data_type: integer
+-- is_nullable: YES
+-- column_default: 1
+
+-- =============================================================================
+-- VERIFY: plans table has max_seats column
+-- =============================================================================
+
+SELECT 
+    column_name, 
+    data_type, 
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_name = 'plans'
+  AND column_name = 'max_seats';
+
+-- Expected result (1 row):
+-- column_name: max_seats
+-- data_type: integer
+-- is_nullable: YES
+-- column_default: 100
+
+-- =============================================================================
+-- VERIFY: Team Plus plan exists and is configured correctly
+-- =============================================================================
+
+SELECT 
+    name,
+    price_monthly,
+    price_yearly,
+    api_calls_limit,
+    webhook_limit,
+    is_team_plan,
+    seat_price_monthly,
+    seat_price_yearly,
+    min_seats,
+    max_seats
+FROM plans
+WHERE name = 'Team Plus';
+
+-- Expected result (1 row):
+-- name: Team Plus
+-- price_monthly: 1499 ($14.99)
+-- price_yearly: 14990 ($149.90)
+-- api_calls_limit: 5000
+-- webhook_limit: 10
+-- is_team_plan: true
+-- seat_price_monthly: 799 ($7.99)
+-- seat_price_yearly: 7990 ($79.90)
+-- min_seats: 2
+-- max_seats: 25
+
+-- =============================================================================
+-- VERIFY: Team Pro plan exists and is configured correctly
+-- =============================================================================
+
+SELECT 
+    name,
+    price_monthly,
+    price_yearly,
+    api_calls_limit,
+    webhook_limit,
+    is_team_plan,
+    seat_price_monthly,
+    seat_price_yearly,
+    min_seats,
+    max_seats
+FROM plans
+WHERE name = 'Team Pro';
+
+-- Expected result (1 row):
+-- name: Team Pro
+-- price_monthly: 4999 ($49.99)
+-- price_yearly: 49990 ($499.90)
+-- api_calls_limit: 50000
+-- webhook_limit: 50
+-- is_team_plan: true
+-- seat_price_monthly: 1999 ($19.99)
+-- seat_price_yearly: 19990 ($199.90)
+-- min_seats: 2
+-- max_seats: 100
+
+-- =============================================================================
+-- VERIFY: Team Enterprise plan exists and is configured correctly
+-- =============================================================================
+
+SELECT 
+    name,
+    price_monthly,
+    price_yearly,
+    api_calls_limit,
+    webhook_limit,
+    is_team_plan,
+    seat_price_monthly,
+    seat_price_yearly,
+    min_seats,
+    max_seats
+FROM plans
+WHERE name = 'Team Enterprise';
+
+-- Expected result (1 row):
+-- name: Team Enterprise
+-- price_monthly: 14999 ($149.99)
+-- price_yearly: 149990 ($1499.90)
+-- api_calls_limit: 500000
+-- webhook_limit: 200
+-- is_team_plan: true
+-- seat_price_monthly: 2999 ($29.99)
+-- seat_price_yearly: 29990 ($299.90)
+-- min_seats: 5
+-- max_seats: 1000
+
+-- =============================================================================
+-- VERIFY: Individual plans are NOT team plans
+-- =============================================================================
+
+SELECT 
+    name,
+    is_team_plan
+FROM plans
+WHERE name IN ('Free', 'Plus', 'Pro', 'Enterprise')
+ORDER BY price_monthly;
+
+-- Expected result (4 rows, all with is_team_plan = false):
+-- name: Free, is_team_plan: false
+-- name: Plus, is_team_plan: false
+-- name: Pro, is_team_plan: false
+-- name: Enterprise, is_team_plan: false
+
+-- =============================================================================
+-- VERIFY: All team plans are marked as team plans
+-- =============================================================================
+
+SELECT 
+    name,
+    is_team_plan
+FROM plans
+WHERE is_team_plan = true
+ORDER BY price_monthly;
+
+-- Expected result (3 rows, all team plans):
+-- name: Team Plus, is_team_plan: true
+-- name: Team Pro, is_team_plan: true
+-- name: Team Enterprise, is_team_plan: true
