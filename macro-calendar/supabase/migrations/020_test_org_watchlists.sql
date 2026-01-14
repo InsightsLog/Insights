@@ -134,4 +134,7 @@ BEGIN
     RAISE NOTICE 'Test 8 passed: Foreign key constraint on org_id exists';
 END $$;
 
-RAISE NOTICE 'All organization-scoped watchlist tests passed!';
+DO $$
+BEGIN
+    RAISE NOTICE 'All organization-scoped watchlist tests passed!';
+END $$;
