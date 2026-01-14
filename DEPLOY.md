@@ -110,6 +110,14 @@ In the Vercel project settings, add these environment variables:
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST API URL (optional) | Upstash Console → Redis Database → REST API |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST API token (optional) | Upstash Console → Redis Database → REST API |
 | `ENABLE_REQUEST_LOGGING` | Enable request logging (optional) | Set to `true` to enable, leave unset or `false` to disable |
+| `STRIPE_SECRET_KEY` | Stripe API secret key (optional) | Stripe Dashboard → Developers → API keys |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (optional) | Stripe Dashboard → Webhooks → Endpoint → Signing secret |
+| `STRIPE_PRICE_PLUS_MONTHLY` | Stripe price ID for Plus monthly (optional) | Stripe Dashboard → Products → Plus → Price ID |
+| `STRIPE_PRICE_PLUS_YEARLY` | Stripe price ID for Plus yearly (optional) | Stripe Dashboard → Products → Plus → Price ID |
+| `STRIPE_PRICE_PRO_MONTHLY` | Stripe price ID for Pro monthly (optional) | Stripe Dashboard → Products → Pro → Price ID |
+| `STRIPE_PRICE_PRO_YEARLY` | Stripe price ID for Pro yearly (optional) | Stripe Dashboard → Products → Pro → Price ID |
+| `STRIPE_PRICE_ENTERPRISE_MONTHLY` | Stripe price ID for Enterprise monthly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
+| `STRIPE_PRICE_ENTERPRISE_YEARLY` | Stripe price ID for Enterprise yearly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
 
 **Important notes:**
 - Both `NEXT_PUBLIC_` variables are required for the app to run (validated by `src/lib/env.ts`)
@@ -118,6 +126,8 @@ In the Vercel project settings, add these environment variables:
 - `UNSUBSCRIBE_TOKEN_SECRET` is server-only and used to sign email unsubscribe tokens
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are optional; rate limiting is disabled if not set
 - `ENABLE_REQUEST_LOGGING` is optional; request logging is disabled by default (requires `SUPABASE_SERVICE_ROLE_KEY`)
+- `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are required for billing/subscription features
+- `STRIPE_PRICE_*` variables are required for plan upgrades; get price IDs from Stripe Products dashboard
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
 ### 2.4 Deploy

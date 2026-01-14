@@ -21,6 +21,7 @@ vi.mock("@/lib/supabase/service-role", () => ({
 // Mock the env module
 vi.mock("@/lib/env", () => ({
   getStripeEnv: vi.fn(),
+  getStripePriceEnv: vi.fn(),
 }));
 
 // Mock Stripe using vi.hoisted
@@ -48,11 +49,12 @@ vi.mock("stripe", () => ({
 // Import the mocked functions
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
-import { getStripeEnv } from "@/lib/env";
+import { getStripeEnv, getStripePriceEnv } from "@/lib/env";
 
 const mockCreateSupabaseServerClient = vi.mocked(createSupabaseServerClient);
 const mockCreateSupabaseServiceClient = vi.mocked(createSupabaseServiceClient);
 const mockGetStripeEnv = vi.mocked(getStripeEnv);
+const mockGetStripePriceEnv = vi.mocked(getStripePriceEnv);
 
 // Valid UUID for testing
 const mockUserId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
@@ -345,13 +347,73 @@ describe("createCheckoutSession", () => {
       secretKey: "sk_test_123",
       webhookSecret: "whsec_123",
     });
+    // Mock empty price config (no env vars set)
+    mockGetStripePriceEnv.mockReturnValue({});
 
     const result = await createCheckoutSession(mockPlanId, "monthly");
 
     expect(result).toEqual({
       success: false,
-      error: "No Stripe price configured for Plus (monthly)",
+      error: "No Stripe price configured for Plus (monthly). Set STRIPE_PRICE_PLUS_MONTHLY environment variable.",
     });
+  });
+
+  it("uses environment variable fallback when DB has no price", async () => {
+    const mockSupabase = createMockSupabase({
+      user: { id: mockUserId, email: "test@example.com" },
+    });
+
+    // First call: plan lookup (no Stripe price IDs in features)
+    const mockPlanSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: mockPlanId,
+        name: "Plus",
+        features: {}, // No Stripe price IDs in DB
+      },
+      error: null,
+    });
+    const mockPlanEq = vi.fn().mockReturnValue({ single: mockPlanSingle });
+    const mockPlanSelect = vi.fn().mockReturnValue({ eq: mockPlanEq });
+
+    // Second call: subscription lookup
+    const mockSubSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: "PGRST116" },
+    });
+    const mockSubEq = vi.fn().mockReturnValue({ single: mockSubSingle });
+    const mockSubSelect = vi.fn().mockReturnValue({ eq: mockSubEq });
+
+    mockSupabase.from.mockReturnValueOnce({ select: mockPlanSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockSubSelect });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+    mockGetStripeEnv.mockReturnValue({
+      secretKey: "sk_test_123",
+      webhookSecret: "whsec_123",
+    });
+    // Mock price config from env vars
+    mockGetStripePriceEnv.mockReturnValue({
+      plus: { monthly: "price_env_monthly_123", yearly: "price_env_yearly_123" },
+    });
+
+    mockCheckout.sessions.create.mockResolvedValue({
+      url: "https://checkout.stripe.com/session123",
+    });
+
+    const result = await createCheckoutSession(mockPlanId, "monthly");
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.url).toBe("https://checkout.stripe.com/session123");
+    }
+    // Verify that the price from env var was used
+    expect(mockCheckout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "subscription",
+        line_items: [{ price: "price_env_monthly_123", quantity: 1 }],
+        customer_email: "test@example.com",
+        metadata: { user_id: mockUserId },
+      })
+    );
   });
 
   it("creates checkout session successfully", async () => {

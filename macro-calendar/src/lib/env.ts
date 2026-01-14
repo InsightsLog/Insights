@@ -128,3 +128,61 @@ export function getStripeEnv(): { secretKey: string; webhookSecret: string } | n
     webhookSecret: result.data.STRIPE_WEBHOOK_SECRET,
   };
 }
+
+/**
+ * Stripe price ID environment variables schema.
+ * Optional: Maps plan names to Stripe price IDs for subscriptions.
+ * These can be set as environment variables or stored in the database.
+ * Environment variables take precedence as fallback when DB values are not set.
+ *
+ * Format: STRIPE_PRICE_{PLAN}_{INTERVAL}
+ * Example: STRIPE_PRICE_PLUS_MONTHLY=price_xxx
+ */
+const stripePriceEnvSchema = z.object({
+  STRIPE_PRICE_PLUS_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_PLUS_YEARLY: z.string().optional(),
+  STRIPE_PRICE_PRO_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_PRO_YEARLY: z.string().optional(),
+  STRIPE_PRICE_ENTERPRISE_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_ENTERPRISE_YEARLY: z.string().optional(),
+});
+
+/**
+ * Plan price ID configuration from environment variables.
+ */
+export type StripePriceConfig = {
+  plus?: { monthly?: string; yearly?: string };
+  pro?: { monthly?: string; yearly?: string };
+  enterprise?: { monthly?: string; yearly?: string };
+};
+
+/**
+ * Get Stripe price IDs from environment variables.
+ * Returns a configuration object mapping plan names to their Stripe price IDs.
+ * Used as fallback when price IDs are not configured in the database.
+ */
+export function getStripePriceEnv(): StripePriceConfig {
+  const parsed = stripePriceEnvSchema.parse({
+    STRIPE_PRICE_PLUS_MONTHLY: process.env.STRIPE_PRICE_PLUS_MONTHLY,
+    STRIPE_PRICE_PLUS_YEARLY: process.env.STRIPE_PRICE_PLUS_YEARLY,
+    STRIPE_PRICE_PRO_MONTHLY: process.env.STRIPE_PRICE_PRO_MONTHLY,
+    STRIPE_PRICE_PRO_YEARLY: process.env.STRIPE_PRICE_PRO_YEARLY,
+    STRIPE_PRICE_ENTERPRISE_MONTHLY: process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY,
+    STRIPE_PRICE_ENTERPRISE_YEARLY: process.env.STRIPE_PRICE_ENTERPRISE_YEARLY,
+  });
+
+  return {
+    plus: {
+      monthly: parsed.STRIPE_PRICE_PLUS_MONTHLY,
+      yearly: parsed.STRIPE_PRICE_PLUS_YEARLY,
+    },
+    pro: {
+      monthly: parsed.STRIPE_PRICE_PRO_MONTHLY,
+      yearly: parsed.STRIPE_PRICE_PRO_YEARLY,
+    },
+    enterprise: {
+      monthly: parsed.STRIPE_PRICE_ENTERPRISE_MONTHLY,
+      yearly: parsed.STRIPE_PRICE_ENTERPRISE_YEARLY,
+    },
+  };
+}
