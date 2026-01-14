@@ -26,6 +26,7 @@ export function UsageBanner() {
     warningThreshold: number | null;
   } | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -33,17 +34,27 @@ export function UsageBanner() {
     hasFetched.current = true;
 
     async function fetchUsageStatus() {
-      const result = await getUsageStatus();
-      if (result.success) {
-        setUsageData(result.data);
+      try {
+        const result = await getUsageStatus();
+        if (result.success) {
+          setUsageData(result.data);
+        } else {
+          // Log error for debugging but don't show to user
+          // The banner is optional - users can still use the app without it
+          console.error("[UsageBanner] Failed to fetch usage status:", result.error);
+          setError(result.error);
+        }
+      } catch (err) {
+        console.error("[UsageBanner] Unexpected error:", err);
+        setError("Failed to fetch usage status");
       }
     }
 
     fetchUsageStatus();
   }, []);
 
-  // Don't show banner if dismissed, no data, or no warning needed
-  if (dismissed || !usageData || !usageData.shouldShowWarning) {
+  // Don't show banner if dismissed, no data, error, or no warning needed
+  if (dismissed || error || !usageData || !usageData.shouldShowWarning) {
     return null;
   }
 

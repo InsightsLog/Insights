@@ -654,8 +654,10 @@ export async function checkAndTriggerUsageAlerts(
   }
 
   // Send alerts via Edge Function
+  // Use server-side SUPABASE_URL env var to prevent URL manipulation
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const edgeFunctionUrl = process.env.SUPABASE_EDGE_FUNCTION_URL || 
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1`;
+    `${supabaseUrl}/functions/v1`;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   const alertsSent: number[] = [];

@@ -26,7 +26,7 @@ const supabase = createClient(
 );
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FROM_EMAIL = Deno.env.get("EMAIL_FROM") || "alerts@macrocalendar.com";
+const FROM_EMAIL = Deno.env.get("EMAIL_FROM");
 const APP_URL = Deno.env.get("APP_URL") || "https://macrocalendar.com";
 
 /**
@@ -166,6 +166,11 @@ async function sendEmail(
     return { success: false, error: "Email service not configured" };
   }
 
+  if (!FROM_EMAIL) {
+    console.error("EMAIL_FROM not configured");
+    return { success: false, error: "Email sender not configured" };
+  }
+
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -261,7 +266,16 @@ Deno.serve(async (req) => {
 
     if (checkError) {
       console.error("Error checking existing alert:", checkError);
-      // Continue anyway - we'll let the unique constraint handle duplicates
+      return new Response(
+        JSON.stringify({
+          error: "Database error checking existing alerts",
+          details: checkError.message,
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     if (existingAlert) {
