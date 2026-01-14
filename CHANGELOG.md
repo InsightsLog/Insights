@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Documentation
+- **Clarified:** Stripe webhook testing instructions for `checkout.session.completed` event
+  - Added note that `stripe trigger checkout.session.completed` creates a payment-mode session without a subscription
+  - No DB insert occurs by design when session lacks subscription (this is correct behavior)
+  - To test subscription webhooks, use `stripe trigger customer.subscription.updated` instead
+
 ## [2.5.0] - 2026-01-13
 
 ### Billing & Quotas (L3)

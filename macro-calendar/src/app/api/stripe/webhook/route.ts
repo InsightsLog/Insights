@@ -13,6 +13,12 @@
  * - Validates webhook signature using STRIPE_WEBHOOK_SECRET
  * - Uses service role client to bypass RLS for subscription updates
  *
+ * Testing:
+ * - Note: `stripe trigger checkout.session.completed` creates a payment-mode session
+ *   without a subscription, so the webhook will not insert any DB records (by design).
+ * - To test subscriptions, use: `stripe trigger customer.subscription.updated` or
+ *   create a real subscription checkout session in Stripe dashboard/CLI.
+ *
  * Task: T322 - Integrate Stripe for payments
  */
 
