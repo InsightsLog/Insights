@@ -211,7 +211,7 @@ export async function authenticateApiRequest(
 ): Promise<NextResponse<ApiErrorResponse> | { userId: string; apiKeyId: string }> {
   const authResult = await validateApiKeyFromHeader(request);
 
-  if (!authResult.valid) {
+  if (!authResult.valid || !authResult.userId || !authResult.apiKeyId) {
     return createApiErrorResponse(
       authResult.error ?? "Authentication failed",
       "UNAUTHORIZED",
@@ -219,8 +219,11 @@ export async function authenticateApiRequest(
     );
   }
 
+  // At this point, userId and apiKeyId are guaranteed to exist
+  const { userId, apiKeyId } = authResult;
+
   // Check API quota (T324)
-  const quotaResult = await checkApiQuota(authResult.userId!);
+  const quotaResult = await checkApiQuota(userId);
   if (!quotaResult.allowed) {
     return createApiErrorResponse(
       formatQuotaExceededMessage(quotaResult),
@@ -230,5 +233,5 @@ export async function authenticateApiRequest(
     );
   }
 
-  return { userId: authResult.userId!, apiKeyId: authResult.apiKeyId! };
+  return { userId, apiKeyId };
 }

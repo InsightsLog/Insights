@@ -16,6 +16,12 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
 const DEFAULT_API_CALLS_LIMIT = 100;
 
 /**
+ * Active subscription statuses that grant the user their plan's quota.
+ * Users with other statuses (canceled, past_due) fall back to Free tier limits.
+ */
+const ACTIVE_SUBSCRIPTION_STATUSES = ["active", "trialing"] as const;
+
+/**
  * Result of a quota check.
  */
 export interface QuotaCheckResult {
@@ -81,7 +87,7 @@ export async function checkApiQuota(userId: string): Promise<QuotaCheckResult> {
     `
     )
     .eq("user_id", userId)
-    .in("status", ["active", "trialing"])
+    .in("status", ACTIVE_SUBSCRIPTION_STATUSES as unknown as string[])
     .single();
 
   // Determine the plan limit
