@@ -3,6 +3,25 @@
 ## [Unreleased]
 
 ### Multi-Tenant Admin (L3)
+- **Added:** Organization-scoped watchlists (T333)
+  - Migration: `020_add_org_watchlists.sql`
+  - Added `org_id` column to watchlist table (nullable for personal watchlists)
+  - NULL org_id = personal watchlist, non-NULL org_id = shared org watchlist
+  - Helper function: `is_org_member(org_id)` for RLS policy checks
+  - Updated RLS policies:
+    - Users can read personal watchlists AND org watchlists they belong to
+    - Users can insert to personal watchlists OR org watchlists where they are admin/owner
+    - Same pattern for update and delete operations
+  - Updated unique constraints:
+    - Personal watchlists: unique per user + indicator
+    - Org watchlists: unique per org + indicator
+  - Server actions in `src/app/actions/watchlist.ts`:
+    - `addToOrgWatchlist(orgId, indicatorId)` - Add indicator to org watchlist (admin/owner only)
+    - `removeFromOrgWatchlist(orgId, indicatorId)` - Remove from org watchlist (admin/owner only)
+    - `getOrgWatchlist(orgId)` - List all org watchlist items (any org member)
+    - `toggleOrgWatchlist(orgId, indicatorId)` - Toggle indicator in org watchlist (admin/owner only)
+  - Unit tests for all organization watchlist actions (27 tests)
+  - Test file: `020_test_org_watchlists.sql` for migration verification
 - **Added:** Organization management UI at `/org/[slug]/settings` (T332)
   - Route: `/org/:slug/settings` with authentication and membership verification
   - Invite members form with email input and role selection (admin/member)
