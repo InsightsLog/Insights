@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 // Valid roles for organization members
-const VALID_ROLES = ["owner", "admin", "member"] as const;
+const VALID_ROLES = ["owner", "admin", "billing_admin", "member"] as const;
 type OrgMemberRole = (typeof VALID_ROLES)[number];
 
 // Schema for validating organization slug

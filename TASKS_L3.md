@@ -144,7 +144,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Shared watchlists visible to all org members
   - Test: org watchlist visible to members; personal watchlist private
 
-- [ ] T334 Add organization billing
+- [x] T334 Add organization billing
   - Organization subscriptions separate from personal
   - Seat-based pricing for team plans
   - Billing admin role for payment management
