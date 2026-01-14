@@ -94,7 +94,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - RLS: users can only read their own subscription
   - Test: subscription records created correctly
 
-- [ ] T322 Integrate Stripe for payments
+- [x] T322 Integrate Stripe for payments
   - Environment: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
   - Route: /api/stripe/webhook for Stripe events
   - Handle: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted
