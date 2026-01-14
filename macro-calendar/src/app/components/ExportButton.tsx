@@ -46,8 +46,22 @@ export function ExportButton({
       const response = await fetch(url);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error ?? `Export failed (${response.status})`);
+        // Try to parse JSON error response, but handle non-JSON responses gracefully
+        const contentType = response.headers.get("Content-Type") ?? "";
+        let errorMessage = `Export failed (${response.status})`;
+        
+        if (contentType.includes("application/json")) {
+          try {
+            const errorData = await response.json();
+            if (errorData?.error) {
+              errorMessage = errorData.error;
+            }
+          } catch {
+            // JSON parsing failed, use default error message
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       // Get the filename from Content-Disposition header or generate one

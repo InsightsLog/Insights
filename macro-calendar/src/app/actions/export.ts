@@ -10,6 +10,18 @@ const exportFormatSchema = z.enum(["csv", "json"]);
 const indicatorIdSchema = z.string().uuid("Invalid indicator ID");
 
 /**
+ * Maximum number of releases to export per request.
+ * Prevents oversized exports and excessive database load.
+ */
+const MAX_EXPORT_RELEASES = 1000;
+
+/**
+ * Maximum length for indicator name in exported filenames.
+ * Ensures filenames remain reasonable and compatible with file systems.
+ */
+const MAX_FILENAME_LENGTH = 50;
+
+/**
  * Type for export format options.
  */
 export type ExportFormat = z.infer<typeof exportFormatSchema>;
@@ -202,7 +214,7 @@ export async function exportWatchlistReleases(
     )
     .in("indicator_id", indicatorIds)
     .order("release_at", { ascending: false })
-    .limit(1000); // Limit to prevent oversized exports
+    .limit(MAX_EXPORT_RELEASES);
 
   if (releasesError) {
     return { success: false, error: "Failed to fetch releases" };
@@ -291,7 +303,7 @@ export async function exportIndicatorHistory(
     .select("id, release_at, period, actual, forecast, previous, revised, unit")
     .eq("indicator_id", indicatorId)
     .order("release_at", { ascending: false })
-    .limit(1000); // Limit to prevent oversized exports
+    .limit(MAX_EXPORT_RELEASES);
 
   if (releasesError) {
     return { success: false, error: "Failed to fetch releases" };
@@ -313,7 +325,7 @@ export async function exportIndicatorHistory(
     .replace(/[^a-zA-Z0-9\s]/g, "")
     .replace(/\s+/g, "-")
     .toLowerCase()
-    .slice(0, 50);
+    .slice(0, MAX_FILENAME_LENGTH);
   const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
   if (format === "json") {
