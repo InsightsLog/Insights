@@ -159,7 +159,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Export historical data for indicators
   - Test: exports contain correct data
 
-- [ ] T341 Add calendar integrations
+- [x] T341 Add calendar integrations
   - Generate iCal feed for watchlist releases
   - Google Calendar one-click add
   - Test: iCal feed valid; Google Calendar link works
