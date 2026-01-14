@@ -186,3 +186,24 @@ export function getStripePriceEnv(): StripePriceConfig {
     },
   };
 }
+
+/**
+ * FRED API environment variables schema.
+ * Optional: Used for importing historical economic data from FRED.
+ * Get a free API key at: https://fred.stlouisfed.org/docs/api/api_key.html
+ */
+const fredEnvSchema = z.object({
+  FRED_API_KEY: z.string().min(1).optional(),
+});
+
+/**
+ * Get FRED API key from environment.
+ * Returns null if FRED API is not configured.
+ */
+export function getFredApiKey(): string | null {
+  const parsed = fredEnvSchema.parse({
+    FRED_API_KEY: process.env.FRED_API_KEY,
+  });
+
+  return parsed.FRED_API_KEY ?? null;
+}

@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+### Data Acquisition (L4)
+- **Added:** FRED bulk import script for historical economic data (T401.1)
+  - Script: `src/lib/data-import/fred-import.ts`
+  - FRED API client: `src/lib/data-import/fred-client.ts`
+  - Imports historical data from FRED (Federal Reserve Economic Data) API
+  - Supports 15+ key US economic indicators:
+    - GDP: Real GDP, Real GDP Growth Rate
+    - Inflation: CPI, Core CPI, PPI
+    - Employment: Unemployment Rate, Non-Farm Payrolls, Initial Jobless Claims
+    - Interest Rates: Federal Funds Rate, 10-Year Treasury, 2-Year Treasury
+    - Consumer: Consumer Sentiment, Retail Sales
+    - Housing: Housing Starts, Building Permits
+    - Manufacturing: Industrial Production Index
+  - Features:
+    - Rate limiting support (120 requests/minute)
+    - Automatic deduplication using (indicator_id, release_at, period) key
+    - Creates indicators if they don't exist
+    - Progress tracking and error handling
+    - Configurable start date (default: 2014-01-01, 10+ years of data)
+    - Support for importing specific series or all configured series
+  - Usage: `npx tsx src/lib/data-import/fred-import.ts`
+  - Environment variable: `FRED_API_KEY` (get free at https://fred.stlouisfed.org/docs/api/api_key.html)
+  - Unit tests for FRED client (15 tests) and import functionality (5 tests)
+
 ### Navigation & UX (L3)
 - **Added:** Settings dropdown menu in header for authenticated users
   - Accessible via settings gear icon next to user email
