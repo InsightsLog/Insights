@@ -12,7 +12,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
-import { getStripeEnv } from "@/lib/env";
+import { getStripeEnv, getStripePriceEnv, StripePriceConfig } from "@/lib/env";
 import Stripe from "stripe";
 
 /**
@@ -223,17 +223,27 @@ export async function createCheckoutSession(
     return { success: false, error: "Plan not found" };
   }
 
-  // Get the Stripe price ID from plan features
+  // Get the Stripe price ID from plan features (database) or environment variables (fallback)
   const features = plan.features as Record<string, unknown>;
-  const priceId =
+  let priceId: string | undefined =
     billingInterval === "yearly"
-      ? (features.stripe_price_id_yearly as string)
-      : (features.stripe_price_id_monthly as string);
+      ? (features.stripe_price_id_yearly as string | undefined)
+      : (features.stripe_price_id_monthly as string | undefined);
+
+  // Fallback to environment variables if not configured in database
+  if (!priceId) {
+    const priceConfig = getStripePriceEnv();
+    const planKey = plan.name.toLowerCase() as keyof StripePriceConfig;
+    const planPrices = priceConfig[planKey];
+    if (planPrices) {
+      priceId = billingInterval === "yearly" ? planPrices.yearly : planPrices.monthly;
+    }
+  }
 
   if (!priceId) {
     return {
       success: false,
-      error: `No Stripe price configured for ${plan.name} (${billingInterval})`,
+      error: `No Stripe price configured for ${plan.name} (${billingInterval}). Set STRIPE_PRICE_${plan.name.toUpperCase()}_${billingInterval.toUpperCase()} environment variable.`,
     };
   }
 

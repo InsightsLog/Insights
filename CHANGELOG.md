@@ -19,9 +19,18 @@
   - `createCheckoutSession(planId, interval)` - Create Stripe Checkout session for upgrades
   - `cancelSubscription()` - Cancel at period end via Stripe API
   - `reactivateSubscription()` - Remove cancellation for active period subscriptions
-- **Added:** Unit tests for billing actions (21 tests)
+- **Added:** Unit tests for billing actions (22 tests)
   - Tests for all billing actions with authentication and error handling
   - Stripe API mocking for checkout and subscription management
+- **Fixed:** "No Stripe price configured" error when upgrading plans
+  - Stripe price IDs can now be configured via environment variables as fallback
+  - New environment variables: `STRIPE_PRICE_{PLAN}_{INTERVAL}` (e.g., `STRIPE_PRICE_PLUS_MONTHLY`)
+  - Price IDs in database `features` JSONB field still take precedence if set
+  - Updated error message to include environment variable name for easier configuration
+- **Added:** `getStripePriceEnv()` function in `src/lib/env.ts`
+  - Returns Stripe price IDs from environment variables for Plus, Pro, and Enterprise plans
+  - Supports both monthly and yearly billing intervals
+- **Added:** Unit tests for Stripe price environment configuration (6 tests)
 
 ### Documentation
 - **Clarified:** Stripe webhook testing instructions for `checkout.session.completed` event
