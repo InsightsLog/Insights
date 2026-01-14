@@ -3,6 +3,25 @@
 ## [Unreleased]
 
 ### Multi-Tenant Admin (L3)
+- **Added:** Organization management UI at `/org/[slug]/settings` (T332)
+  - Route: `/org/:slug/settings` with authentication and membership verification
+  - Invite members form with email input and role selection (admin/member)
+  - Member list display with role badges and joined date
+  - Change role functionality for admins (member ↔ admin)
+  - Remove member functionality with confirmation dialog
+  - Transfer ownership button (owner only) to make another member the owner
+  - Leave organization functionality for non-owners
+  - Role permissions reference section explaining Owner/Admin/Member roles
+  - Server actions in `src/app/actions/organizations.ts`:
+    - `getOrganization(slug)` - Fetch organization by slug
+    - `getCurrentUserRole(orgId)` - Get current user's role in organization
+    - `listOrganizationMembers(orgId)` - List all members with profile info
+    - `inviteMember(orgId, {email, role})` - Invite new member by email
+    - `updateMemberRole(memberId, newRole)` - Change member's role
+    - `removeMember(memberId)` - Remove member from organization
+    - `transferOwnership(orgId, newOwnerUserId)` - Transfer ownership to another member
+    - `leaveOrganization(orgId)` - Leave organization voluntarily
+  - Unit tests for all organization actions (41 tests)
 - **Added:** Organizations table for multi-tenant team features (T330)
   - Migration: `018_create_organizations.sql`
   - Schema: id, name, slug (unique, URL-friendly), owner_id (FK to profiles), created_at
