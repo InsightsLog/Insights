@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS organizations (
 );
 
 -- Create indexes for efficient lookups
-CREATE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
 CREATE INDEX IF NOT EXISTS idx_organizations_owner_id ON organizations(owner_id);
 
 -- Add comments for documentation

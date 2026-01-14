@@ -54,8 +54,7 @@ ORDER BY indexname;
 
 -- Expected indexes:
 -- organizations_pkey (unique index on id)
--- organizations_slug_key (unique index on slug)
--- idx_organizations_slug (index on slug)
+-- organizations_slug_key (unique index on slug - auto-created by UNIQUE constraint)
 -- idx_organizations_owner_id (index on owner_id)
 
 -- =============================================================================
