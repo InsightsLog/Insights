@@ -14,6 +14,21 @@
     - Owners can delete their own organizations
   - Indexes: slug (for URL lookups), owner_id (for user's organizations)
 - **Added:** Test file for organizations verification (`018_test_organizations.sql`)
+- **Added:** Organization members table for team membership management (T331)
+  - Migration: `019_create_organization_members.sql`
+  - Schema: id, org_id (FK to organizations), user_id (FK to profiles), role, invited_at, joined_at
+  - Roles: 'owner', 'admin', 'member' (enforced by CHECK constraint)
+  - Foreign key behavior: CASCADE on org deletion, CASCADE on user deletion
+  - Unique constraint: (org_id, user_id) - one membership per user per organization
+  - RLS policies:
+    - Org members can read their organization's member list
+    - Org admins and owners can add new members
+    - Org admins and owners can update member roles
+    - Org admins and owners can remove members
+  - Indexes: org_id (for org member lookups), user_id (for user's memberships), role (for role queries)
+  - Helper function: `is_org_admin(org_id)` for RLS policy checks
+- **Updated:** Organizations RLS to allow org members to read (not just owners)
+- **Added:** Test file for organization_members verification (`019_test_organization_members.sql`)
 
 ### Billing & Quotas (L3)
 - **Added:** Usage alerts for approaching quota limits (T325)
