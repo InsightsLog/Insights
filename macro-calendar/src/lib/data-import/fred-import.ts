@@ -176,6 +176,8 @@ async function importSeriesObservations(
 ): Promise<{ inserted: number; updated: number; skipped: number }> {
   let inserted = 0;
   let updated = 0;
+  // skipped is currently always 0 - data validation (T401.6) will add skip logic
+  // for duplicate/invalid records. Keeping the field for API consistency.
   const skipped = 0;
 
   // Prepare all releases data
