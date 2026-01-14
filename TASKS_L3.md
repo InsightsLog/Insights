@@ -127,7 +127,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Unique slug for URL-friendly org names
   - Test: can create organization
 
-- [ ] T331 Add organization_members table
+- [x] T331 Add organization_members table
   - Migration: organization_members(id, org_id, user_id, role, invited_at, joined_at)
   - Roles: 'owner', 'admin', 'member'
   - RLS: org members can read; org admins can write

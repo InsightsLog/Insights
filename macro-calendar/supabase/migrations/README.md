@@ -23,6 +23,7 @@ In your Supabase SQL Editor, execute the migrations in the following order:
 15. `016_create_subscriptions.sql` - Creates subscriptions table for billing
 16. `017_create_usage_alerts_sent.sql` - Creates usage_alerts_sent table for tracking alerts
 17. `018_create_organizations.sql` - Creates organizations table for multi-tenant admin
+18. `019_create_organization_members.sql` - Creates organization_members table with RLS
 
 ### 2. Test the Schema (Optional)
 
@@ -34,6 +35,7 @@ To verify the schema:
 4. `016_test_subscriptions.sql` - Verification queries for subscriptions table
 5. `017_test_usage_alerts_sent.sql` - Verification queries for usage_alerts_sent table
 6. `018_test_organizations.sql` - Verification queries for organizations table
+7. `019_test_organization_members.sql` - Verification queries for organization_members table
 
 ### 3. Verify Indexes
 
@@ -118,9 +120,18 @@ Expected indexes:
 ### organizations table
 - Stores organizations for multi-tenant team features
 - Columns: id, name, slug (unique, URL-friendly), owner_id (FK to profiles), created_at
-- RLS: owners can CRUD their own organizations
+- RLS: owners can CRUD their own organizations; org members can read
 - Foreign key behavior: CASCADE on owner deletion
 - Unique constraint: slug (for URL-friendly organization identifiers)
+
+### organization_members table
+- Stores organization membership with role assignments
+- Columns: id, org_id (FK to organizations), user_id (FK to profiles), role, invited_at, joined_at
+- Roles: 'owner', 'admin', 'member' (enforced by CHECK constraint)
+- RLS: org members can read; org admins/owners can write (INSERT, UPDATE, DELETE)
+- Foreign key behavior: CASCADE on org deletion, CASCADE on user deletion
+- Unique constraint: (org_id, user_id) - one membership per user per org
+- Helper function: `is_org_admin(org_id)` for RLS policy checks
 
 ## Clean Up (Development Only)
 
