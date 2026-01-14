@@ -4,6 +4,7 @@ import { z } from "zod";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AlertToggle } from "@/app/components/AlertToggle";
+import { ExportButton } from "@/app/components/ExportButton";
 
 export const metadata: Metadata = {
   title: "My Watchlist",
@@ -222,12 +223,22 @@ export default async function WatchlistPage() {
           >
             ← Back to Calendar
           </Link>
-          <h1 className="mt-4 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-            My Watchlist
-          </h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Track your saved macroeconomic indicators
-          </p>
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+                My Watchlist
+              </h1>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                Track your saved macroeconomic indicators
+              </p>
+            </div>
+            {watchlistItems.length > 0 && (
+              <ExportButton
+                downloadUrl="/api/export/watchlist"
+                label="Export Releases"
+              />
+            )}
+          </div>
         </div>
 
         {/* Empty state */}
