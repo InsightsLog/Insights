@@ -107,7 +107,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Cancel subscription button
   - Test: can view plan; upgrade redirects to Stripe; cancellation works
 
-- [ ] T324 Add usage quota enforcement
+- [x] T324 Add usage quota enforcement
   - Middleware checks API call count against plan limit
   - Returns 429 with upgrade prompt when quota exceeded
   - Reset counters monthly
