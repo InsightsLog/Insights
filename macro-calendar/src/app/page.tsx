@@ -269,7 +269,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className="mx-auto max-w-5xl px-2 py-4 sm:px-4 sm:py-6">
         {/* Filters — T022 */}
         <CalendarFilters
           countries={filterOptions.countries}
@@ -288,137 +288,146 @@ export default async function CalendarPage({ searchParams }: PageProps) {
           </div>
         )}
 
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-          <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
-            <thead className="bg-zinc-50 dark:bg-zinc-800">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Time
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Country
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Indicator
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Period
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Actual
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Forecast
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Previous
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Revised
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {releases.length === 0 && !hasError ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center">
-                    <div className="text-zinc-400 dark:text-zinc-500">
-                      <svg
-                        className="mx-auto h-12 w-12 mb-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                      <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                        No upcoming releases
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
-                        {filters.country || filters.category || filters.search
-                          ? "Try adjusting your filters or search terms."
-                          : "No economic releases scheduled for the next 7 days."}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                releases.map((release) => {
-                  const status = getReleaseStatus(release.actual);
+        {/* Mobile scroll hint */}
+        <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400 sm:hidden">
+          ← Scroll horizontally to see all columns →
+        </p>
 
-                  return (
-                    <tr
-                      key={release.id}
-                      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                    >
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100">
-                      {formatReleaseTime(release.release_at)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {release.indicator?.country_code ?? "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      <div className="flex items-center gap-2">
-                        {release.indicator ? (
-                          <Link
-                            href={`/indicator/${release.indicator.id}`}
-                            className="text-blue-600 hover:underline dark:text-blue-400"
-                          >
-                            {release.indicator.name}
-                          </Link>
-                        ) : (
-                          "Unknown"
-                        )}
-                        <RevisionBadge revisions={release.revision_history} />
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {release.period}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      {release.actual ? (
-                        <span className="font-semibold text-green-700 dark:text-green-400">
-                          {release.actual}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400 dark:text-zinc-500">—</span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {release.forecast ?? "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {release.previous ?? "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {release.revised ?? "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                          status === "released"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                        }`}
-                      >
-                        {status}
-                      </span>
-                    </td>
+        <div className="-mx-2 overflow-x-auto sm:mx-0 sm:rounded-lg sm:border sm:border-zinc-200 sm:dark:border-zinc-800">
+          <div className="inline-block min-w-full align-middle">
+            <div className="overflow-hidden border-y border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 sm:rounded-lg sm:border-y-0">
+              <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
+                <thead className="bg-zinc-50 dark:bg-zinc-800">
+                  <tr>
+                    <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
+                      Time
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
+                      Country
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
+                      Indicator
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
+                      Period
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
+                      Actual
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
+                      Forecast
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
+                      Previous
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
+                      Revised
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
+                      Status
+                    </th>
                   </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  {releases.length === 0 && !hasError ? (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-12 text-center">
+                        <div className="text-zinc-400 dark:text-zinc-500">
+                          <svg
+                            className="mx-auto mb-4 h-12 w-12"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                            No upcoming releases
+                          </p>
+                          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
+                            {filters.country || filters.category || filters.search
+                              ? "Try adjusting your filters or search terms."
+                              : "No economic releases scheduled for the next 7 days."}
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    releases.map((release) => {
+                      const status = getReleaseStatus(release.actual);
+
+                      return (
+                        <tr
+                          key={release.id}
+                          className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                        >
+                          <td className="whitespace-nowrap px-2 py-2 text-xs text-zinc-900 dark:text-zinc-100 sm:px-4 sm:py-3 sm:text-sm">
+                            {formatReleaseTime(release.release_at)}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-xs text-zinc-600 dark:text-zinc-400 sm:px-4 sm:py-3 sm:text-sm">
+                            {release.indicator?.country_code ?? "—"}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-xs font-medium text-zinc-900 dark:text-zinc-100 sm:px-4 sm:py-3 sm:text-sm">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              {release.indicator ? (
+                                <Link
+                                  href={`/indicator/${release.indicator.id}`}
+                                  className="text-blue-600 hover:underline dark:text-blue-400"
+                                >
+                                  {release.indicator.name}
+                                </Link>
+                              ) : (
+                                "Unknown"
+                              )}
+                              <RevisionBadge revisions={release.revision_history} />
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-xs text-zinc-600 dark:text-zinc-400 sm:px-4 sm:py-3 sm:text-sm">
+                            {release.period}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-xs sm:px-4 sm:py-3 sm:text-sm">
+                            {release.actual ? (
+                              <span className="font-semibold text-green-700 dark:text-green-400">
+                                {release.actual}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-400 dark:text-zinc-500">—</span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-xs text-zinc-600 dark:text-zinc-400 sm:px-4 sm:py-3 sm:text-sm">
+                            {release.forecast ?? "—"}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-xs text-zinc-600 dark:text-zinc-400 sm:px-4 sm:py-3 sm:text-sm">
+                            {release.previous ?? "—"}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-xs text-zinc-600 dark:text-zinc-400 sm:px-4 sm:py-3 sm:text-sm">
+                            {release.revised ?? "—"}
+                          </td>
+                          <td className="whitespace-nowrap px-2 py-2 text-xs sm:px-4 sm:py-3 sm:text-sm">
+                            <span
+                              className={`inline-flex rounded-full px-1.5 py-0.5 text-xs font-medium sm:px-2 sm:py-1 ${
+                                status === "released"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              }`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </main>
     </div>

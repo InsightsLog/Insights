@@ -12,6 +12,8 @@ type CalendarFiltersProps = {
 /**
  * Client component for country and category filter dropdowns.
  * Uses URL search params for state so filters are bookmarkable/shareable.
+ * 
+ * Mobile responsive: filters stack in a grid layout on small screens.
  */
 export function CalendarFilters({
   countries,
@@ -58,12 +60,12 @@ export function CalendarFilters({
   }, [searchValue, currentSearch, updateFilter]);
 
   return (
-    <div className="mb-4 flex flex-wrap gap-3">
+    <div className="mb-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:gap-3">
       {/* Country filter */}
       <div className="flex items-center gap-2">
         <label
           htmlFor="country-filter"
-          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          className="min-w-[60px] text-xs font-medium text-zinc-700 dark:text-zinc-300 sm:min-w-0 sm:text-sm"
         >
           Country
         </label>
@@ -71,7 +73,7 @@ export function CalendarFilters({
           id="country-filter"
           value={currentCountry}
           onChange={(e) => updateFilter("country", e.target.value)}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+          className="flex-1 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 sm:flex-initial sm:px-3"
         >
           <option value="">All countries</option>
           {countries.map((code) => (
@@ -86,7 +88,7 @@ export function CalendarFilters({
       <div className="flex items-center gap-2">
         <label
           htmlFor="category-filter"
-          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          className="min-w-[60px] text-xs font-medium text-zinc-700 dark:text-zinc-300 sm:min-w-0 sm:text-sm"
         >
           Category
         </label>
@@ -94,7 +96,7 @@ export function CalendarFilters({
           id="category-filter"
           value={currentCategory}
           onChange={(e) => updateFilter("category", e.target.value)}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+          className="flex-1 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 sm:flex-initial sm:px-3"
         >
           <option value="">All categories</option>
           {categories.map((cat) => (
@@ -109,7 +111,7 @@ export function CalendarFilters({
       <div className="flex items-center gap-2">
         <label
           htmlFor="search-filter"
-          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          className="min-w-[60px] text-xs font-medium text-zinc-700 dark:text-zinc-300 sm:min-w-0 sm:text-sm"
         >
           Search
         </label>
@@ -119,7 +121,7 @@ export function CalendarFilters({
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Indicator name..."
-          className="w-48 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+          className="flex-1 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500 sm:w-48 sm:flex-initial sm:px-3"
         />
       </div>
 
@@ -139,7 +141,7 @@ export function CalendarFilters({
               }
               className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:border-zinc-600 dark:bg-zinc-800"
             />
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 sm:text-sm">
               My Watchlist
             </span>
           </label>
@@ -153,7 +155,7 @@ export function CalendarFilters({
             setSearchValue("");
             router.push("/");
           }}
-          className="rounded-md border border-zinc-300 bg-zinc-100 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600"
+          className="rounded-md border border-zinc-300 bg-zinc-100 px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 sm:px-3 sm:text-sm"
         >
           Clear filters
         </button>

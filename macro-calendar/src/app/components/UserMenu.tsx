@@ -71,13 +71,13 @@ export function UserMenu({ initialUser }: UserMenuProps) {
 
   if (currentUser && displayEmail) {
     return (
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <span className="max-w-[150px] truncate text-xs text-zinc-600 dark:text-zinc-400 sm:max-w-none sm:text-sm">
           {displayEmail}
         </span>
         <button
           onClick={handleSignOut}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          className="flex-shrink-0 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 sm:px-3 sm:py-1.5 sm:text-sm"
         >
           Sign Out
         </button>

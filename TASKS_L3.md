@@ -164,7 +164,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Google Calendar one-click add
   - Test: iCal feed valid; Google Calendar link works
 
-- [ ] T342 Add mobile-responsive improvements
+- [x] T342 Add mobile-responsive improvements
   - Audit and fix mobile layout issues
   - Add PWA manifest for app-like experience
   - Test: app works well on mobile devices

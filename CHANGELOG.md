@@ -3,6 +3,31 @@
 ## [Unreleased]
 
 ### Additional Enhancements (L3)
+- **Added:** Mobile-responsive improvements and PWA support (T342)
+  - PWA manifest (`public/manifest.json`) for app-like mobile experience:
+    - App name, short name, description
+    - Theme color (#2563eb) matching brand
+    - Standalone display mode for full-screen app experience
+    - Portrait-primary orientation for mobile
+    - Icons in 192x192 and 512x512 sizes
+    - Finance/business/productivity categories
+  - App icons:
+    - `public/icons/icon-192.png` - Standard PWA icon
+    - `public/icons/icon-512.png` - High-resolution PWA icon
+    - `public/icons/apple-touch-icon.png` - iOS home screen icon
+    - `public/icons/icon.svg` - Source vector icon
+  - Layout metadata updates (`src/app/layout.tsx`):
+    - Viewport configuration with proper mobile scaling
+    - Theme color meta tags for browser UI theming
+    - Apple Web App capable meta tags
+    - Format detection disabled for telephone numbers
+    - Manifest link for PWA installation
+  - Mobile layout fixes:
+    - Header: Stacks vertically on small screens with reduced padding
+    - CalendarFilters: Grid layout on mobile, flex on desktop
+    - Calendar table: Mobile scroll hint, reduced padding, smaller text
+    - UserMenu: Truncates long emails on mobile, smaller button sizes
+    - Status badges: Compact sizing on mobile
 - **Added:** Calendar integrations for watchlist (T341)
   - Generate iCal/ICS feed for watchlist releases
   - Google Calendar one-click add for individual events
