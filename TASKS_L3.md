@@ -100,7 +100,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
   - Handle: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted
   - Test: Stripe webhook updates subscription status
 
-- [ ] T323 Add billing page
+- [x] T323 Add billing page
   - Route: /settings/billing
   - Shows current plan, usage, upgrade options
   - Stripe Checkout integration for upgrades
