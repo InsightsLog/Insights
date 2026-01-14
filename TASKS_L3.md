@@ -122,7 +122,7 @@ L3 focuses on API access, webhooks, and monetization foundations.
 
 ## 3) Multi-Tenant Admin
 
-- [ ] T330 Add organizations table
+- [x] T330 Add organizations table
   - Migration: organizations(id, name, slug, owner_id, created_at)
   - Unique slug for URL-friendly org names
   - Test: can create organization
