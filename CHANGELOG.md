@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+### Billing & Quotas (L3)
+- **Added:** Billing page at `/settings/billing` (T323)
+  - Displays current subscription plan with status badges (Active, Canceling, Past Due, Trial)
+  - Shows API usage with progress bar and monthly quota
+  - Plan upgrade options with monthly/yearly billing toggle
+  - Stripe Checkout integration for plan upgrades
+  - Cancel subscription button with confirmation dialog
+  - Reactivate subscription for canceled plans (within billing period)
+  - Feature lists for each plan tier
+  - Help section with support contact
+- **Added:** Billing server actions (`src/app/actions/billing.ts`)
+  - `getPlans()` - Fetch all available subscription plans
+  - `getCurrentSubscription()` - Get user's current subscription with plan details
+  - `getApiUsage()` - Get API call count for current billing period
+  - `createCheckoutSession(planId, interval)` - Create Stripe Checkout session for upgrades
+  - `cancelSubscription()` - Cancel at period end via Stripe API
+  - `reactivateSubscription()` - Remove cancellation for active period subscriptions
+- **Added:** Unit tests for billing actions (21 tests)
+  - Tests for all billing actions with authentication and error handling
+  - Stripe API mocking for checkout and subscription management
+
 ### Documentation
 - **Clarified:** Stripe webhook testing instructions for `checkout.session.completed` event
   - Added note that `stripe trigger checkout.session.completed` creates a payment-mode session without a subscription
