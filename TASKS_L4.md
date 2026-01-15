@@ -385,9 +385,9 @@ These sources update within minutes of official release:
 ```
 
 **Schedule Explanation (UTC):**
-- `*/5 12-15 * * 1-5`: Every 5 minutes from 12:00-15:59 UTC (covers 8:00 AM - 11:59 AM ET during EST)
-- `30 13 * * 1-5`: 1:30 PM UTC = 8:30 AM ET (exact US release time during EST)
-- During EDT (Daylight Saving): adjust to `30 12` for 8:30 AM ET
+- `*/5 12-15 * * 1-5`: Every 5 minutes from 12:00-15:59 UTC (covers 7:00 AM - 10:59 AM ET during EST, 8:00 AM - 11:59 AM ET during EDT)
+- `30 13 * * 1-5`: 1:30 PM UTC = 8:30 AM ET during EST (exact US release time)
+- During EDT (Daylight Saving): 1:30 PM UTC = 9:30 AM ET; use `30 12` for 8:30 AM ET
 
 **DST Handling Note:** For production, consider using a timezone-aware scheduling solution (e.g., storing schedules in local timezone and converting at runtime) to automatically handle daylight saving transitions.
 

@@ -707,7 +707,7 @@ The Macro Calendar provides comprehensive coverage of all G20 member economies:
 
 ### 14.2 Additional Countries
 
-Beyond G20, the platform covers 38+ economies including:
+Beyond G20, the platform covers additional economies including:
 - **Eurozone**: Austria, Belgium, Greece, Ireland, Netherlands, Portugal, Spain
 - **Asia-Pacific**: Hong Kong, Malaysia, New Zealand, Singapore, Thailand
 - **Latin America**: Chile, Colombia
@@ -717,8 +717,8 @@ Beyond G20, the platform covers 38+ economies including:
 
 | Source | Coverage | API Key Required | Notes |
 |--------|----------|------------------|-------|
-| FRED | US (800K+ series) | Yes (free) | Most comprehensive US data |
-| BLS | US (employment, prices) | Optional | Higher limits with key |
+| FRED | US (800K+ series) | Required (free tier) | Most comprehensive US data |
+| BLS | US (employment, prices) | Optional (free tier) | Higher limits with key |
 | ECB | Eurozone | No | Interest rates, inflation, GDP |
 | IMF | Global (37 countries) | No | World Economic Outlook data |
 | World Bank | Global (38 countries) | No | Development indicators |
