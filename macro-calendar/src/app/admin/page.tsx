@@ -6,6 +6,8 @@ import { RoleManager } from "@/app/components/RoleManager";
 import { FredImportButton } from "@/app/components/FredImportButton";
 import { BLSImportButton } from "@/app/components/BLSImportButton";
 import { ECBImportButton } from "@/app/components/ECBImportButton";
+import { WorldBankImportButton } from "@/app/components/WorldBankImportButton";
+import { IMFImportButton } from "@/app/components/IMFImportButton";
 import { ClearDataButton } from "@/app/components/ClearDataButton";
 import type { Metadata } from "next";
 
@@ -160,6 +162,16 @@ export default async function AdminDashboardPage() {
         {/* ECB Data Import */}
         <div className="mb-6">
           <ECBImportButton />
+        </div>
+
+        {/* World Bank Data Import */}
+        <div className="mb-6">
+          <WorldBankImportButton />
+        </div>
+
+        {/* IMF Data Import */}
+        <div className="mb-6">
+          <IMFImportButton />
         </div>
 
         {/* Clear Data */}
