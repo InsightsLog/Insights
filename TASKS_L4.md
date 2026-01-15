@@ -293,6 +293,115 @@ Create a comprehensive strategy for acquiring 10+ years of historical economic d
 
 ---
 
+### T402 — Real-Time/Fast Data Updates Strategy
+
+#### Objective
+Implement a strategy for receiving economic data releases as fast as possible after they are published by government agencies and central banks.
+
+#### Priority Data Sources by Speed
+
+##### Tier 1: Near Real-Time (Minutes after release)
+These sources update within minutes of official release:
+
+| Source | Data Type | Update Speed | Method |
+|--------|-----------|--------------|--------|
+| **FRED** | US indicators | ~5-15 min | Scheduled polling at known release times |
+| **ECB SDW** | Eurozone | ~30 min | Scheduled polling |
+| **BLS** | US Employment/CPI | ~15 min | Scheduled polling at 8:30 AM ET |
+
+##### Tier 2: Same-Day (Hours after release)
+| Source | Data Type | Update Speed | Method |
+|--------|-----------|--------------|--------|
+| World Bank | Global indicators | Same day | Daily batch sync |
+| IMF | Global indicators | Same day | Daily batch sync |
+| OECD | OECD countries | Same day | Daily batch sync |
+
+#### Implementation Plan
+
+##### Phase 1: Scheduled Polling (Immediate Priority)
+1. **Release Time Database**
+   - Create a `release_schedules` table with known release times
+   - US data: 8:30 AM ET (employment, CPI, GDP)
+   - ECB data: 10:00 AM CET (interest rate decisions, HICP)
+   - Example: "Non-Farm Payrolls releases first Friday of every month at 8:30 AM ET"
+
+2. **Vercel Cron Jobs**
+   - Set up cron jobs in `vercel.json` to poll at known release times
+   - Polling frequency: Every 5 minutes during release windows
+   - Off-peak: Every 30 minutes
+
+3. **Release Detection**
+   - Compare fetched data with existing releases
+   - Trigger webhooks/email alerts for new data
+   - Update revision history for changed values
+
+##### Phase 2: Supabase Edge Functions (Week 2)
+4. **Scheduled Edge Functions**
+   - Deploy Edge Functions with scheduled invocations
+   - More reliable than Vercel Cron for time-sensitive operations
+   - Example: `supabase functions deploy fetch-fred-data --schedule "*/5 8-10 * * 1-5"`
+
+5. **Multi-Source Aggregation**
+   - Fetch from multiple sources simultaneously
+   - Priority: FRED > BLS > ECB > World Bank
+   - First valid data wins for each indicator
+
+##### Phase 3: Push Notifications (Week 3-4)
+6. **Webhook to Email/Push Pipeline**
+   - When new release detected, trigger existing `send-release-alert` function
+   - Send push notifications via webhook endpoints
+   - Target latency: < 5 minutes from official release
+
+#### Known Release Schedules
+
+| Indicator | Source | Release Schedule | Time (Local) |
+|-----------|--------|------------------|--------------|
+| Non-Farm Payrolls | BLS | 1st Friday of month | 8:30 AM ET |
+| Unemployment Rate | BLS | 1st Friday of month | 8:30 AM ET |
+| CPI | BLS | ~12th of month | 8:30 AM ET |
+| PPI | BLS | ~15th of month | 8:30 AM ET |
+| Real GDP | BEA | End of month (Q+1) | 8:30 AM ET |
+| Fed Funds Rate | FRED | After FOMC meetings | 2:00 PM ET |
+| ECB Interest Rates | ECB | ECB meeting days | 2:15 PM CET |
+| Eurozone HICP | Eurostat | End of month | 11:00 AM CET |
+
+#### Vercel Cron Configuration
+
+```json
+// vercel.json
+{
+  "crons": [
+    {
+      "path": "/api/cron/fetch-releases",
+      "schedule": "*/5 12-14 * * 1-5"
+    },
+    {
+      "path": "/api/cron/fetch-releases",
+      "schedule": "30 8 * * 1-5"
+    }
+  ]
+}
+```
+
+#### Implementation Tasks
+- [ ] T402.1 Create `release_schedules` table with known release times
+- [ ] T402.2 Implement `/api/cron/fetch-releases` endpoint
+- [ ] T402.3 Set up Vercel Cron jobs for US release times (8:30 AM ET)
+- [ ] T402.4 Set up Vercel Cron jobs for EU release times (10:00 AM CET)
+- [ ] T402.5 Implement release detection and comparison logic
+- [ ] T402.6 Trigger existing webhook/email infrastructure for new releases
+- [ ] T402.7 Add release schedule management in admin dashboard
+- [ ] T402.8 Document known release schedules by country
+
+#### Acceptance Criteria
+- [ ] US economic releases detected within 15 minutes of publication
+- [ ] Eurozone releases detected within 30 minutes of publication
+- [ ] Automatic webhook/email alerts triggered for new releases
+- [ ] Revision detection works for updated values
+- [ ] Admin can view and manage release schedules
+
+---
+
 ## Priority 2: Mobile & Integrations
 
 ### T410 — Mobile App (React Native)
