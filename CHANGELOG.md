@@ -2,17 +2,32 @@
 
 ## [Unreleased]
 
+### CME Group Calendar Integration (Replaces Paid APIs)
+- **Major Change:** Replaced paid API dependencies (FMP, Finnhub, Trading Economics) with CME Group scraping
+  - New `cme-calendar-client.ts`: Scrapes CME Group's Economic Releases Calendar
+  - New `cme-import.ts`: Import logic with schedule change detection
+  - No API keys required - uses web scraping of public CME calendar
+  - Automatic schedule change tracking with alerts when events are rescheduled
+- **Updated:** Admin UI now shows CME Group as the data source
+  - Simplified UI - no API key configuration needed
+  - Shows schedule changes detected during import
+  - Displays supported countries and features
+- **Updated:** Cron endpoint now uses CME import instead of paid APIs
+- **Updated:** DEPLOY.md Section 15 rewritten for CME-based import
+  - Removed references to FMP, Finnhub, Trading Economics API keys
+  - Added schedule change detection documentation
+  - Simplified setup - only CRON_SECRET needed
+- **Added:** `cheerio` dependency for HTML parsing
+
 ### Scheduled Releases Setup (L4)
 - **Added:** Complete documentation for configuring upcoming economic releases (T403.3)
   - New Section 15 in DEPLOY.md: "Scheduled Releases (Upcoming Events)"
-  - Step-by-step guide for obtaining API keys (FMP, Finnhub, Trading Economics)
-  - Environment variable configuration instructions
+  - No API key registration required
   - Manual import and automated cron sync options
   - Troubleshooting guide for common issues
 - **Updated:** Environment variables table in DEPLOY.md
-  - Added `FMP_API_KEY`, `FINNHUB_API_KEY`, `TRADING_ECONOMICS_API_KEY`
-  - Added `CRON_SECRET` for Vercel Cron authentication
-  - Updated notes explaining which keys are needed for scheduled releases
+  - Removed `FMP_API_KEY`, `FINNHUB_API_KEY`, `TRADING_ECONOMICS_API_KEY` (no longer needed)
+  - `CRON_SECRET` for Vercel Cron authentication
 
 ### Sub-Second Real-Time Updates (L4)
 - **Added:** Supabase Realtime integration for sub-second data propagation (T400)

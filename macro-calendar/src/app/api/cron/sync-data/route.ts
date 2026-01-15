@@ -1,16 +1,18 @@
 /**
  * GET /api/cron/sync-data - Scheduled data sync endpoint
  *
- * This endpoint is called by Vercel Cron to sync economic data from all sources.
- * Runs every 2 hours to keep data fresh.
+ * This endpoint is called by Vercel Cron to sync economic data from CME Group.
+ * Runs every 2 hours to keep data fresh and detect schedule changes.
  *
  * Protected by CRON_SECRET to prevent unauthorized access.
+ *
+ * Source: CME Group Economic Releases Calendar (no API key required)
  *
  * Task: T403.1 - Create /api/cron/sync-data endpoint
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { importUpcomingEvents } from "@/lib/data-import/upcoming-import";
+import { importCMEEvents } from "@/lib/data-import/cme-import";
 
 /** Maximum number of errors to include in the response */
 const MAX_ERRORS_IN_RESPONSE = 10;
@@ -53,12 +55,12 @@ export async function GET(request: NextRequest) {
 
   try {
     console.log("=".repeat(60));
-    console.log("Cron: Starting scheduled data sync");
+    console.log("Cron: Starting scheduled data sync from CME Group");
     console.log("=".repeat(60));
 
-    // Import upcoming events (30 days)
-    // This uses FMP, Finnhub, and Trading Economics APIs
-    const result = await importUpcomingEvents({ days: 30 });
+    // Import upcoming events from CME (2 months)
+    // No API key required - uses web scraping
+    const result = await importCMEEvents({ months: 2 });
 
     const duration = Date.now() - startTime;
 
@@ -68,32 +70,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       duration_ms: duration,
-      sources: {
-        fmp: {
-          available: result.sources.fmp.available,
-          events: result.sources.fmp.events,
-          errors: result.sources.fmp.errors.length,
-        },
-        finnhub: {
-          available: result.sources.finnhub.available,
-          events: result.sources.finnhub.events,
-          errors: result.sources.finnhub.errors.length,
-        },
-        trading_economics: {
-          available: result.sources.tradingEconomics.available,
-          events: result.sources.tradingEconomics.events,
-          errors: result.sources.tradingEconomics.errors.length,
-        },
+      source: {
+        name: result.source.name,
+        events: result.source.events,
+        errors: result.source.errors.length,
       },
       summary: {
-        total_events_from_sources: result.totalEventsFromSources,
-        unique_events: result.uniqueEventsAfterDedup,
+        total_events: result.totalEvents,
         indicators_created: result.indicatorsCreated,
         releases_created: result.releasesCreated,
+        releases_updated: result.releasesUpdated,
         releases_skipped: result.releasesSkipped,
+        schedule_changes: result.schedulesChanged.length,
         countries_covered: result.countriesCovered.length,
       },
-      errors: result.errors.slice(0, MAX_ERRORS_IN_RESPONSE), // Limit errors in response
+      schedule_changes: result.schedulesChanged.slice(0, 10), // Include schedule changes for alerts
+      errors: result.errors.slice(0, MAX_ERRORS_IN_RESPONSE),
     });
   } catch (error) {
     const duration = Date.now() - startTime;

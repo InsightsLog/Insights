@@ -1,29 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { checkAdminRole, logAuditAction } from "@/lib/supabase/auth";
-import { getFMPApiKey, getFinnhubApiKey, getTradingEconomicsApiKey } from "@/lib/env";
-import { importUpcomingEvents } from "@/lib/data-import/upcoming-import";
+import { importCMEEvents } from "@/lib/data-import/cme-import";
 
 /**
  * Request body schema for upcoming events import.
  */
 const requestSchema = z.object({
-  // Optional: Number of days to import (default: 30)
-  days: z.number().min(1).max(90).optional(),
+  // Optional: Number of months to import (default: 2)
+  months: z.number().min(1).max(6).optional(),
 });
 
 /**
  * POST /api/admin/upcoming-import
  * 
- * Triggers an upcoming economic events import from multiple sources.
- * Uses FMP, Finnhub, and Trading Economics APIs (whichever are configured).
- * Events are deduplicated across sources.
+ * Triggers an upcoming economic events import from CME Group.
+ * No API key required - uses web scraping of CME's public calendar.
+ * Automatically detects and tracks schedule changes.
  * 
  * Requires admin authentication.
  * 
  * Request body (optional):
  * {
- *   "days": 30  // Number of days to import (default: 30, max: 90)
+ *   "months": 2  // Number of months to import (default: 2, max: 6)
  * }
  * 
  * Response:
@@ -31,10 +30,10 @@ const requestSchema = z.object({
  *   "success": true,
  *   "message": "Import completed",
  *   "result": {
- *     "sources": { ... },
- *     "totalEventsFromSources": 500,
- *     "uniqueEventsAfterDedup": 350,
- *     "releasesCreated": 320,
+ *     "source": { ... },
+ *     "totalEvents": 150,
+ *     "releasesCreated": 120,
+ *     "schedulesChanged": [...],
  *     ...
  *   }
  * }
@@ -54,26 +53,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Authentication required: Sign in with an admin account" },
         { status: 401 }
-      );
-    }
-
-    // Check if at least one API key is configured
-    const fmpKey = getFMPApiKey();
-    const finnhubKey = getFinnhubApiKey();
-    const teKey = getTradingEconomicsApiKey();
-
-    if (!fmpKey && !finnhubKey && !teKey) {
-      return NextResponse.json(
-        { 
-          error: "No calendar API keys configured",
-          message: "Set at least one of: FMP_API_KEY, FINNHUB_API_KEY, or TRADING_ECONOMICS_API_KEY in Vercel environment variables.",
-          registrationUrls: {
-            fmp: "https://financialmodelingprep.com/register",
-            finnhub: "https://finnhub.io/register",
-            tradingEconomics: "https://tradingeconomics.com/api",
-          }
-        },
-        { status: 400 }
       );
     }
 
@@ -97,12 +76,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Run the import
-    const result = await importUpcomingEvents({
-      days: body.days,
-      fmpApiKey: fmpKey ?? undefined,
-      finnhubApiKey: finnhubKey ?? undefined,
-      teApiKey: teKey ?? undefined,
+    // Run the CME import
+    const result = await importCMEEvents({
+      months: body.months,
     });
 
     // Log the action to audit log
@@ -112,15 +88,12 @@ export async function POST(request: NextRequest) {
       "upcoming_import",
       null,
       {
-        days: body.days ?? 30,
-        sources: {
-          fmp: result.sources.fmp.available,
-          finnhub: result.sources.finnhub.available,
-          tradingEconomics: result.sources.tradingEconomics.available,
-        },
-        totalEvents: result.totalEventsFromSources,
-        uniqueEvents: result.uniqueEventsAfterDedup,
+        months: body.months ?? 2,
+        source: "CME Group",
+        totalEvents: result.totalEvents,
         releasesCreated: result.releasesCreated,
+        releasesUpdated: result.releasesUpdated,
+        schedulesChanged: result.schedulesChanged.length,
         countriesCovered: result.countriesCovered.length,
       }
     );
@@ -133,12 +106,13 @@ export async function POST(request: NextRequest) {
         ? `Import completed with ${result.errors.length} errors`
         : "Upcoming events import completed successfully",
       result: {
-        sources: result.sources,
-        totalEventsFromSources: result.totalEventsFromSources,
-        uniqueEventsAfterDedup: result.uniqueEventsAfterDedup,
+        source: result.source,
+        totalEvents: result.totalEvents,
         indicatorsCreated: result.indicatorsCreated,
         releasesCreated: result.releasesCreated,
+        releasesUpdated: result.releasesUpdated,
         releasesSkipped: result.releasesSkipped,
+        schedulesChanged: result.schedulesChanged.slice(0, 10),
         countriesCovered: result.countriesCovered,
         errors: result.errors.length > 0 ? result.errors.slice(0, 10) : undefined,
       },
@@ -158,9 +132,8 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/admin/upcoming-import
  * 
- * Returns information about the upcoming events import feature, including:
- * - Which API keys are configured
- * - Available data sources
+ * Returns information about the upcoming events import feature.
+ * CME Group is the data source - no API keys required.
  * 
  * Requires admin authentication.
  */
@@ -182,45 +155,26 @@ export async function GET() {
       );
     }
 
-    // Check which API keys are configured
-    const fmpConfigured = !!getFMPApiKey();
-    const finnhubConfigured = !!getFinnhubApiKey();
-    const teConfigured = !!getTradingEconomicsApiKey();
-    const anyConfigured = fmpConfigured || finnhubConfigured || teConfigured;
-
     return NextResponse.json({
-      configured: anyConfigured,
-      sources: {
-        fmp: {
-          configured: fmpConfigured,
-          name: "Financial Modeling Prep",
-          coverage: "Global (G20+ countries)",
-          freeLimit: "250 calls/day",
-          registrationUrl: "https://financialmodelingprep.com/register",
-        },
-        finnhub: {
-          configured: finnhubConfigured,
-          name: "Finnhub",
-          coverage: "Global economic calendar",
-          freeLimit: "60 calls/minute",
-          registrationUrl: "https://finnhub.io/register",
-        },
-        tradingEconomics: {
-          configured: teConfigured,
-          name: "Trading Economics",
-          coverage: "Comprehensive G20+ data",
-          freeLimit: "Registration required",
-          registrationUrl: "https://tradingeconomics.com/api",
-        },
+      configured: true, // CME doesn't require API keys
+      source: {
+        name: "CME Group",
+        description: "Economic Releases Calendar",
+        coverage: "Global economic events (US, EU, JP, GB, etc.)",
+        apiKeyRequired: false,
+        features: [
+          "No API key required - uses web scraping",
+          "Automatic schedule change detection",
+          "Event time tracking and alerts",
+          "2 months of upcoming events",
+        ],
+        url: "https://www.cmegroup.com/education/events/economic-releases-calendar.html",
       },
-      message: anyConfigured 
-        ? "At least one calendar API is configured and ready for import"
-        : "No calendar API keys configured. Set at least one in Vercel environment variables.",
-      g20Countries: [
-        "Argentina", "Australia", "Brazil", "Canada", "China", "France", 
-        "Germany", "India", "Indonesia", "Italy", "Japan", "Mexico", 
-        "Russia", "Saudi Arabia", "South Africa", "South Korea", "Turkey", 
-        "United Kingdom", "United States", "European Union"
+      message: "CME Group calendar is ready. No API keys required.",
+      supportedCountries: [
+        "United States", "Japan", "Germany", "United Kingdom", 
+        "European Union", "France", "Italy", "Spain", "Canada", 
+        "Australia", "New Zealand", "Switzerland", "China", "India"
       ],
     });
   } catch (error) {

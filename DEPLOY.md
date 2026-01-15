@@ -119,9 +119,6 @@ In the Vercel project settings, add these environment variables:
 | `STRIPE_PRICE_ENTERPRISE_MONTHLY` | Stripe price ID for Enterprise monthly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
 | `STRIPE_PRICE_ENTERPRISE_YEARLY` | Stripe price ID for Enterprise yearly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
 | `FRED_API_KEY` | FRED API key for economic data (optional) | Get free at [fred.stlouisfed.org](https://fred.stlouisfed.org/docs/api/api_key.html) |
-| `FMP_API_KEY` | Financial Modeling Prep API key (optional) | Get free at [financialmodelingprep.com](https://financialmodelingprep.com/register) |
-| `FINNHUB_API_KEY` | Finnhub API key (optional) | Get free at [finnhub.io](https://finnhub.io/register) |
-| `TRADING_ECONOMICS_API_KEY` | Trading Economics API key (optional) | Register at [tradingeconomics.com](https://tradingeconomics.com/api) |
 | `CRON_SECRET` | Secret for Vercel Cron authentication | Generate with: `openssl rand -hex 32` |
 
 **Important notes:**
@@ -134,8 +131,8 @@ In the Vercel project settings, add these environment variables:
 - `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are required for billing/subscription features
 - `STRIPE_PRICE_*` variables are required for plan upgrades; get price IDs from Stripe Products dashboard
 - `FRED_API_KEY` is optional; enables importing real economic data from Federal Reserve (see Section 12)
-- `FMP_API_KEY`, `FINNHUB_API_KEY`, `TRADING_ECONOMICS_API_KEY` are optional; at least one is required for importing upcoming scheduled releases (see Section 15)
 - `CRON_SECRET` is required for automated data sync; protects the cron endpoint from unauthorized access
+- Scheduled releases now use CME Group's public calendar (no API keys required) - see Section 15
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
 ### 2.4 Deploy
@@ -733,56 +730,41 @@ Beyond G20, the platform covers additional economies including:
 
 ## 15. Scheduled Releases (Upcoming Events)
 
-The calendar displays upcoming economic releases from multiple data sources. This section explains how to configure and populate the calendar with real scheduled releases.
+The calendar displays upcoming economic releases from CME Group's Economic Releases Calendar. This section explains how to set up and use the scheduled releases feature.
 
 ### 15.1 Overview
 
-Scheduled releases (future economic events) come from external calendar APIs:
-- **Financial Modeling Prep (FMP)**: G20+ global coverage, 250 calls/day (free tier)
-- **Finnhub**: Global economic calendar, 60 calls/minute (free tier)  
-- **Trading Economics**: Comprehensive G20+ data, registration required
+Scheduled releases (future economic events) are imported from CME Group:
+- **CME Group Economic Calendar**: Comprehensive coverage of global economic events
+- **No API key required**: Uses web scraping of CME's public calendar
+- **Schedule change detection**: Automatically tracks when events are rescheduled
+- **Automatic refresh**: Cron job syncs data every 2 hours
 
-At least **one API key** is required to import upcoming events.
+> ✅ **No Paid Subscriptions Required**
+> 
+> Unlike third-party APIs (FMP, Finnhub, Trading Economics) that require paid subscriptions,
+> CME Group's calendar is freely accessible. The import uses web scraping to fetch event data.
 
-### 15.2 Get API Keys
+### 15.2 No API Keys Needed
 
-1. **FMP (Recommended for free tier)**:
-   - Go to [financialmodelingprep.com/register](https://financialmodelingprep.com/register)
-   - Create a free account
-   - Copy your API key from the dashboard
-
-2. **Finnhub**:
-   - Go to [finnhub.io/register](https://finnhub.io/register)
-   - Create a free account
-   - Copy your API key from the dashboard
-
-3. **Trading Economics**:
-   - Go to [tradingeconomics.com/api](https://tradingeconomics.com/api)
-   - Request API access (registration required)
-   - Copy your API key when approved
-
-### 15.3 Configure Environment Variables
+The CME-based import does not require any API keys. Simply configure the cron secret for automated sync:
 
 1. Go to your Vercel project → **Settings** → **Environment Variables**
-2. Add at least one of these:
-   - `FMP_API_KEY` — Your Financial Modeling Prep API key
-   - `FINNHUB_API_KEY` — Your Finnhub API key
-   - `TRADING_ECONOMICS_API_KEY` — Your Trading Economics API key
-3. Add the cron secret for automated sync:
+2. Add the cron secret:
    - `CRON_SECRET` — Generate with `openssl rand -hex 32`
-4. Click **Redeploy** to apply changes
+3. Click **Redeploy** to apply changes
 
-### 15.4 Import Upcoming Events
+### 15.3 Import Upcoming Events
 
 #### Option A: Manual Import (Admin Dashboard)
 1. Sign in with an admin account
 2. Go to `/admin`
-3. Find the "Upcoming Releases Import (G20+)" section
+3. Find the "Upcoming Releases Import (CME Group)" section
 4. Click "Import Upcoming Releases"
-5. The import will fetch events for the next 30 days from configured sources
+5. The import will fetch events for the next 2 months from CME
 
 #### Option B: Automated Sync (Cron Job)
-The app includes a Vercel Cron job that automatically syncs data daily:
+The app includes a Vercel Cron job that automatically syncs data:
 
 - **Endpoint**: `/api/cron/sync-data`
 - **Schedule**: Daily at 5:00 PM Central Time / 23:00 UTC (`0 23 * * *`)
@@ -809,27 +791,39 @@ This runs the same sync process as the scheduled cron job.
 
 After importing:
 1. Go to the calendar at `/` (home page)
-2. You should see scheduled releases for the next 30 days
+2. You should see scheduled releases for the next 2 months
 3. Use filters to browse by country or category
 4. Click on any indicator to see details
 
+### 15.5 Schedule Change Detection
+
+The CME import automatically detects when event schedules change:
+- **Time changes**: When an event is rescheduled to a different time
+- **Date changes**: When an event is moved to a different date
+
+Schedule changes are logged and can be used for alerting. The import response includes a `schedulesChanged` array with details about each change.
+
 ### 15.6 Troubleshooting
 
+**Import returns 0 events:**
+- CME Group's calendar may be temporarily unavailable
+- Check Vercel function logs for scraping errors
+- Try again in a few minutes
+
 **No releases appearing:**
-- Check that at least one API key is configured in Vercel
-- Verify the API keys are valid (test in browser/curl)
+- Run a manual import from `/admin`
 - Check Vercel function logs for import errors
-- Try a manual import from `/admin`
+- Verify the database connection is working
 
 **Cron job not running:**
 - Verify `CRON_SECRET` is set in Vercel
 - Check the Functions tab in Vercel dashboard for cron logs
 - Cron jobs only run in production (not preview deployments)
 
-**Import errors:**
-- API rate limits may cause partial imports
-- Free tier limits: FMP (250/day), Finnhub (60/min)
-- The import handles rate limits gracefully and imports what it can
+**Scraping errors:**
+- CME may have changed their page structure
+- Check for updates to the `cme-calendar-client.ts` file
+- Open an issue on GitHub for support
 
 ---
 
@@ -837,6 +831,7 @@ After importing:
 
 **Vercel Dashboard**: [https://vercel.com/dashboard](https://vercel.com/dashboard)  
 **Supabase Dashboard**: [https://app.supabase.com](https://app.supabase.com)  
+**CME Economic Calendar**: [https://www.cmegroup.com/education/events/economic-releases-calendar.html](https://www.cmegroup.com/education/events/economic-releases-calendar.html)  
 **Production URL**: Check Vercel project settings  
 **Support**: GitHub Issues in `InsightsLog/Insights` repository
 
