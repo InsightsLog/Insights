@@ -296,117 +296,146 @@ Create a comprehensive strategy for acquiring 10+ years of historical economic d
 ### T402 — Real-Time/Fast Data Updates Strategy
 
 #### Objective
-Implement a strategy for receiving economic data releases as fast as possible after they are published by government agencies and central banks.
+Implement a strategy for receiving economic data releases within **1 minute** of official publication by government agencies and central banks.
+
+#### Target Latency
+**< 1 minute from official release** — This is the maximum acceptable delay between when data is published by the source and when it appears in our system.
 
 #### Priority Data Sources by Speed
 
-##### Tier 1: Near Real-Time (Minutes after release)
-These sources update within minutes of official release:
+##### Tier 1: Sub-Minute (< 1 minute after release)
+To achieve sub-minute latency, we need aggressive polling or push-based updates:
 
-| Source | Data Type | Update Speed | Method |
-|--------|-----------|--------------|--------|
-| **FRED** | US indicators | ~5-15 min | Scheduled polling at known release times |
-| **ECB SDW** | Eurozone | ~30 min | Scheduled polling |
-| **BLS** | US Employment/CPI | ~15 min | Scheduled polling at 8:30 AM ET |
+| Source | Data Type | Strategy | Polling Interval |
+|--------|-----------|----------|------------------|
+| **FRED** | US indicators | Aggressive polling during release windows | Every 10-15 seconds |
+| **BLS** | US Employment/CPI | Aggressive polling at exact release time | Every 10-15 seconds |
+| **ECB SDW** | Eurozone | Aggressive polling during ECB announcements | Every 15-30 seconds |
 
-##### Tier 2: Same-Day (Hours after release)
-| Source | Data Type | Update Speed | Method |
-|--------|-----------|--------------|--------|
-| World Bank | Global indicators | Same day | Daily batch sync |
-| IMF | Global indicators | Same day | Daily batch sync |
-| OECD | OECD countries | Same day | Daily batch sync |
+##### Tier 2: Near Real-Time (1-5 minutes)
+| Source | Data Type | Strategy | Polling Interval |
+|--------|-----------|----------|------------------|
+| World Bank | Global indicators | Standard polling | Every 1 minute |
+| IMF | Global indicators | Standard polling | Every 1 minute |
+| OECD | OECD countries | Standard polling | Every 5 minutes |
 
 #### Implementation Plan
 
-##### Phase 1: Scheduled Polling (Immediate Priority)
+##### Phase 1: Aggressive Polling Infrastructure (Week 1)
 1. **Release Time Database**
-   - Create a `release_schedules` table with known release times
-   - US data: 8:30 AM ET (employment, CPI, GDP)
-   - ECB data: 10:00 AM CET (interest rate decisions, HICP)
-   - Example: "Non-Farm Payrolls releases first Friday of every month at 8:30 AM ET"
+   - Create a `release_schedules` table with exact release times (to the minute)
+   - US data: 8:30:00 AM ET (employment, CPI, GDP)
+   - ECB data: 2:15:00 PM CET (interest rate decisions)
+   - Example: "Non-Farm Payrolls releases first Friday of every month at 8:30:00 AM ET"
 
-2. **Vercel Cron Jobs**
-   - Set up cron jobs in `vercel.json` to poll at known release times
-   - Polling frequency: Every 5 minutes during release windows
-   - Off-peak: Every 30 minutes
+2. **High-Frequency Polling Worker**
+   - Supabase Edge Function that polls every 10-15 seconds during release windows
+   - Activate 1 minute before scheduled release time
+   - Deactivate 5 minutes after release detected
+   - Use worker to avoid Vercel Cron's 1-minute minimum interval
 
 3. **Release Detection**
-   - Compare fetched data with existing releases
-   - Trigger webhooks/email alerts for new data
+   - Compare fetched data with existing releases (hash comparison for speed)
+   - Trigger webhooks/email alerts immediately on new data detection
    - Update revision history for changed values
 
 ##### Phase 2: Supabase Edge Functions (Week 2)
-4. **Scheduled Edge Functions**
-   - Deploy Edge Functions with scheduled invocations
-   - More reliable than Vercel Cron for time-sensitive operations
-   - Example: `supabase functions deploy fetch-fred-data --schedule "*/5 8-10 * * 1-5"`
+4. **Scheduled Edge Functions with Sub-Minute Polling**
+   - Deploy Edge Functions that run continuously during release windows
+   - Use `setInterval` within the function for 10-15 second polling
+   - Maximum function runtime: 60 seconds, then re-trigger
 
-5. **Multi-Source Aggregation**
-   - Fetch from multiple sources simultaneously
+5. **Multi-Source Parallel Fetching**
+   - Fetch from multiple sources simultaneously (Promise.all)
    - Priority: FRED > BLS > ECB > World Bank
    - First valid data wins for each indicator
 
-##### Phase 3: Push Notifications (Week 3-4)
-6. **Webhook to Email/Push Pipeline**
-   - When new release detected, trigger existing `send-release-alert` function
-   - Send push notifications via webhook endpoints
-   - Target latency: < 5 minutes from official release
+##### Phase 3: Real-Time Push (Week 3-4)
+6. **WebSocket/Server-Sent Events**
+   - Implement SSE endpoint for real-time updates to connected clients
+   - When new release detected, push to all subscribed clients immediately
+   - Target latency: < 1 second from detection to client notification
+
+7. **Webhook Pipeline**
+   - Trigger `send-release-alert` function immediately on detection
+   - Parallel webhook delivery to all endpoints
+   - Target latency: < 30 seconds from detection to webhook delivery
 
 #### Known Release Schedules
 
 | Indicator | Source | Release Schedule | Time (Local) |
 |-----------|--------|------------------|--------------|
-| Non-Farm Payrolls | BLS | 1st Friday of month | 8:30 AM ET |
-| Unemployment Rate | BLS | 1st Friday of month | 8:30 AM ET |
-| CPI | BLS | ~12th of month | 8:30 AM ET |
-| PPI | BLS | ~15th of month | 8:30 AM ET |
-| Real GDP | BEA | End of month (Q+1) | 8:30 AM ET |
-| Fed Funds Rate | FRED | After FOMC meetings | 2:00 PM ET |
-| ECB Interest Rates | ECB | ECB meeting days | 2:15 PM CET |
-| Eurozone HICP | Eurostat | End of month | 11:00 AM CET |
+| Non-Farm Payrolls | BLS | 1st Friday of month | 8:30:00 AM ET |
+| Unemployment Rate | BLS | 1st Friday of month | 8:30:00 AM ET |
+| CPI | BLS | ~12th of month | 8:30:00 AM ET |
+| PPI | BLS | ~15th of month | 8:30:00 AM ET |
+| Real GDP | BEA | End of month (Q+1) | 8:30:00 AM ET |
+| Fed Funds Rate | FRED | After FOMC meetings | 2:00:00 PM ET |
+| ECB Interest Rates | ECB | ECB meeting days | 2:15:00 PM CET |
+| Eurozone HICP | Eurostat | End of month | 11:00:00 AM CET |
 
-#### Vercel Cron Configuration
+#### Polling Infrastructure
 
-**Note:** Vercel Cron schedules use UTC timezone.
+**Note:** Vercel Cron has a minimum 1-minute interval, which meets our target. For sub-minute polling during critical release windows, use Supabase Edge Functions with internal `setInterval`.
 
+**Vercel Cron (1-minute intervals during release windows):**
 ```jsonc
 {
   "crons": [
     {
       "path": "/api/cron/fetch-releases",
-      "schedule": "*/5 12-15 * * 1-5"
+      "schedule": "* 12-15 * * 1-5"
     },
     {
       "path": "/api/cron/fetch-releases",
-      "schedule": "30 13 * * 1-5"
+      "schedule": "30-35 13 * * 1-5"
     }
   ]
 }
 ```
 
 **Schedule Explanation (UTC):**
-- `*/5 12-15 * * 1-5`: Every 5 minutes from 12:00-15:59 UTC (covers 7:00 AM - 10:59 AM ET during EST, 8:00 AM - 11:59 AM ET during EDT)
-- `30 13 * * 1-5`: 1:30 PM UTC = 8:30 AM ET during EST (exact US release time)
-- During EDT (Daylight Saving): 1:30 PM UTC = 9:30 AM ET; use `30 12` for 8:30 AM ET
+- `* 12-15 * * 1-5`: Every minute from 12:00-15:59 UTC (covers release windows for US/EU)
+- `30-35 13 * * 1-5`: Every minute from 1:30-1:35 PM UTC = 8:30-8:35 AM ET during EST (exact US release time window)
 
-**DST Handling Note:** For production, consider using a timezone-aware scheduling solution (e.g., storing schedules in local timezone and converting at runtime) to automatically handle daylight saving transitions.
+**For Sub-Minute Polling (Supabase Edge Function):**
+```typescript
+// Edge Function that polls every 10 seconds for 60 seconds
+Deno.serve(async () => {
+  const startTime = Date.now();
+  const maxDuration = 55000; // 55 seconds to allow cleanup
+  
+  while (Date.now() - startTime < maxDuration) {
+    await fetchAndCheckReleases();
+    await new Promise(r => setTimeout(r, 10000)); // 10 second intervals
+  }
+  
+  return new Response("OK");
+});
+```
+
+**DST Handling Note:** For production, use a timezone-aware scheduling solution to automatically handle daylight saving transitions.
 
 #### Implementation Tasks
-- [ ] T402.1 Create `release_schedules` table with known release times
-- [ ] T402.2 Implement `/api/cron/fetch-releases` endpoint
-- [ ] T402.3 Set up Vercel Cron jobs for US release times (8:30 AM ET)
-- [ ] T402.4 Set up Vercel Cron jobs for EU release times (10:00 AM CET)
-- [ ] T402.5 Implement release detection and comparison logic
-- [ ] T402.6 Trigger existing webhook/email infrastructure for new releases
-- [ ] T402.7 Add release schedule management in admin dashboard
-- [ ] T402.8 Document known release schedules by country
+- [ ] T402.1 Create `release_schedules` table with exact release times (to the second)
+- [ ] T402.2 Implement `/api/cron/fetch-releases` endpoint with fast hash comparison
+- [ ] T402.3 Set up Vercel Cron jobs with 1-minute intervals for US release windows
+- [ ] T402.4 Set up Vercel Cron jobs with 1-minute intervals for EU release windows
+- [ ] T402.5 Implement high-frequency Edge Function for sub-minute polling
+- [ ] T402.6 Implement fast release detection (hash comparison, not full data compare)
+- [ ] T402.7 Trigger existing webhook/email infrastructure immediately on detection
+- [ ] T402.8 Add release schedule management in admin dashboard
+- [ ] T402.9 Implement SSE/WebSocket for real-time client updates
+- [ ] T402.10 Document known release schedules by country with exact times
 
 #### Acceptance Criteria
-- [ ] US economic releases detected within 15 minutes of publication
-- [ ] Eurozone releases detected within 30 minutes of publication
-- [ ] Automatic webhook/email alerts triggered for new releases
+- [ ] **US economic releases detected within 1 minute of publication**
+- [ ] **Eurozone releases detected within 1 minute of publication**
+- [ ] Automatic webhook/email alerts triggered within 30 seconds of detection
+- [ ] Real-time client updates via SSE within 1 second of detection
 - [ ] Revision detection works for updated values
 - [ ] Admin can view and manage release schedules
+- [ ] Polling infrastructure handles 10+ concurrent data source checks
 
 ---
 

@@ -38,10 +38,12 @@ These are the highest priority items for L4:
    - See TASKS_L4.md T401 for detailed plan
 
 4. **Real-Time/Fast Data Updates** (NEW - High Priority)
-   - Implement scheduled polling for known release times
+   - Implement aggressive polling for known release times
    - US releases: 8:30 AM ET (employment, CPI, GDP)
-   - EU releases: 10:00 AM CET (ECB decisions, HICP)
-   - Target latency: < 15 minutes from official release
+   - EU releases: 2:15 PM CET (ECB decisions), 11:00 AM CET (HICP)
+   - **Target latency: < 1 minute from official release**
+   - Sub-minute polling using Supabase Edge Functions
+   - Real-time client updates via SSE/WebSocket
    - See TASKS_L4.md T402 for detailed plan
 
 ### Priority 2: Calendar Sync

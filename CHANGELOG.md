@@ -6,21 +6,23 @@
 - **Added:** G20 country coverage documentation in DEPLOY.md (Section 14)
   - Full list of all 20 G20 member economies and their data sources
   - Table showing which data sources cover each country
-  - Additional 18+ countries beyond G20 also documented
+  - Additional countries beyond G20 also documented
 - **Added:** Calendar integration documentation in DEPLOY.md (Section 13)
   - iCal/ICS feed export instructions
   - Google Calendar one-click add feature
-  - API endpoint for programmatic iCal access
+  - API endpoint for programmatic iCal access with full documentation
 - **Added:** Real-time data updates plan (T402) in TASKS_L4.md
-  - Scheduled polling strategy for known release times
+  - **Target latency: < 1 minute from official release**
+  - Aggressive polling strategy (10-15 second intervals during release windows)
   - US releases at 8:30 AM ET (employment, CPI, GDP)
-  - EU releases at 10:00 AM CET (ECB decisions, HICP)
-  - Target latency: < 15 minutes from official release
-  - Vercel Cron configuration for automated polling
-  - Implementation tasks for release schedule management
+  - EU releases at 2:15 PM CET (ECB decisions), 11:00 AM CET (HICP)
+  - Vercel Cron with 1-minute intervals for release windows
+  - Supabase Edge Functions for sub-minute polling
+  - SSE/WebSocket for real-time client updates
+  - 10 implementation tasks (T402.1 - T402.10)
 - **Updated:** BACKLOG.md with new priorities
   - Confirmed G20 coverage is complete
-  - Added real-time/fast data updates as high priority
+  - Added real-time/fast data updates as high priority with 1-minute target
   - Reorganized priorities for clarity
 
 ### Data Acquisition (L4)
