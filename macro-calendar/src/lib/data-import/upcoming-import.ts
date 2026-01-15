@@ -77,10 +77,9 @@ function createDedupeKey(country: string, eventName: string, date: string): stri
   // Normalize event name: lowercase, remove extra spaces, common variations
   const normalizedEvent = eventName
     .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim()
     // Remove common suffixes/prefixes that vary between sources
     .replace(/\s*(yoy|mom|qoq|sa|nsa|final|preliminary|flash|revised)\s*/gi, " ")
+    // Collapse multiple spaces and trim
     .replace(/\s+/g, " ")
     .trim();
   
