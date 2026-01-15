@@ -2,46 +2,46 @@
 
 import { useState, useEffect } from "react";
 
-interface SourceInfo {
-  configured: boolean;
+interface CMESourceInfo {
   name: string;
+  description: string;
   coverage: string;
-  freeLimit: string;
-  subscriptionNote?: string;
-  registrationUrl: string;
+  apiKeyRequired: boolean;
+  features: string[];
+  url: string;
 }
 
 interface UpcomingImportStatus {
   configured: boolean;
-  sources: {
-    fmp: SourceInfo;
-    finnhub: SourceInfo;
-    tradingEconomics: SourceInfo;
-  };
+  source: CMESourceInfo;
   message: string;
-  g20Countries: string[];
+  supportedCountries: string[];
 }
 
-interface SourceResult {
-  available: boolean;
-  events: number;
-  errors: string[];
+interface ScheduleChange {
+  indicatorId: string;
+  indicatorName: string;
+  country: string;
+  changeType: "time_changed" | "date_changed" | "cancelled" | "new";
+  oldValue?: string;
+  newValue?: string;
 }
 
 interface ImportResult {
   success: boolean;
   message: string;
   result: {
-    sources: {
-      fmp: SourceResult;
-      finnhub: SourceResult;
-      tradingEconomics: SourceResult;
+    source: {
+      name: string;
+      events: number;
+      errors: string[];
     };
-    totalEventsFromSources: number;
-    uniqueEventsAfterDedup: number;
+    totalEvents: number;
     indicatorsCreated: number;
     releasesCreated: number;
+    releasesUpdated: number;
     releasesSkipped: number;
+    schedulesChanged: ScheduleChange[];
     countriesCovered: string[];
     errors?: string[];
   };
@@ -49,10 +49,9 @@ interface ImportResult {
 
 /**
  * Determines the styling state for an import result.
- * Returns 'warning' for 0 events or failures, 'success' for successful imports.
  */
 function getResultState(result: ImportResult): "success" | "warning" {
-  if (result.result.totalEventsFromSources === 0) {
+  if (result.result.totalEvents === 0) {
     return "warning";
   }
   return result.success ? "success" : "warning";
@@ -72,8 +71,8 @@ const resultTextStyles = {
 
 /**
  * UpcomingReleasesImportButton component for admin dashboard.
- * Displays calendar API status and allows triggering upcoming events imports.
- * Supports 3 sources: FMP, Finnhub, and Trading Economics.
+ * Displays CME calendar status and allows triggering upcoming events imports.
+ * Uses CME Group's Economic Releases Calendar - no API key required.
  */
 export function UpcomingReleasesImportButton() {
   const [status, setStatus] = useState<UpcomingImportStatus | null>(null);
@@ -113,7 +112,7 @@ export function UpcomingReleasesImportButton() {
       const response = await fetch("/api/admin/upcoming-import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ days: 30 }),
+        body: JSON.stringify({ months: 2 }),
       });
 
       const data = await response.json();
@@ -137,16 +136,12 @@ export function UpcomingReleasesImportButton() {
         <div className="flex items-center gap-2">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            Checking calendar API status...
+            Checking CME calendar status...
           </span>
         </div>
       </div>
     );
   }
-
-  const configuredCount = status
-    ? [status.sources.fmp.configured, status.sources.finnhub.configured, status.sources.tradingEconomics.configured].filter(Boolean).length
-    : 0;
 
   return (
     <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
@@ -155,22 +150,16 @@ export function UpcomingReleasesImportButton() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              🌍 Upcoming Releases Import (G20+)
+              📊 Upcoming Releases Import (CME Group)
             </h3>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Import upcoming economic events from multiple sources
+              Import economic events from CME&apos;s calendar - no API key required
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {configuredCount > 0 ? (
-              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                {configuredCount}/3 Sources Ready
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                Not Configured
-              </span>
-            )}
+            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+              ✓ Ready
+            </span>
           </div>
         </div>
       </div>
@@ -191,41 +180,33 @@ export function UpcomingReleasesImportButton() {
               {result.message}
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <p>Total from sources: {result.result.totalEventsFromSources.toLocaleString()}</p>
-              <p>After deduplication: {result.result.uniqueEventsAfterDedup.toLocaleString()}</p>
+              <p>Total events: {result.result.totalEvents.toLocaleString()}</p>
               <p>Releases created: {result.result.releasesCreated.toLocaleString()}</p>
+              <p>Releases updated: {result.result.releasesUpdated.toLocaleString()}</p>
               <p>Countries: {result.result.countriesCovered.length}</p>
             </div>
-            {/* Source breakdown */}
+            {/* Source info */}
             <div className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-700">
-              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Source Breakdown:</p>
-              <div className="mt-1 grid grid-cols-3 gap-2 text-xs">
-                <div className={result.result.sources.fmp.available ? "text-green-600 dark:text-green-400" : "text-zinc-400"}>
-                  FMP: {result.result.sources.fmp.events} events
-                </div>
-                <div className={result.result.sources.finnhub.available ? "text-green-600 dark:text-green-400" : "text-zinc-400"}>
-                  Finnhub: {result.result.sources.finnhub.events} events
-                </div>
-                <div className={result.result.sources.tradingEconomics.available ? "text-green-600 dark:text-green-400" : "text-zinc-400"}>
-                  TE: {result.result.sources.tradingEconomics.events} events
-                </div>
+              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Source:</p>
+              <div className="mt-1 text-xs text-green-600 dark:text-green-400">
+                {result.result.source.name}: {result.result.source.events} events fetched
               </div>
             </div>
-            {/* Zero events warning - likely subscription tier issue */}
-            {result.result.totalEventsFromSources === 0 && (
+            {/* Schedule changes alert */}
+            {result.result.schedulesChanged && result.result.schedulesChanged.length > 0 && (
               <div className="mt-3 rounded-md border border-amber-300 bg-amber-100 px-3 py-2 dark:border-amber-700 dark:bg-amber-900/30">
                 <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                  ⚠️ No events returned from any source
+                  ⚠️ {result.result.schedulesChanged.length} Schedule Change(s) Detected
                 </p>
-                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                  This typically means your API keys are on free tier plans that don&apos;t include 
-                  economic calendar data. Both FMP and Finnhub require <strong>Premium/paid subscriptions</strong> for 
-                  economic calendar access. Trading Economics also has limited free tier access.
-                </p>
-                <div className="mt-2 space-y-1 text-xs text-amber-600 dark:text-amber-400">
-                  <p>• <strong>FMP</strong>: Premium or Ultimate plan required</p>
-                  <p>• <strong>Finnhub</strong>: Premium subscription required</p>
-                  <p>• <strong>Trading Economics</strong>: Paid tier may be required</p>
+                <div className="mt-2 space-y-1 text-xs text-amber-700 dark:text-amber-400">
+                  {result.result.schedulesChanged.slice(0, 3).map((change, i) => (
+                    <p key={i}>
+                      • <strong>{change.indicatorName}</strong> ({change.country}): {change.changeType.replace("_", " ")}
+                    </p>
+                  ))}
+                  {result.result.schedulesChanged.length > 3 && (
+                    <p>...and {result.result.schedulesChanged.length - 3} more</p>
+                  )}
                 </div>
               </div>
             )}
@@ -245,117 +226,58 @@ export function UpcomingReleasesImportButton() {
           </div>
         )}
 
-        {configuredCount > 0 ? (
-          <div>
-            <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-              Import upcoming economic events for the next 30 days from G20+ countries.
-              Events are deduplicated across sources to avoid duplicates.
-            </p>
-            
-            {/* Source status */}
-            <div className="mb-4 grid grid-cols-3 gap-2">
-              {status && Object.entries(status.sources).map(([key, source]) => (
-                <div 
-                  key={key}
-                  className={`rounded-md p-2 text-xs ${
-                    source.configured 
-                      ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                      : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500"
-                  }`}
-                >
-                  <div className="font-medium">{source.name}</div>
-                  <div className="text-xs opacity-75">
-                    {source.configured ? "✓ Key configured" : "✗ Not configured"}
-                  </div>
-                  {source.configured && source.subscriptionNote && (
-                    <div className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                      {source.subscriptionNote}
-                    </div>
-                  )}
-                </div>
-              ))}
+        <div>
+          <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+            Import upcoming economic events for the next 2 months from CME Group&apos;s calendar.
+            Schedule changes are automatically detected and tracked.
+          </p>
+          
+          {/* Source info */}
+          {status?.source && (
+            <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+              <div className="flex items-center gap-2">
+                <span className="text-green-600 dark:text-green-400">✓</span>
+                <span className="font-medium text-green-800 dark:text-green-300">{status.source.name}</span>
+              </div>
+              <p className="mt-1 text-xs text-green-700 dark:text-green-400">{status.source.coverage}</p>
+              <div className="mt-2 space-y-1">
+                {status.source.features.map((feature, i) => (
+                  <p key={i} className="text-xs text-green-600 dark:text-green-400">• {feature}</p>
+                ))}
+              </div>
             </div>
+          )}
 
-            {/* Subscription warning banner */}
-            <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-900/20">
-              <p className="text-xs text-amber-800 dark:text-amber-300">
-                <strong>⚠️ Important:</strong> Most economic calendar APIs require premium subscriptions 
-                to return data. Free tier API keys may result in 0 events.
-              </p>
-            </div>
+          <button
+            onClick={handleImport}
+            disabled={importing}
+            className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {importing ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Importing... (this may take a minute)
+              </>
+            ) : (
+              "🚀 Import Upcoming Releases"
+            )}
+          </button>
 
+          {/* Supported Countries */}
+          <div className="mt-4">
             <button
-              onClick={handleImport}
-              disabled={importing}
-              className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => setShowDetails(!showDetails)}
+              className="text-sm text-blue-600 hover:underline dark:text-blue-400"
             >
-              {importing ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Importing... (this may take a minute)
-                </>
-              ) : (
-                "🚀 Import Upcoming Releases"
-              )}
+              {showDetails ? "Hide" : "Show"} supported countries ({status?.supportedCountries?.length ?? 0})
             </button>
-
-            {/* G20 Countries */}
-            <div className="mt-4">
-              <button
-                onClick={() => setShowDetails(!showDetails)}
-                className="text-sm text-blue-600 hover:underline dark:text-blue-400"
-              >
-                {showDetails ? "Hide" : "Show"} G20+ countries ({status?.g20Countries.length ?? 0})
-              </button>
-              {showDetails && status && (
-                <div className="mt-2 rounded border border-zinc-200 p-2 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-                  {status.g20Countries.join(", ")}
-                </div>
-              )}
-            </div>
+            {showDetails && status?.supportedCountries && (
+              <div className="mt-2 rounded border border-zinc-200 p-2 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+                {status.supportedCountries.join(", ")}
+              </div>
+            )}
           </div>
-        ) : (
-          <div>
-            <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-              To import upcoming economic events, configure at least one calendar API key:
-            </p>
-            <div className="mb-4 space-y-3">
-              {status && Object.entries(status.sources).map(([key, source]) => (
-                <div key={key} className="rounded-md border border-zinc-200 p-3 dark:border-zinc-700">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {source.name}
-                      </span>
-                      <span className="ml-2 text-xs text-zinc-500">
-                        ({source.freeLimit})
-                      </span>
-                    </div>
-                    <a
-                      href={source.registrationUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline dark:text-blue-400"
-                    >
-                      Get API Key →
-                    </a>
-                  </div>
-                  <p className="mt-1 text-xs text-zinc-500">{source.coverage}</p>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-md bg-zinc-50 p-3 dark:bg-zinc-800">
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                Add the API key(s) to Vercel environment variables:
-              </p>
-              <ul className="mt-1 list-disc ml-4 text-xs text-zinc-500 font-mono">
-                <li>FMP_API_KEY</li>
-                <li>FINNHUB_API_KEY</li>
-                <li>TRADING_ECONOMICS_API_KEY</li>
-              </ul>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
