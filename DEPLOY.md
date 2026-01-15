@@ -785,15 +785,25 @@ At least **one API key** is required to import upcoming events.
 The app includes a Vercel Cron job that automatically syncs data daily:
 
 - **Endpoint**: `/api/cron/sync-data`
-- **Schedule**: Daily at 6:00 AM UTC (`0 6 * * *`)
+- **Schedule**: Daily at 5:00 PM Central Time / 23:00 UTC (`0 23 * * *`)
 - **Configuration**: `vercel.json` in the repository root
 
-**Note:** Vercel Hobby plan limits cron jobs to once per day. For more frequent syncs, upgrade to Pro or use the manual import option.
+**Note:** Vercel Hobby plan limits cron jobs to once per day. Use the "Manual Sync" button in the admin panel to run syncs on-demand.
 
 For the cron job to work:
 1. Ensure `CRON_SECRET` is set in Vercel environment variables
 2. Vercel automatically adds the authorization header for configured crons
 3. Monitor the Functions tab in Vercel for cron execution logs
+
+#### Option C: Manual Sync (Admin Panel)
+Admins can trigger a data sync at any time from the admin dashboard:
+
+1. Sign in with an admin account
+2. Go to `/admin`
+3. Find the "Manual Data Sync" section
+4. Click "Run Sync Now"
+
+This runs the same sync process as the scheduled cron job.
 
 ### 15.5 Verify It's Working
 

@@ -111,11 +111,11 @@ npx tsx src/lib/data-import/upcoming-import.ts
 ```json
 {
   "crons": [
-    { "path": "/api/cron/sync-data", "schedule": "0 6 * * *" }
+    { "path": "/api/cron/sync-data", "schedule": "0 23 * * *" }
   ]
 }
 ```
-Runs daily at 6:00 AM UTC to fetch latest data. (Vercel Hobby plan limits cron to once per day.)
+Runs daily at 5:00 PM Central Time (23:00 UTC). Admins can also trigger syncs manually from the admin panel.
 
 ---
 
