@@ -648,14 +648,31 @@ For individual events, users can add directly to Google Calendar:
 
 ### 13.3 Programmatic iCal Access
 
-The iCal feed is also available via API:
+The iCal feed is also available via API for authenticated users:
 
+**Endpoint:** `GET /api/calendar/ical`
+
+**Authentication:** Requires active session cookie (magic link login)
+
+**Response:**
+- **Content-Type:** `text/calendar`
+- **Body:** iCalendar (ICS) format file containing upcoming watchlist releases
+
+**Example using cURL:**
 ```bash
-# Requires authentication cookie
-GET /api/calendar/ical
+curl -X GET "https://your-app.vercel.app/api/calendar/ical" \
+  -H "Cookie: sb-access-token=your-auth-token"
 ```
 
-Returns: `text/calendar` content type with iCal data
+**Response Codes:**
+- `200 OK`: Returns iCal data
+- `401 Unauthorized`: User not authenticated
+- `500 Internal Server Error`: Failed to fetch watchlist data
+
+**Notes:**
+- Only includes releases for indicators in the user's personal watchlist
+- Maximum 500 upcoming releases included
+- Event duration is 30 minutes per economic release
 
 ---
 
