@@ -20,6 +20,7 @@ const serverEnvSchema = z.object({
   ADMIN_UPLOAD_SECRET: z.string().optional(),
   UNSUBSCRIBE_TOKEN_SECRET: z.string().min(1, "UNSUBSCRIBE_TOKEN_SECRET is required"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
+  CRON_SECRET: z.string().optional(), // Used by Vercel Cron for authentication
 });
 
 /**
@@ -40,6 +41,7 @@ export function getServerEnv() {
     ADMIN_UPLOAD_SECRET: process.env.ADMIN_UPLOAD_SECRET,
     UNSUBSCRIBE_TOKEN_SECRET: process.env.UNSUBSCRIBE_TOKEN_SECRET,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    CRON_SECRET: process.env.CRON_SECRET,
   });
 }
 

@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+### Sub-Second Real-Time Updates (L4)
+- **Added:** Supabase Realtime integration for sub-second data propagation (T400)
+  - `useRealtimeReleases` React hook for live release updates
+  - `useRealtimeIndicators` React hook for live indicator updates
+  - `LiveIndicator` component showing real-time connection status
+  - WebSocket subscription to releases and indicators tables
+  - Database changes propagate to clients in < 500ms
+- **Added:** Scheduled data sync via Vercel Cron (T403)
+  - `/api/cron/sync-data` endpoint for automated syncing
+  - Runs every 2 hours to import upcoming events
+  - Protected by `CRON_SECRET` environment variable
+  - `vercel.json` configured with cron schedule
+- **Updated:** Calendar now shows 30 days by default (was 7 days) (T404)
+  - Extended time range for upcoming releases
+  - Updated empty state message
+
+### Documentation
+- **Simplified:** TASKS_L4.md completely rewritten
+  - Consolidated verbose planning into actionable checklist format
+  - Matches the clean structure of TASKS_L1, L2, and L3
+  - Added clear data sources summary table with API keys
+  - Focus on sub-second updates as the key goal
+  - Removed redundant implementation details
+
 ### Documentation
 - **Added:** G20 country coverage documentation in DEPLOY.md (Section 14)
   - Full list of all 20 G20 member economies and their data sources
