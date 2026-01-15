@@ -286,7 +286,7 @@ Create a comprehensive strategy for acquiring 10+ years of historical economic d
 - [x] T401.2 Create bulk import script for BLS historical data
 - [x] T401.3 Create bulk import script for ECB historical data
 - [x] T401.4 Create bulk import script for World Bank data
-- [ ] T401.5 Create bulk import script for IMF data
+- [x] T401.5 Create bulk import script for IMF data
 - [x] T401.6 Add data validation and deduplication logic
 - [x] T401.7 Create admin UI for triggering bulk imports
 - [ ] T401.8 Document all imported series with source attribution

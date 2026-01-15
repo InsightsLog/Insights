@@ -29,9 +29,51 @@
     - Support for importing specific indicators or countries
   - Usage: `npx tsx src/lib/data-import/world-bank-import.ts`
   - Unit tests for World Bank client (19 tests) and import functionality (7 tests)
+- **Added:** IMF bulk import script for historical economic data (T401.5)
+  - Script: `src/lib/data-import/imf-import.ts`
+  - IMF API client: `src/lib/data-import/imf-client.ts`
+  - Imports historical data from IMF World Economic Outlook API
+  - No API key required (IMF API is free and open)
+  - Supports 15 key economic indicators:
+    - GDP: Real GDP Growth Rate, GDP (Current USD), GDP Per Capita, GDP (PPP)
+    - Inflation: Inflation Rate (CPI), Inflation Rate (End of Period)
+    - Employment: Unemployment Rate, Employment
+    - Trade: Current Account Balance (% of GDP and USD)
+    - Government: Government Gross Debt (% of GDP), Net Lending/Borrowing
+    - Investment: Total Investment (% of GDP), Gross National Savings
+    - Demographics: Population
+  - Covers 37 major economies:
+    - G7 countries (US, UK, Germany, Japan, France, Italy, Canada)
+    - Major emerging markets (China, India, Brazil, Russia)
+    - Eurozone, Asia-Pacific, Latin America, and others
+  - Features:
+    - Rate limiting (1 second between requests for fair use)
+    - Automatic deduplication using (indicator_id, release_at, period) key
+    - Creates country-specific indicators (e.g., "Real GDP Growth Rate (%) (United States)")
+    - Progress tracking and error handling
+    - Configurable start/end year (default: 2014 to current year)
+    - Support for importing specific indicators or countries
+  - Usage: `npx tsx src/lib/data-import/imf-import.ts`
+  - API route: `POST /api/admin/imf-import`
+  - Unit tests for IMF client (13 tests) and import functionality (7 tests)
 
 ### Admin Features
-- **Added:** BLS import button in admin dashboard
+- **Added:** World Bank import button in admin dashboard
+  - New API route `/api/admin/world-bank-import` for triggering World Bank imports
+  - New `WorldBankImportButton` component in admin dashboard
+  - Shows available indicators and countries
+  - One-click import for all configured World Bank indicators
+  - Progress feedback during import
+  - Import results display (inserted, updated, errors)
+  - No API key required - World Bank API is free and open
+- **Added:** IMF import button in admin dashboard
+  - New API route `/api/admin/imf-import` for triggering IMF imports
+  - New `IMFImportButton` component in admin dashboard
+  - Shows available indicators (15) and countries (37)
+  - One-click import for all configured IMF indicators
+  - Progress feedback during import
+  - Import results display (inserted, updated, errors)
+  - No API key required - IMF API is free and open
   - Previously created BLS import API existed but button was missing from UI
   - New `BLSImportButton` component added to admin dashboard
   - Shows API key configuration status (with key: 500 queries/day, without: 25/day)
