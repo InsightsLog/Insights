@@ -71,8 +71,6 @@ export function FredImportButton() {
     try {
       const response = await fetch("/api/admin/fred-import", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
       });
 
       const data = await response.json();
@@ -153,21 +151,28 @@ export function FredImportButton() {
             }`}>
               {result.message}
             </p>
-            <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <p>Series: {result.result.successfulSeries}/{result.result.totalSeries} successful</p>
-              <p>Observations: {result.result.totalObservations.toLocaleString()}</p>
-              <p>Inserted: {result.result.totalInserted.toLocaleString()}, Updated: {result.result.totalUpdated.toLocaleString()}</p>
-            </div>
-            {result.result.errors && result.result.errors.length > 0 && (
-              <div className="mt-2">
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">Errors:</p>
-                <ul className="list-disc ml-4 text-sm text-red-600 dark:text-red-400">
-                  {result.result.errors.map((err, i) => (
-                    <li key={i}>{err}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {(() => {
+              const { successfulSeries, totalSeries, totalObservations, totalInserted, totalUpdated, errors } = result.result;
+              return (
+                <>
+                  <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                    <p>Series: {successfulSeries}/{totalSeries} successful</p>
+                    <p>Observations: {totalObservations.toLocaleString()}</p>
+                    <p>Inserted: {totalInserted.toLocaleString()}, Updated: {totalUpdated.toLocaleString()}</p>
+                  </div>
+                  {errors && errors.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-sm font-medium text-red-600 dark:text-red-400">Errors:</p>
+                      <ul className="list-disc ml-4 text-sm text-red-600 dark:text-red-400">
+                        {errors.map((err, i) => (
+                          <li key={i}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 
