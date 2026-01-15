@@ -211,11 +211,11 @@ async function importSeriesObservations(
     }
   }
 
-  // Prepare all releases data from validated observations
+  // Prepare all releases data from validated observations (reuse period from validation)
   const releasesData = validObservations.map((obs) => ({
     indicator_id: indicatorId,
     release_at: new Date(obs.date).toISOString(),
-    period: formatPeriod(obs.date, frequency),
+    period: obs.period, // Already computed during validation
     actual: obs.value,
     unit: units,
     notes: `Imported from FRED`,

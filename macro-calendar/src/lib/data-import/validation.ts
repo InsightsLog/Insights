@@ -346,15 +346,18 @@ export function processObservations<T extends ObservationData>(
     stats.skippedReasons[reason] = (stats.skippedReasons[reason] ?? 0) + 1;
   }
 
-  // Step 2: Detect outliers if configured
+  // Step 2: Detect outliers if configured (outliers are additional skipped items)
   let processedObs = valid;
   if (options.outlierStdDevs !== undefined) {
     const { normal, outliers } = detectOutliers(valid, options.outlierStdDevs);
     processedObs = normal;
     stats.outlierCount = outliers.length;
+    // Outliers are counted separately from initial validation skips
     stats.skippedCount += outliers.length;
     if (outliers.length > 0) {
-      stats.skippedReasons["Outlier value"] = outliers.length;
+      // Add to existing outlier count if any (for batch processing)
+      stats.skippedReasons["Outlier value"] = 
+        (stats.skippedReasons["Outlier value"] ?? 0) + outliers.length;
     }
   }
 

@@ -499,10 +499,11 @@ export async function clearHistoricalData(
   try {
     if (clearAllData) {
       // Delete all releases first (due to foreign key)
+      // Using gte with empty string to match all rows (Supabase requires a filter for delete)
       const { data: releaseData, error: releaseError } = await supabase
         .from("releases")
         .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000") // Delete all
+        .gte("id", "00000000-0000-0000-0000-000000000000") // Match all UUIDs
         .select("id");
 
       if (releaseError) {
@@ -514,7 +515,7 @@ export async function clearHistoricalData(
       const { data: indicatorData, error: indicatorError } = await supabase
         .from("indicators")
         .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000") // Delete all
+        .gte("id", "00000000-0000-0000-0000-000000000000") // Match all UUIDs
         .select("id");
 
       if (indicatorError) {
