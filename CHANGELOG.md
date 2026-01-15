@@ -23,7 +23,7 @@
   - Database changes propagate to clients in < 500ms
 - **Added:** Scheduled data sync via Vercel Cron (T403)
   - `/api/cron/sync-data` endpoint for automated syncing
-  - Runs every 2 hours to import upcoming events
+  - Runs daily at 6:00 AM UTC (Vercel Hobby plan limit)
   - Protected by `CRON_SECRET` environment variable
   - `vercel.json` configured with cron schedule
 - **Updated:** Calendar now shows 30 days by default (was 7 days) (T404)

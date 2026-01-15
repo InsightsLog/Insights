@@ -782,11 +782,13 @@ At least **one API key** is required to import upcoming events.
 5. The import will fetch events for the next 30 days from configured sources
 
 #### Option B: Automated Sync (Cron Job)
-The app includes a Vercel Cron job that automatically syncs data every 2 hours:
+The app includes a Vercel Cron job that automatically syncs data daily:
 
 - **Endpoint**: `/api/cron/sync-data`
-- **Schedule**: Every 2 hours (`0 */2 * * *`)
+- **Schedule**: Daily at 6:00 AM UTC (`0 6 * * *`)
 - **Configuration**: `vercel.json` in the repository root
+
+**Note:** Vercel Hobby plan limits cron jobs to once per day. For more frequent syncs, upgrade to Pro or use the manual import option.
 
 For the cron job to work:
 1. Ensure `CRON_SECRET` is set in Vercel environment variables
