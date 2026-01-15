@@ -376,7 +376,7 @@ To achieve sub-minute latency, we need aggressive polling or push-based updates:
 
 #### Polling Infrastructure
 
-**Note:** Vercel Cron has a minimum 1-minute interval, which meets our target. For sub-minute polling during critical release windows, use Supabase Edge Functions with internal `setInterval`.
+**Note:** Vercel Cron has a minimum 1-minute interval, which meets our target. For sub-minute polling during critical release windows, use Supabase Edge Functions with internal polling loops.
 
 **Vercel Cron (1-minute intervals during release windows):**
 ```jsonc
@@ -396,25 +396,36 @@ To achieve sub-minute latency, we need aggressive polling or push-based updates:
 
 **Schedule Explanation (UTC):**
 - `* 12-15 * * 1-5`: Every minute from 12:00-15:59 UTC (covers release windows for US/EU)
-- `30-35 13 * * 1-5`: Every minute from 1:30-1:35 PM UTC = 8:30-8:35 AM ET during EST (exact US release time window)
+- `30-35 13 * * 1-5`: Every minute from 1:30-1:35 PM UTC (8:30-8:35 AM EST / 9:30-9:35 AM EDT)
+
+**Timezone Considerations:**
+- US releases at 8:30 AM ET = 13:30 UTC during EST (Nov-Mar), 12:30 UTC during EDT (Mar-Nov)
+- For year-round coverage, use the broad `12-15` window which covers both
+- For precise targeting, update cron schedules seasonally or use a timezone-aware scheduler
 
 **For Sub-Minute Polling (Supabase Edge Function):**
 ```typescript
-// Edge Function that polls every 10 seconds for 60 seconds
+// Edge Function that polls every 10 seconds for up to 55 seconds
 Deno.serve(async () => {
   const startTime = Date.now();
   const maxDuration = 55000; // 55 seconds to allow cleanup
+  const pollInterval = 10000; // 10 seconds
   
-  while (Date.now() - startTime < maxDuration) {
+  while (Date.now() - startTime < maxDuration - pollInterval) {
     await fetchAndCheckReleases();
-    await new Promise(r => setTimeout(r, 10000)); // 10 second intervals
+    await new Promise(r => setTimeout(r, pollInterval));
   }
+  // One final fetch before returning
+  await fetchAndCheckReleases();
   
   return new Response("OK");
 });
 ```
 
-**DST Handling Note:** For production, use a timezone-aware scheduling solution to automatically handle daylight saving transitions.
+**DST Handling Note:** For production, implement timezone-aware scheduling:
+1. Store release times in local timezone (e.g., "8:30 AM America/New_York")
+2. Convert to UTC at runtime based on current DST status
+3. Or use the broad window approach (`12-15 UTC`) to cover both EST and EDT
 
 #### Implementation Tasks
 - [ ] T402.1 Create `release_schedules` table with exact release times (to the second)
