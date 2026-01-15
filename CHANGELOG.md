@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Upcoming Events Import UX Improvements
+- **Fixed:** Import showing 0 events now displays clear warning about subscription requirements
+  - Added warning banner explaining that FMP, Finnhub, and Trading Economics require premium subscriptions
+  - Added detailed troubleshooting message when import returns 0 events from all sources
+  - Each configured source now shows subscription requirement note in status display
+  - Pre-import warning banner alerts users that free tier API keys typically don't work
+- **Updated:** DEPLOY.md Section 15 with subscription tier requirements
+  - Added important warning box about premium subscriptions needed for calendar data
+  - Updated "Get API Keys" section with subscription notes for each provider
+  - Added "Import returns 0 events" as first troubleshooting item (most common issue)
+  - Updated environment variables table with subscription warnings
+
 ### Scheduled Releases Setup (L4)
 - **Added:** Complete documentation for configuring upcoming economic releases (T403.3)
   - New Section 15 in DEPLOY.md: "Scheduled Releases (Upcoming Events)"

@@ -196,6 +196,7 @@ export async function GET() {
           name: "Financial Modeling Prep",
           coverage: "Global (G20+ countries)",
           freeLimit: "250 calls/day",
+          subscriptionNote: "⚠️ Premium/Ultimate plan required for economic calendar data",
           registrationUrl: "https://financialmodelingprep.com/register",
         },
         finnhub: {
@@ -203,6 +204,7 @@ export async function GET() {
           name: "Finnhub",
           coverage: "Global economic calendar",
           freeLimit: "60 calls/minute",
+          subscriptionNote: "⚠️ Premium subscription required for economic calendar data",
           registrationUrl: "https://finnhub.io/register",
         },
         tradingEconomics: {
@@ -210,11 +212,12 @@ export async function GET() {
           name: "Trading Economics",
           coverage: "Comprehensive G20+ data",
           freeLimit: "Registration required",
+          subscriptionNote: "⚠️ Paid tier may be required for full access",
           registrationUrl: "https://tradingeconomics.com/api",
         },
       },
       message: anyConfigured 
-        ? "At least one calendar API is configured and ready for import"
+        ? "At least one calendar API is configured. Note: Most calendar APIs require premium subscriptions to return data."
         : "No calendar API keys configured. Set at least one in Vercel environment variables.",
       g20Countries: [
         "Argentina", "Australia", "Brazil", "Canada", "China", "France", 

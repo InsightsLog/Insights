@@ -119,9 +119,9 @@ In the Vercel project settings, add these environment variables:
 | `STRIPE_PRICE_ENTERPRISE_MONTHLY` | Stripe price ID for Enterprise monthly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
 | `STRIPE_PRICE_ENTERPRISE_YEARLY` | Stripe price ID for Enterprise yearly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
 | `FRED_API_KEY` | FRED API key for economic data (optional) | Get free at [fred.stlouisfed.org](https://fred.stlouisfed.org/docs/api/api_key.html) |
-| `FMP_API_KEY` | Financial Modeling Prep API key (optional) | Get free at [financialmodelingprep.com](https://financialmodelingprep.com/register) |
-| `FINNHUB_API_KEY` | Finnhub API key (optional) | Get free at [finnhub.io](https://finnhub.io/register) |
-| `TRADING_ECONOMICS_API_KEY` | Trading Economics API key (optional) | Register at [tradingeconomics.com](https://tradingeconomics.com/api) |
+| `FMP_API_KEY` | Financial Modeling Prep API key (optional) | Get free at [financialmodelingprep.com](https://financialmodelingprep.com/register). **⚠️ Premium/Ultimate subscription required for economic calendar data.** |
+| `FINNHUB_API_KEY` | Finnhub API key (optional) | Get free at [finnhub.io](https://finnhub.io/register). **⚠️ Premium subscription required for economic calendar data.** |
+| `TRADING_ECONOMICS_API_KEY` | Trading Economics API key (optional) | Register at [tradingeconomics.com](https://tradingeconomics.com/api). **⚠️ Paid tier may be required for full access.** |
 | `CRON_SECRET` | Secret for Vercel Cron authentication | Generate with: `openssl rand -hex 32` |
 
 **Important notes:**
@@ -134,7 +134,7 @@ In the Vercel project settings, add these environment variables:
 - `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are required for billing/subscription features
 - `STRIPE_PRICE_*` variables are required for plan upgrades; get price IDs from Stripe Products dashboard
 - `FRED_API_KEY` is optional; enables importing real economic data from Federal Reserve (see Section 12)
-- `FMP_API_KEY`, `FINNHUB_API_KEY`, `TRADING_ECONOMICS_API_KEY` are optional; at least one is required for importing upcoming scheduled releases (see Section 15)
+- `FMP_API_KEY`, `FINNHUB_API_KEY`, `TRADING_ECONOMICS_API_KEY` are optional; at least one is required for importing upcoming scheduled releases. **Note: Free tier API keys typically do not return economic calendar data—premium subscriptions are required.** (see Section 15)
 - `CRON_SECRET` is required for automated data sync; protects the cron endpoint from unauthorized access
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
@@ -744,17 +744,29 @@ Scheduled releases (future economic events) come from external calendar APIs:
 
 At least **one API key** is required to import upcoming events.
 
+> ⚠️ **Important: Subscription Requirements**
+> 
+> Most economic calendar APIs **require premium/paid subscriptions** to return calendar data. Free tier API keys typically result in **0 events** being returned.
+> 
+> | Provider | Free Tier Result | Required for Calendar Data |
+> |----------|-----------------|---------------------------|
+> | FMP | Empty/0 events | **Premium or Ultimate** subscription |
+> | Finnhub | Empty/0 events | **Premium** subscription |
+> | Trading Economics | Limited/empty | Paid tier may be required |
+> 
+> If your import returns 0 events, check your subscription tier with each provider.
+
 ### 15.2 Get API Keys
 
-1. **FMP (Recommended for free tier)**:
+1. **FMP**:
    - Go to [financialmodelingprep.com/register](https://financialmodelingprep.com/register)
-   - Create a free account
-   - Copy your API key from the dashboard
+   - Create an account
+   - **Note:** Free tier does not include economic calendar. Upgrade to Premium or Ultimate for calendar access.
 
 2. **Finnhub**:
    - Go to [finnhub.io/register](https://finnhub.io/register)
-   - Create a free account
-   - Copy your API key from the dashboard
+   - Create an account
+   - **Note:** Free tier does not include economic calendar. Upgrade to Premium for calendar access.
 
 3. **Trading Economics**:
    - Go to [tradingeconomics.com/api](https://tradingeconomics.com/api)
@@ -815,7 +827,17 @@ After importing:
 
 ### 15.6 Troubleshooting
 
+**Import returns 0 events (most common issue):**
+- ⚠️ **This is usually a subscription tier issue, not a configuration problem**
+- Free tier API keys from FMP and Finnhub do not return economic calendar data
+- The APIs accept free tier keys but return empty arrays
+- **Solution:** Upgrade to a paid subscription tier with your data provider:
+  - FMP: Premium or Ultimate plan
+  - Finnhub: Premium subscription
+  - Trading Economics: Contact for pricing
+
 **No releases appearing:**
+- First, check if the import returned 0 events (subscription issue above)
 - Check that at least one API key is configured in Vercel
 - Verify the API keys are valid (test in browser/curl)
 - Check Vercel function logs for import errors

@@ -7,6 +7,7 @@ interface SourceInfo {
   name: string;
   coverage: string;
   freeLimit: string;
+  subscriptionNote?: string;
   registrationUrl: string;
 }
 
@@ -163,14 +164,18 @@ export function UpcomingReleasesImportButton() {
 
         {result && (
           <div className={`mb-4 rounded-md border px-4 py-3 ${
-            result.success 
-              ? "border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-900/20"
-              : "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20"
+            result.result.totalEventsFromSources === 0
+              ? "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20"
+              : result.success 
+                ? "border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-900/20"
+                : "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20"
           }`}>
             <p className={`text-sm font-medium ${
-              result.success 
-                ? "text-green-800 dark:text-green-400"
-                : "text-amber-800 dark:text-amber-400"
+              result.result.totalEventsFromSources === 0
+                ? "text-amber-800 dark:text-amber-400"
+                : result.success 
+                  ? "text-green-800 dark:text-green-400"
+                  : "text-amber-800 dark:text-amber-400"
             }`}>
               {result.message}
             </p>
@@ -195,6 +200,24 @@ export function UpcomingReleasesImportButton() {
                 </div>
               </div>
             </div>
+            {/* Zero events warning - likely subscription tier issue */}
+            {result.result.totalEventsFromSources === 0 && (
+              <div className="mt-3 rounded-md border border-amber-300 bg-amber-100 px-3 py-2 dark:border-amber-700 dark:bg-amber-900/30">
+                <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                  ⚠️ No events returned from any source
+                </p>
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                  This typically means your API keys are on free tier plans that don&apos;t include 
+                  economic calendar data. Both FMP and Finnhub require <strong>Premium/paid subscriptions</strong> for 
+                  economic calendar access. Trading Economics also has limited free tier access.
+                </p>
+                <div className="mt-2 space-y-1 text-xs text-amber-600 dark:text-amber-400">
+                  <p>• <strong>FMP</strong>: Premium or Ultimate plan required</p>
+                  <p>• <strong>Finnhub</strong>: Premium subscription required</p>
+                  <p>• <strong>Trading Economics</strong>: Paid tier may be required</p>
+                </div>
+              </div>
+            )}
             {result.result.errors && result.result.errors.length > 0 && (
               <div className="mt-2">
                 <p className="text-sm font-medium text-red-600 dark:text-red-400">Errors:</p>
@@ -231,10 +254,23 @@ export function UpcomingReleasesImportButton() {
                 >
                   <div className="font-medium">{source.name}</div>
                   <div className="text-xs opacity-75">
-                    {source.configured ? "✓ Ready" : "✗ Not configured"}
+                    {source.configured ? "✓ Key configured" : "✗ Not configured"}
                   </div>
+                  {source.configured && source.subscriptionNote && (
+                    <div className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                      {source.subscriptionNote}
+                    </div>
+                  )}
                 </div>
               ))}
+            </div>
+
+            {/* Subscription warning banner */}
+            <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-900/20">
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                <strong>⚠️ Important:</strong> Most economic calendar APIs require premium subscriptions 
+                to return data. Free tier API keys may result in 0 events.
+              </p>
             </div>
 
             <button
