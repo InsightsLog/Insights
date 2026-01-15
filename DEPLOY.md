@@ -118,6 +118,7 @@ In the Vercel project settings, add these environment variables:
 | `STRIPE_PRICE_PRO_YEARLY` | Stripe price ID for Pro yearly (optional) | Stripe Dashboard → Products → Pro → Price ID |
 | `STRIPE_PRICE_ENTERPRISE_MONTHLY` | Stripe price ID for Enterprise monthly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
 | `STRIPE_PRICE_ENTERPRISE_YEARLY` | Stripe price ID for Enterprise yearly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
+| `FRED_API_KEY` | FRED API key for economic data (optional) | Get free at [fred.stlouisfed.org](https://fred.stlouisfed.org/docs/api/api_key.html) |
 
 **Important notes:**
 - Both `NEXT_PUBLIC_` variables are required for the app to run (validated by `src/lib/env.ts`)
@@ -128,6 +129,7 @@ In the Vercel project settings, add these environment variables:
 - `ENABLE_REQUEST_LOGGING` is optional; request logging is disabled by default (requires `SUPABASE_SERVICE_ROLE_KEY`)
 - `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are required for billing/subscription features
 - `STRIPE_PRICE_*` variables are required for plan upgrades; get price IDs from Stripe Products dashboard
+- `FRED_API_KEY` is optional; enables importing real economic data from Federal Reserve (see Section 12)
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
 ### 2.4 Deploy
@@ -505,6 +507,75 @@ Monitor rate limiting in the Upstash Console:
 - Supabase free tier: 500MB database, 50MB file storage, 50,000 monthly active users
 - Vercel free tier: 100GB bandwidth, unlimited requests
 - For growth beyond free tier, upgrade plans in Supabase/Vercel dashboards
+
+## 12. Importing Real Economic Data (FRED)
+
+By default, the application uses test seed data. To display real economic data from the Federal Reserve Economic Data (FRED) API:
+
+### 12.1 Get a FRED API Key
+
+1. Go to [https://fred.stlouisfed.org/docs/api/api_key.html](https://fred.stlouisfed.org/docs/api/api_key.html)
+2. Sign up for a free account (or sign in if you already have one)
+3. Request an API key (free, instant approval)
+4. Save your API key securely
+
+### 12.2 Configure the Environment Variable
+
+1. Go to your Vercel project → **Settings** → **Environment Variables**
+2. Add `FRED_API_KEY` with your API key value
+3. Redeploy the application (or it will take effect on next deployment)
+
+### 12.3 Trigger the Data Import
+
+After configuring the API key and redeploying:
+
+1. Sign in to the application with an admin account
+2. Navigate to `/admin` (Admin Dashboard)
+3. Find the "FRED Data Import" section
+4. Click "Import FRED Data" to start the import
+5. Wait for the import to complete (typically 2-5 minutes for all 16 indicators)
+
+**What gets imported:**
+- Real GDP and GDP Growth Rate
+- Consumer Price Index (CPI) and Core CPI
+- Producer Price Index (PPI)
+- Unemployment Rate
+- Non-Farm Payrolls
+- Initial Jobless Claims
+- Federal Funds Rate
+- 2-Year and 10-Year Treasury Rates
+- Consumer Sentiment Index
+- Retail Sales
+- Housing Starts and Building Permits
+- Industrial Production Index
+
+### 12.4 Alternative: CLI Import
+
+For local development or advanced use cases, you can also run the import via CLI:
+
+```bash
+cd macro-calendar
+FRED_API_KEY=your_api_key npx tsx src/lib/data-import/fred-import.ts
+```
+
+Optional environment variables for CLI:
+- `FRED_IMPORT_START_DATE`: Start date (default: 2014-01-01, 10+ years of data)
+- `FRED_IMPORT_SERIES`: Comma-separated list of specific series (default: all)
+
+### 12.5 Troubleshooting FRED Import
+
+**"FRED API key not configured" error**
+- Verify `FRED_API_KEY` is set in Vercel environment variables
+- Redeploy after adding the environment variable
+
+**Import fails with API errors**
+- FRED has a rate limit of 120 requests/minute; the import handles this automatically
+- If errors persist, try importing fewer series at a time
+
+**Data not appearing after import**
+- Refresh the calendar page
+- Check that the import completed successfully in the admin dashboard
+- Verify the indicators exist in the database
 
 ---
 
