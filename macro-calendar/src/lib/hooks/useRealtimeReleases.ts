@@ -78,14 +78,17 @@ export function useRealtimeReleases(): UseRealtimeReleasesResult {
 
       if (!record || typeof record !== "object") return;
 
+      // Extract fields from the record with type safety
+      const typedRecord = record as Record<string, unknown>;
+      
       const update: ReleaseUpdate = {
-        id: (record as Record<string, unknown>).id as string,
-        indicator_id: (record as Record<string, unknown>).indicator_id as string,
-        release_at: (record as Record<string, unknown>).release_at as string,
-        period: (record as Record<string, unknown>).period as string,
-        actual: (record as Record<string, unknown>).actual as string | null,
-        forecast: (record as Record<string, unknown>).forecast as string | null,
-        previous: (record as Record<string, unknown>).previous as string | null,
+        id: String(typedRecord.id ?? ""),
+        indicator_id: String(typedRecord.indicator_id ?? ""),
+        release_at: String(typedRecord.release_at ?? ""),
+        period: String(typedRecord.period ?? ""),
+        actual: typedRecord.actual != null ? String(typedRecord.actual) : null,
+        forecast: typedRecord.forecast != null ? String(typedRecord.forecast) : null,
+        previous: typedRecord.previous != null ? String(typedRecord.previous) : null,
         eventType,
         timestamp: new Date(),
       };
