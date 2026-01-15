@@ -207,3 +207,26 @@ export function getFredApiKey(): string | null {
 
   return parsed.FRED_API_KEY ?? null;
 }
+
+/**
+ * BLS API environment variables schema.
+ * Optional: Used for importing historical economic data from the Bureau of Labor Statistics.
+ * Register for a free API key at: https://data.bls.gov/registrationEngine/
+ * (Without a key: 25 queries/day, 10 years of data; With key: 500 queries/day, 20 years)
+ */
+const blsEnvSchema = z.object({
+  BLS_API_KEY: z.string().min(1).optional(),
+});
+
+/**
+ * Get BLS API key from environment.
+ * Returns null if BLS API key is not configured.
+ * Note: BLS API works without a key but with reduced limits.
+ */
+export function getBLSApiKey(): string | null {
+  const parsed = blsEnvSchema.parse({
+    BLS_API_KEY: process.env.BLS_API_KEY,
+  });
+
+  return parsed.BLS_API_KEY ?? null;
+}
