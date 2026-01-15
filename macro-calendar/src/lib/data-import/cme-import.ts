@@ -108,16 +108,17 @@ function createSupabaseClient(): SupabaseClient {
 
 /**
  * Get or create an indicator for an event.
+ * Returns the indicator ID and whether it was newly created.
  */
 async function getOrCreateIndicator(
   supabase: SupabaseClient,
   event: NormalizedEvent,
   indicatorCache: Map<string, string>
-): Promise<string> {
+): Promise<{ id: string; created: boolean }> {
   const cacheKey = `${event.country}:${event.event}`;
 
   if (indicatorCache.has(cacheKey)) {
-    return indicatorCache.get(cacheKey)!;
+    return { id: indicatorCache.get(cacheKey)!, created: false };
   }
 
   // Try to find existing indicator
@@ -134,7 +135,7 @@ async function getOrCreateIndicator(
 
   if (existing) {
     indicatorCache.set(cacheKey, existing.id);
-    return existing.id;
+    return { id: existing.id, created: false };
   }
 
   // Create new indicator
@@ -155,7 +156,7 @@ async function getOrCreateIndicator(
   }
 
   indicatorCache.set(cacheKey, inserted.id);
-  return inserted.id;
+  return { id: inserted.id, created: true };
 }
 
 /**
@@ -262,7 +263,7 @@ export async function importCMEEvents(
     console.log("Importing to database...");
     const supabase = createSupabaseClient();
     const indicatorCache = new Map<string, string>();
-    const initialCacheSize = indicatorCache.size;
+    let indicatorsCreatedCount = 0;
 
     const BATCH_SIZE = 50;
     const releasesToInsert: Array<{
@@ -279,7 +280,10 @@ export async function importCMEEvents(
       const event = uniqueEvents[i];
 
       try {
-        const indicatorId = await getOrCreateIndicator(supabase, event, indicatorCache);
+        const { id: indicatorId, created } = await getOrCreateIndicator(supabase, event, indicatorCache);
+        if (created) {
+          indicatorsCreatedCount++;
+        }
 
         // Construct release datetime (CME times are in ET)
         const releaseAt = new Date(`${event.date}T${event.time}:00-05:00`).toISOString();
@@ -357,7 +361,7 @@ export async function importCMEEvents(
       }
     }
 
-    result.indicatorsCreated = indicatorCache.size - initialCacheSize;
+    result.indicatorsCreated = indicatorsCreatedCount;
 
     // Log schedule changes
     if (result.schedulesChanged.length > 0) {
