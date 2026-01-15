@@ -48,6 +48,29 @@ interface ImportResult {
 }
 
 /**
+ * Determines the styling state for an import result.
+ * Returns 'warning' for 0 events or failures, 'success' for successful imports.
+ */
+function getResultState(result: ImportResult): "success" | "warning" {
+  if (result.result.totalEventsFromSources === 0) {
+    return "warning";
+  }
+  return result.success ? "success" : "warning";
+}
+
+/** Result styling classes for container */
+const resultContainerStyles = {
+  success: "border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-900/20",
+  warning: "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20",
+};
+
+/** Result styling classes for text */
+const resultTextStyles = {
+  success: "text-green-800 dark:text-green-400",
+  warning: "text-amber-800 dark:text-amber-400",
+};
+
+/**
  * UpcomingReleasesImportButton component for admin dashboard.
  * Displays calendar API status and allows triggering upcoming events imports.
  * Supports 3 sources: FMP, Finnhub, and Trading Economics.
@@ -163,20 +186,8 @@ export function UpcomingReleasesImportButton() {
         )}
 
         {result && (
-          <div className={`mb-4 rounded-md border px-4 py-3 ${
-            result.result.totalEventsFromSources === 0
-              ? "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20"
-              : result.success 
-                ? "border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-900/20"
-                : "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20"
-          }`}>
-            <p className={`text-sm font-medium ${
-              result.result.totalEventsFromSources === 0
-                ? "text-amber-800 dark:text-amber-400"
-                : result.success 
-                  ? "text-green-800 dark:text-green-400"
-                  : "text-amber-800 dark:text-amber-400"
-            }`}>
+          <div className={`mb-4 rounded-md border px-4 py-3 ${resultContainerStyles[getResultState(result)]}`}>
+            <p className={`text-sm font-medium ${resultTextStyles[getResultState(result)]}`}>
               {result.message}
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-zinc-600 dark:text-zinc-400">
