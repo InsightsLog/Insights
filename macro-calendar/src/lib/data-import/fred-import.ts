@@ -29,7 +29,6 @@ import { FredClient, FRED_SERIES_CONFIG, FredSeriesId, FredObservation } from ".
 import {
   filterValidObservations,
   ValidationOptions,
-  ObservationData,
 } from "./validation";
 
 // Default start date: 10+ years of historical data
@@ -185,7 +184,8 @@ async function importSeriesObservations(
   let skipped = 0;
 
   // Convert FRED observations to ObservationData format for validation
-  const observationData: (FredObservation & ObservationData)[] = observations.map((obs) => ({
+  // Note: We extend with { period: string } to ensure period is always defined
+  const observationData = observations.map((obs) => ({
     ...obs,
     indicatorId,
     period: formatPeriod(obs.date, frequency),
@@ -211,11 +211,12 @@ async function importSeriesObservations(
     }
   }
 
-  // Prepare all releases data from validated observations (reuse period from validation)
+  // Prepare all releases data from validated observations
+  // period is guaranteed to be defined since we set it above in observationData
   const releasesData = validObservations.map((obs) => ({
     indicator_id: indicatorId,
     release_at: new Date(obs.date).toISOString(),
-    period: obs.period, // Already computed during validation
+    period: obs.period as string, // Safe assertion: period is always set during observation mapping
     actual: obs.value,
     unit: units,
     notes: `Imported from FRED`,
