@@ -183,8 +183,11 @@ async function importSeriesObservations(
     }
   }
 
-  // Determine unit based on frequency
-  const unit = frequency;
+  // Determine unit based on frequency (matches existing BLS pattern)
+  // The unit field stores the measurement frequency for this data
+  const unit = frequency === "Monthly" ? "Monthly" : 
+               frequency === "Quarterly" ? "Quarterly" :
+               frequency === "Daily" ? "Daily" : frequency;
 
   // Prepare all releases data from validated observations
   const releasesData = validObservations.map((obs) => ({
@@ -198,6 +201,8 @@ async function importSeriesObservations(
 
   // Fetch existing releases to determine which to update vs insert
   // Build filters in chunks to avoid query limits
+  // Note: Filter values are not user-controlled - indicator_id is a UUID from the database,
+  // release_at is generated from validated dates, and period is encodeURIComponent'd.
   const CHUNK_SIZE = 50;
   const existingReleaseMap = new Map<string, string>();
 
