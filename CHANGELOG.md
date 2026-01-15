@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Scheduled Releases Setup (L4)
+- **Added:** Complete documentation for configuring upcoming economic releases (T403.3)
+  - New Section 15 in DEPLOY.md: "Scheduled Releases (Upcoming Events)"
+  - Step-by-step guide for obtaining API keys (FMP, Finnhub, Trading Economics)
+  - Environment variable configuration instructions
+  - Manual import and automated cron sync options
+  - Troubleshooting guide for common issues
+- **Updated:** Environment variables table in DEPLOY.md
+  - Added `FMP_API_KEY`, `FINNHUB_API_KEY`, `TRADING_ECONOMICS_API_KEY`
+  - Added `CRON_SECRET` for Vercel Cron authentication
+  - Updated notes explaining which keys are needed for scheduled releases
+
 ### Sub-Second Real-Time Updates (L4)
 - **Added:** Supabase Realtime integration for sub-second data propagation (T400)
   - `useRealtimeReleases` React hook for live release updates
@@ -11,9 +23,10 @@
   - Database changes propagate to clients in < 500ms
 - **Added:** Scheduled data sync via Vercel Cron (T403)
   - `/api/cron/sync-data` endpoint for automated syncing
-  - Runs every 2 hours to import upcoming events
+  - Runs daily at 5:00 PM Central Time (23:00 UTC)
   - Protected by `CRON_SECRET` environment variable
   - `vercel.json` configured with cron schedule
+  - Manual sync button in admin panel for on-demand syncs
 - **Updated:** Calendar now shows 30 days by default (was 7 days) (T404)
   - Extended time range for upcoming releases
   - Updated empty state message

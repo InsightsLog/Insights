@@ -10,6 +10,7 @@ import { WorldBankImportButton } from "@/app/components/WorldBankImportButton";
 import { IMFImportButton } from "@/app/components/IMFImportButton";
 import { ClearDataButton } from "@/app/components/ClearDataButton";
 import { UpcomingReleasesImportButton } from "@/app/components/UpcomingReleasesImportButton";
+import { ManualSyncButton } from "@/app/components/ManualSyncButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -153,6 +154,11 @@ export default async function AdminDashboardPage() {
         {/* Upcoming Releases Import - G20+ Global Coverage */}
         <div className="mb-6">
           <UpcomingReleasesImportButton />
+        </div>
+
+        {/* Manual Data Sync - Run cron job on demand */}
+        <div className="mb-6">
+          <ManualSyncButton />
         </div>
 
         {/* FRED Data Import */}
