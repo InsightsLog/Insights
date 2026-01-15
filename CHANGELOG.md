@@ -3,6 +3,33 @@
 ## [Unreleased]
 
 ### Admin Features
+- **Added:** BLS import button in admin dashboard
+  - Previously created BLS import API existed but button was missing from UI
+  - New `BLSImportButton` component added to admin dashboard
+  - Shows API key configuration status (with key: 500 queries/day, without: 25/day)
+  - One-click import for all 17 configured US economic indicators
+  - Progress feedback during import
+- **Added:** ECB data import for Eurozone economic indicators (T401.3)
+  - New ECB API client: `src/lib/data-import/ecb-client.ts`
+  - ECB bulk import script: `src/lib/data-import/ecb-import.ts`
+  - API route: `POST /api/admin/ecb-import`
+  - No API key required (ECB SDW is free and open)
+  - Supports 11 Eurozone economic indicators:
+    - Interest Rates: ECB Main Refinancing Rate, Deposit Facility Rate
+    - Inflation: Eurozone HICP (YoY), Core HICP, Germany/France/Italy/Spain HICP
+    - GDP: Eurozone GDP Growth (QoQ)
+    - Employment: Eurozone Unemployment Rate
+    - Monetary: M3 Money Supply (YoY)
+  - Features:
+    - SDMX-JSON parsing for ECB Statistical Data Warehouse API
+    - Rate limiting (500ms between requests for fair use)
+    - Automatic deduplication using (indicator_id, release_at, period) key
+    - Progress tracking and error handling
+    - Configurable start period (default: 2014-01)
+  - Unit tests for ECB client (16 tests) and import functionality (6 tests)
+  - New `ECBImportButton` component in admin dashboard
+
+### Admin Features
 - **Added:** Admin UI for FRED data import (T401.7)
   - New `/api/admin/fred-import` endpoint for triggering FRED data import via API
   - GET endpoint returns FRED configuration status and available series
