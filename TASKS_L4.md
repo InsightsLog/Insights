@@ -385,18 +385,13 @@ To achieve sub-minute latency, we need aggressive polling or push-based updates:
     {
       "path": "/api/cron/fetch-releases",
       "schedule": "* 12-15 * * 1-5"
-    },
-    {
-      "path": "/api/cron/fetch-releases",
-      "schedule": "30-35 13 * * 1-5"
     }
   ]
 }
 ```
 
 **Schedule Explanation (UTC):**
-- `* 12-15 * * 1-5`: Every minute from 12:00-15:59 UTC (covers release windows for US/EU)
-- `30-35 13 * * 1-5`: Every minute from 1:30-1:35 PM UTC (8:30-8:35 AM EST / 9:30-9:35 AM EDT)
+- `* 12-15 * * 1-5`: Every minute from 12:00-15:59 UTC on weekdays (covers release windows for US/EU)
 
 **Timezone Considerations:**
 - US releases at 8:30 AM ET = 13:30 UTC during EST (Nov-Mar), 12:30 UTC during EDT (Mar-Nov)
@@ -405,11 +400,21 @@ To achieve sub-minute latency, we need aggressive polling or push-based updates:
 
 **For Sub-Minute Polling (Supabase Edge Function):**
 ```typescript
-// Edge Function that polls every 10 seconds for up to 55 seconds
+// Example Edge Function that polls every 10 seconds for up to 55 seconds
+// Note: fetchAndCheckReleases() should be implemented to query data sources
+// and compare against existing releases in the database
+
 Deno.serve(async () => {
   const startTime = Date.now();
   const maxDuration = 55000; // 55 seconds to allow cleanup
   const pollInterval = 10000; // 10 seconds
+  
+  // Implementation of fetchAndCheckReleases would go here
+  async function fetchAndCheckReleases() {
+    // 1. Query data source (FRED, BLS, ECB, etc.)
+    // 2. Compare with existing releases (hash comparison for speed)
+    // 3. If new data detected, insert release and trigger webhooks
+  }
   
   while (Date.now() - startTime < maxDuration - pollInterval) {
     await fetchAndCheckReleases();
