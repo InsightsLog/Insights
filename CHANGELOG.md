@@ -2,6 +2,34 @@
 
 ## [Unreleased]
 
+### Data Acquisition (L4)
+- **Added:** World Bank bulk import script for historical economic data (T401.4)
+  - Script: `src/lib/data-import/world-bank-import.ts`
+  - World Bank API client: `src/lib/data-import/world-bank-client.ts`
+  - Imports historical data from World Bank Indicators API v2
+  - No API key required (World Bank API is free and open)
+  - Supports 16 key economic indicators:
+    - GDP: GDP (Current USD), GDP Growth Rate, GDP Per Capita
+    - Inflation: Inflation Rate (CPI), Consumer Price Index
+    - Employment: Unemployment Rate, Labor Force Participation Rate
+    - Trade: Exports, Imports (% of GDP), Current Account Balance
+    - Finance: Foreign Direct Investment, Real Interest Rate
+    - Government: Central Government Debt, Government Revenue (% of GDP)
+    - Demographics: Total Population, Population Growth Rate
+  - Covers 38 major economies:
+    - G7 countries (US, UK, Germany, Japan, France, Italy, Canada)
+    - Major emerging markets (China, India, Brazil, Russia)
+    - Eurozone, Asia-Pacific, Latin America, and others
+  - Features:
+    - Rate limiting (500ms between requests for fair use)
+    - Automatic deduplication using (indicator_id, release_at, period) key
+    - Creates country-specific indicators (e.g., "GDP (Current USD) (United States)")
+    - Progress tracking and error handling
+    - Configurable start year (default: 2014, 10+ years)
+    - Support for importing specific indicators or countries
+  - Usage: `npx tsx src/lib/data-import/world-bank-import.ts`
+  - Unit tests for World Bank client (19 tests) and import functionality (7 tests)
+
 ### Admin Features
 - **Added:** BLS import button in admin dashboard
   - Previously created BLS import API existed but button was missing from UI
