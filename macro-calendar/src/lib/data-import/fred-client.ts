@@ -307,3 +307,77 @@ export const FRED_SERIES_CONFIG = {
 } as const;
 
 export type FredSeriesId = keyof typeof FRED_SERIES_CONFIG;
+
+/**
+ * Mapping of FRED series IDs to their parent release IDs.
+ * A release is a collection of related series published together.
+ * 
+ * Key release IDs:
+ * - 50: Employment Situation (PAYEMS, UNRATE)
+ * - 53: Gross Domestic Product (GDP series)
+ * - 10: Consumer Price Index (CPIAUCSL, CPILFESL)
+ * - 46: Producer Price Index (PPIACO)
+ * - 17: Industrial Production and Capacity Utilization (INDPRO)
+ * - 18: H.15 Selected Interest Rates (DGS2, DGS10, FEDFUNDS)
+ * - 8: Unemployment Insurance Weekly Claims (ICSA)
+ * - 13: New Residential Construction (HOUST, PERMIT)
+ * - 9: Advance Monthly Sales for Retail and Food Services (RSXFS)
+ * - 298: University of Michigan Consumer Sentiment (UMCSENT)
+ */
+export const FRED_SERIES_TO_RELEASE: Record<FredSeriesId, { releaseId: number; releaseName: string }> = {
+  // GDP - Release 53: Gross Domestic Product
+  GDPC1: { releaseId: 53, releaseName: "Gross Domestic Product" },
+  A191RL1Q225SBEA: { releaseId: 53, releaseName: "Gross Domestic Product" },
+
+  // Inflation - Release 10: Consumer Price Index
+  CPIAUCSL: { releaseId: 10, releaseName: "Consumer Price Index" },
+  CPILFESL: { releaseId: 10, releaseName: "Consumer Price Index" },
+  
+  // Inflation - Release 46: Producer Price Index
+  PPIACO: { releaseId: 46, releaseName: "Producer Price Index" },
+
+  // Employment - Release 50: Employment Situation
+  UNRATE: { releaseId: 50, releaseName: "Employment Situation" },
+  PAYEMS: { releaseId: 50, releaseName: "Employment Situation" },
+  
+  // Employment - Release 8: Unemployment Insurance Weekly Claims
+  ICSA: { releaseId: 8, releaseName: "Unemployment Insurance Weekly Claims" },
+
+  // Interest Rates - Release 18: H.15 Selected Interest Rates
+  FEDFUNDS: { releaseId: 18, releaseName: "H.15 Selected Interest Rates" },
+  DGS10: { releaseId: 18, releaseName: "H.15 Selected Interest Rates" },
+  DGS2: { releaseId: 18, releaseName: "H.15 Selected Interest Rates" },
+
+  // Consumer - Release 298: Surveys of Consumers
+  UMCSENT: { releaseId: 298, releaseName: "Surveys of Consumers" },
+  
+  // Consumer - Release 9: Advance Monthly Sales for Retail and Food Services
+  RSXFS: { releaseId: 9, releaseName: "Advance Monthly Sales for Retail and Food Services" },
+
+  // Housing - Release 13: New Residential Construction
+  HOUST: { releaseId: 13, releaseName: "New Residential Construction" },
+  PERMIT: { releaseId: 13, releaseName: "New Residential Construction" },
+
+  // Manufacturing - Release 17: Industrial Production and Capacity Utilization
+  INDPRO: { releaseId: 17, releaseName: "Industrial Production and Capacity Utilization" },
+};
+
+/**
+ * Upcoming release date from FRED API.
+ */
+export interface FredReleaseDate {
+  releaseId: number;
+  releaseName: string;
+  date: string; // YYYY-MM-DD format
+}
+
+/**
+ * Response from FRED releases/dates endpoint.
+ */
+interface FredReleaseDatesResponse {
+  release_dates: Array<{
+    release_id: number;
+    release_name: string;
+    date: string;
+  }>;
+}
