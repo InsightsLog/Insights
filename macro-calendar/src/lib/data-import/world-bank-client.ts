@@ -215,7 +215,9 @@ export class WorldBankClient {
     const end = endYear ?? new Date().getFullYear().toString();
     const start = startYear ?? "2014";
 
-    // Join country codes with semicolons for the API
+    // Join country codes with semicolons for the World Bank API
+    // Reference: https://datahelpdesk.worldbank.org/knowledgebase/articles/898581-api-basic-call-structures
+    // Multiple countries are specified as: /country/{country1};{country2}/indicator/{indicator}
     const countriesParam = countryCodes.join(";");
 
     const observations: WorldBankObservation[] = [];

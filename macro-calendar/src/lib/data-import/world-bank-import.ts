@@ -13,6 +13,7 @@
  *
  * Optional environment variables:
  *   - WORLD_BANK_IMPORT_START_YEAR: Start year for import (default: 2014, 10+ years)
+ *   - WORLD_BANK_IMPORT_END_YEAR: End year for import (default: current year)
  *   - WORLD_BANK_IMPORT_INDICATORS: Comma-separated list of indicator IDs to import
  *   - WORLD_BANK_IMPORT_COUNTRIES: Comma-separated list of country codes to import
  *
