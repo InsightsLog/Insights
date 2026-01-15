@@ -230,3 +230,25 @@ export function getBLSApiKey(): string | null {
 
   return parsed.BLS_API_KEY ?? null;
 }
+
+/**
+ * Financial Modeling Prep (FMP) API environment variables schema.
+ * Optional: Used for importing upcoming economic calendar events from G20+ countries.
+ * Register for a free API key at: https://financialmodelingprep.com/register
+ * Free tier: 250 API calls per day
+ */
+const fmpEnvSchema = z.object({
+  FMP_API_KEY: z.string().min(1).optional(),
+});
+
+/**
+ * Get FMP API key from environment.
+ * Returns null if FMP API key is not configured.
+ */
+export function getFMPApiKey(): string | null {
+  const parsed = fmpEnvSchema.parse({
+    FMP_API_KEY: process.env.FMP_API_KEY,
+  });
+
+  return parsed.FMP_API_KEY ?? null;
+}
