@@ -58,6 +58,32 @@
   - Usage: `npx tsx src/lib/data-import/fred-import.ts`
   - Environment variable: `FRED_API_KEY` (get free at https://fred.stlouisfed.org/docs/api/api_key.html)
   - Unit tests for FRED client (15 tests) and import functionality (5 tests)
+- **Added:** BLS bulk import script for historical economic data (T401.2)
+  - Script: `src/lib/data-import/bls-import.ts`
+  - BLS API client: `src/lib/data-import/bls-client.ts`
+  - Imports historical data from BLS (Bureau of Labor Statistics) API v2
+  - Supports 17 key US economic indicators:
+    - Employment: Unemployment Rate, Labor Force Participation Rate, Employment Level
+    - Unemployment Demographics: Black/African American, Hispanic/Latino
+    - Consumer Prices: CPI All Items, Core CPI, Food, Shelter, New Vehicles, Gasoline
+    - Producer Prices: PPI Final Demand, PPI Core (Less Foods and Energy)
+    - Payrolls: Total Nonfarm Employment, Average Hourly Earnings, Average Weekly Hours
+  - Features:
+    - Rate limiting support (25 queries/day without API key, 500 with key)
+    - Year chunking for large date ranges (10 years without key, 20 with key)
+    - Automatic deduplication using (indicator_id, release_at, period) key
+    - Creates indicators if they don't exist
+    - Progress tracking and error handling
+    - Configurable start/end year (default: 2014 to current year)
+    - Support for importing specific series or all configured series
+    - Works without API key (reduced limits)
+  - Usage: `npx tsx src/lib/data-import/bls-import.ts`
+  - Environment variable: `BLS_API_KEY` (optional, register at https://data.bls.gov/registrationEngine/)
+  - Unit tests for BLS client (20 tests) and import functionality (6 tests)
+  - New API route: `/api/admin/bls-import`
+    - GET endpoint returns BLS configuration status and available series
+    - POST endpoint triggers import with optional series selection and date range
+    - Admin authentication required for all operations
 
 ### Navigation & UX (L3)
 - **Added:** Settings dropdown menu in header for authenticated users

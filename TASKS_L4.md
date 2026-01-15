@@ -283,7 +283,7 @@ Create a comprehensive strategy for acquiring 10+ years of historical economic d
 #### Implementation Tasks
 
 - [x] T401.1 Create bulk import script for FRED historical data
-- [ ] T401.2 Create bulk import script for BLS historical data
+- [x] T401.2 Create bulk import script for BLS historical data
 - [ ] T401.3 Create bulk import script for ECB historical data
 - [ ] T401.4 Create bulk import script for World Bank data
 - [ ] T401.5 Create bulk import script for IMF data
