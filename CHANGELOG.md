@@ -2,51 +2,28 @@
 
 ## [Unreleased]
 
-### Upcoming Releases Import (G20+ Coverage)
-- **Added:** Multi-source upcoming economic calendar import with G20+ country coverage
-  - Import upcoming economic events for the next 30 days from multiple sources
-  - Three data sources for redundancy:
-    1. **Financial Modeling Prep (FMP)** - 250 calls/day, global coverage
-    2. **Finnhub** - 60 calls/minute, global economic calendar
-    3. **Trading Economics** - Comprehensive G20+ data
-  - Automatic deduplication across sources to avoid duplicate releases
-  - Deduplication key: country + normalized event name + date
-  - Priority order: FMP > Finnhub > Trading Economics (first source wins)
-- **Added:** FMP Calendar API client (`src/lib/data-import/fmp-calendar-client.ts`)
-  - Fetches upcoming economic events from Financial Modeling Prep API
-  - Supports G20+ country filtering (31 countries)
-  - Categorizes events by type (GDP, Inflation, Employment, etc.)
-  - Impact level support (Low, Medium, High)
-- **Added:** Finnhub Calendar API client (`src/lib/data-import/finnhub-calendar-client.ts`)
-  - Fetches economic calendar from Finnhub API
-  - Country name normalization to ISO codes
-  - Impact level normalization
-- **Added:** Trading Economics Calendar API client (`src/lib/data-import/trading-economics-client.ts`)
-  - Fetches economic calendar from Trading Economics API
-  - Batched country queries for G20+ coverage
-  - Rate limiting (200ms between batches)
-- **Added:** Unified upcoming import script (`src/lib/data-import/upcoming-import.ts`)
-  - Aggregates events from all configured sources
-  - Deduplicates events across sources
-  - Creates indicators and scheduled releases
-  - Progress tracking and error handling
-  - Usage: `npx tsx src/lib/data-import/upcoming-import.ts`
-- **Added:** Environment variables for calendar APIs (`src/lib/env.ts`):
-  - `FMP_API_KEY` - Financial Modeling Prep API key
-  - `FINNHUB_API_KEY` - Finnhub API key
-  - `TRADING_ECONOMICS_API_KEY` - Trading Economics API key
-- **Added:** API route `/api/admin/upcoming-import` for triggering imports
-  - GET endpoint returns source configuration status
-  - POST endpoint triggers import with optional `days` parameter (1-90)
-  - Admin authentication required
-  - Detailed import results with per-source breakdown
-- **Added:** `UpcomingReleasesImportButton` component in admin dashboard
-  - Shows configured sources (3 sources with status indicators)
-  - One-click import for upcoming G20+ events
-  - Source breakdown showing events from each source
-  - Deduplication summary (total vs unique events)
-  - Countries covered in import
-  - Error handling and progress feedback
+### Documentation
+- **Added:** G20 country coverage documentation in DEPLOY.md (Section 14)
+  - Full list of all 20 G20 member economies and their data sources
+  - Table showing which data sources cover each country
+  - Additional countries beyond G20 also documented
+- **Added:** Calendar integration documentation in DEPLOY.md (Section 13)
+  - iCal/ICS feed export instructions
+  - Google Calendar one-click add feature
+  - API endpoint for programmatic iCal access with full documentation
+- **Added:** Real-time data updates plan (T402) in TASKS_L4.md
+  - **Target latency: < 1 minute from official release**
+  - Aggressive polling strategy (10-15 second intervals during release windows)
+  - US releases at 8:30 AM ET (employment, CPI, GDP)
+  - EU releases at 2:15 PM CET (ECB decisions), 11:00 AM CET (HICP)
+  - Vercel Cron with 1-minute intervals for release windows
+  - Supabase Edge Functions for sub-minute polling
+  - SSE/WebSocket for real-time client updates
+  - 10 implementation tasks (T402.1 - T402.10)
+- **Updated:** BACKLOG.md with new priorities
+  - Confirmed G20 coverage is complete
+  - Added real-time/fast data updates as high priority with 1-minute target
+  - Reorganized priorities for clarity
 
 ### Data Acquisition (L4)
 - **Added:** World Bank bulk import script for historical economic data (T401.4)

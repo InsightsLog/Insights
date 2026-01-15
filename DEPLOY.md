@@ -617,6 +617,114 @@ DELETE FROM indicators;
 
 ---
 
+## 13. Calendar Integrations (L3)
+
+The Macro Calendar supports exporting watchlist events to external calendars, allowing users to track economic releases in their preferred calendar application.
+
+### 13.1 iCal/ICS Feed
+
+Users can export their watchlist releases as an iCal file:
+
+1. Sign in to the application
+2. Add indicators to your watchlist
+3. Navigate to `/watchlist`
+4. Click the "Export to iCal" button in the header
+5. Import the downloaded `.ics` file into your calendar application (Google Calendar, Apple Calendar, Outlook, etc.)
+
+**iCal features:**
+- RFC 5545 compliant format
+- Events include indicator name, country, period, and forecast/previous values
+- 30-minute event duration for economic releases
+- Maximum 500 releases per export
+
+### 13.2 Google Calendar One-Click Add
+
+For individual events, users can add directly to Google Calendar:
+
+1. View your watchlist at `/watchlist`
+2. Each release row has a Google Calendar icon link
+3. Click the icon to open Google Calendar with the event pre-filled
+4. Confirm and save the event
+
+### 13.3 Programmatic iCal Access
+
+The iCal feed is also available via API for authenticated users:
+
+**Endpoint:** `GET /api/calendar/ical`
+
+**Authentication:** Requires active session cookie (magic link login)
+
+**Response:**
+- **Content-Type:** `text/calendar`
+- **Body:** iCalendar (ICS) format file containing upcoming watchlist releases
+
+**Example using cURL:**
+```bash
+curl -X GET "https://your-app.vercel.app/api/calendar/ical" \
+  -H "Cookie: sb-access-token=your-auth-token"
+```
+
+**Response Codes:**
+- `200 OK`: Returns iCal data
+- `401 Unauthorized`: User not authenticated
+- `500 Internal Server Error`: Failed to fetch watchlist data
+
+**Notes:**
+- Only includes releases for indicators in the user's personal watchlist
+- Maximum 500 upcoming releases included
+- Event duration is 30 minutes per economic release
+
+---
+
+## 14. Data Coverage
+
+### 14.1 G20 Country Coverage
+
+The Macro Calendar provides comprehensive coverage of all G20 member economies:
+
+| Country | Code | Data Sources |
+|---------|------|--------------|
+| Argentina | AR | IMF, World Bank |
+| Australia | AU | IMF, World Bank |
+| Brazil | BR | IMF, World Bank |
+| Canada | CA | IMF, World Bank |
+| China | CN | IMF, World Bank |
+| France | FR | IMF, World Bank, ECB |
+| Germany | DE | IMF, World Bank, ECB |
+| India | IN | IMF, World Bank |
+| Indonesia | ID | IMF, World Bank |
+| Italy | IT | IMF, World Bank, ECB |
+| Japan | JP | IMF, World Bank |
+| Mexico | MX | IMF, World Bank |
+| Russia | RU | IMF, World Bank |
+| Saudi Arabia | SA | IMF, World Bank |
+| South Africa | ZA | IMF, World Bank |
+| South Korea | KR | IMF, World Bank |
+| Turkey | TR | IMF, World Bank |
+| United Kingdom | GB | IMF, World Bank |
+| United States | US | FRED, BLS, IMF, World Bank |
+| European Union | EU | ECB |
+
+### 14.2 Additional Countries
+
+Beyond G20, the platform covers additional economies including:
+- **Eurozone**: Austria, Belgium, Greece, Ireland, Netherlands, Portugal, Spain
+- **Asia-Pacific**: Hong Kong, Malaysia, New Zealand, Singapore, Thailand
+- **Latin America**: Chile, Colombia
+- **Others**: Israel, Norway, Poland, Sweden, Switzerland, UAE
+
+### 14.3 Available Data Sources
+
+| Source | Coverage | API Key Required | Notes |
+|--------|----------|------------------|-------|
+| FRED | US (800K+ series) | Required (free tier) | Most comprehensive US data |
+| BLS | US (employment, prices) | Optional (free tier) | Higher limits with key |
+| ECB | Eurozone | No | Interest rates, inflation, GDP |
+| IMF | Global (37 countries) | No | World Economic Outlook data |
+| World Bank | Global (38 countries) | No | Development indicators |
+
+---
+
 ## Quick Reference
 
 **Vercel Dashboard**: [https://vercel.com/dashboard](https://vercel.com/dashboard)  
