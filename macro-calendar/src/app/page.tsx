@@ -117,7 +117,7 @@ async function getUpcomingReleases(filters: {
   const supabase = await createSupabaseServerClient();
 
   const now = new Date();
-  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   // If filtering by watchlist, fetch user's watchlist indicator IDs first
   let watchlistIndicatorIds: string[] = [];
@@ -164,7 +164,7 @@ async function getUpcomingReleases(filters: {
     `
     )
     .gte("release_at", now.toISOString())
-    .lte("release_at", sevenDaysFromNow.toISOString());
+    .lte("release_at", thirtyDaysFromNow.toISOString());
 
   // Apply watchlist filter
   if (filters.watchlistOnly && watchlistIndicatorIds.length > 0) {
@@ -353,7 +353,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
                             {filters.country || filters.category || filters.search
                               ? "Try adjusting your filters or search terms."
-                              : "No economic releases scheduled for the next 7 days."}
+                              : "No economic releases scheduled for the next 30 days."}
                           </p>
                         </div>
                       </td>
