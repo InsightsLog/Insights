@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### Admin Features
+- **Added:** Admin UI for FRED data import (T401.7)
+  - New `/api/admin/fred-import` endpoint for triggering FRED data import via API
+  - GET endpoint returns FRED configuration status and available series
+  - POST endpoint triggers import with optional series selection and start date
+  - Admin authentication required for all operations
+  - Detailed import results with success/failure counts
+  - New `FredImportButton` component in admin dashboard (`/admin`)
+  - Shows FRED API configuration status
+  - One-click import for all 16 configured US economic indicators
+  - Progress feedback during import
+  - Import results display (inserted, updated, errors)
+  - Instructions for setting up FRED API key if not configured
+- **Updated:** DEPLOY.md with FRED API key configuration and data import instructions
+  - Added `FRED_API_KEY` to environment variables table
+  - New Section 12: "Importing Real Economic Data (FRED)" with step-by-step guide
+  - Troubleshooting guide for common FRED import issues
+
 ### Data Acquisition (L4)
 - **Added:** FRED bulk import script for historical economic data (T401.1)
   - Script: `src/lib/data-import/fred-import.ts`

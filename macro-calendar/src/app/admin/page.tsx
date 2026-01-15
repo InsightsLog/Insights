@@ -3,6 +3,7 @@ import Link from "next/link";
 import { checkAdminRole } from "@/lib/supabase/auth";
 import { getAdminDashboardData } from "@/app/actions/admin";
 import { RoleManager } from "@/app/components/RoleManager";
+import { FredImportButton } from "@/app/components/FredImportButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -141,6 +142,11 @@ export default async function AdminDashboardPage() {
           >
             Upload CSV
           </Link>
+        </div>
+
+        {/* FRED Data Import */}
+        <div className="mb-6">
+          <FredImportButton />
         </div>
 
         {/* Dashboard grid */}
