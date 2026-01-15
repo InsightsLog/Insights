@@ -230,3 +230,68 @@ export function getBLSApiKey(): string | null {
 
   return parsed.BLS_API_KEY ?? null;
 }
+
+/**
+ * Financial Modeling Prep (FMP) API environment variables schema.
+ * Optional: Used for importing upcoming economic calendar events from G20+ countries.
+ * Register for a free API key at: https://financialmodelingprep.com/register
+ * Free tier: 250 API calls per day
+ */
+const fmpEnvSchema = z.object({
+  FMP_API_KEY: z.string().min(1).optional(),
+});
+
+/**
+ * Get FMP API key from environment.
+ * Returns null if FMP API key is not configured.
+ */
+export function getFMPApiKey(): string | null {
+  const parsed = fmpEnvSchema.parse({
+    FMP_API_KEY: process.env.FMP_API_KEY,
+  });
+
+  return parsed.FMP_API_KEY ?? null;
+}
+
+/**
+ * Finnhub API environment variables schema.
+ * Optional: Used for importing upcoming economic calendar events.
+ * Register for a free API key at: https://finnhub.io/register
+ * Free tier: 60 API calls per minute
+ */
+const finnhubEnvSchema = z.object({
+  FINNHUB_API_KEY: z.string().min(1).optional(),
+});
+
+/**
+ * Get Finnhub API key from environment.
+ * Returns null if Finnhub API key is not configured.
+ */
+export function getFinnhubApiKey(): string | null {
+  const parsed = finnhubEnvSchema.parse({
+    FINNHUB_API_KEY: process.env.FINNHUB_API_KEY,
+  });
+
+  return parsed.FINNHUB_API_KEY ?? null;
+}
+
+/**
+ * Trading Economics API environment variables schema.
+ * Optional: Used for importing upcoming economic calendar events.
+ * Register for a free API key at: https://tradingeconomics.com/api
+ */
+const tradingEconomicsEnvSchema = z.object({
+  TRADING_ECONOMICS_API_KEY: z.string().min(1).optional(),
+});
+
+/**
+ * Get Trading Economics API key from environment.
+ * Returns null if Trading Economics API key is not configured.
+ */
+export function getTradingEconomicsApiKey(): string | null {
+  const parsed = tradingEconomicsEnvSchema.parse({
+    TRADING_ECONOMICS_API_KEY: process.env.TRADING_ECONOMICS_API_KEY,
+  });
+
+  return parsed.TRADING_ECONOMICS_API_KEY ?? null;
+}
