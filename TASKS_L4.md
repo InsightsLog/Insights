@@ -367,21 +367,27 @@ These sources update within minutes of official release:
 
 #### Vercel Cron Configuration
 
-```json
-// vercel.json
+**Note:** Vercel Cron schedules use UTC timezone.
+
+```jsonc
 {
   "crons": [
     {
       "path": "/api/cron/fetch-releases",
-      "schedule": "*/5 12-14 * * 1-5"
+      "schedule": "*/5 12-15 * * 1-5"
     },
     {
-      "path": "/api/cron/fetch-releases",
-      "schedule": "30 8 * * 1-5"
+      "path": "/api/cron/fetch-releases", 
+      "schedule": "30 13 * * 1-5"
     }
   ]
 }
 ```
+
+**Schedule Explanation (UTC):**
+- `*/5 12-15 * * 1-5`: Every 5 minutes from 12:00-15:59 UTC (covers 8:00 AM - 11:59 AM ET during EST)
+- `30 13 * * 1-5`: 1:30 PM UTC = 8:30 AM ET (exact US release time during EST)
+- During EDT (Daylight Saving): adjust to `30 12` for 8:30 AM ET
 
 #### Implementation Tasks
 - [ ] T402.1 Create `release_schedules` table with known release times
