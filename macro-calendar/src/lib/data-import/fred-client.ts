@@ -370,14 +370,3 @@ export interface FredReleaseDate {
   releaseName: string;
   date: string; // YYYY-MM-DD format
 }
-
-/**
- * Response from FRED releases/dates endpoint.
- */
-interface FredReleaseDatesResponse {
-  release_dates: Array<{
-    release_id: number;
-    release_name: string;
-    date: string;
-  }>;
-}

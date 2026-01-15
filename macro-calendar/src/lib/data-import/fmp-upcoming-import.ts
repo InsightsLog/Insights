@@ -26,8 +26,6 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import {
   FMPCalendarClient,
   FMPCalendarEvent,
-  COUNTRY_NAMES,
-  G20PlusCountry,
   categorizeEvent,
 } from "./fmp-calendar-client";
 

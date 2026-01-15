@@ -252,3 +252,46 @@ export function getFMPApiKey(): string | null {
 
   return parsed.FMP_API_KEY ?? null;
 }
+
+/**
+ * Finnhub API environment variables schema.
+ * Optional: Used for importing upcoming economic calendar events.
+ * Register for a free API key at: https://finnhub.io/register
+ * Free tier: 60 API calls per minute
+ */
+const finnhubEnvSchema = z.object({
+  FINNHUB_API_KEY: z.string().min(1).optional(),
+});
+
+/**
+ * Get Finnhub API key from environment.
+ * Returns null if Finnhub API key is not configured.
+ */
+export function getFinnhubApiKey(): string | null {
+  const parsed = finnhubEnvSchema.parse({
+    FINNHUB_API_KEY: process.env.FINNHUB_API_KEY,
+  });
+
+  return parsed.FINNHUB_API_KEY ?? null;
+}
+
+/**
+ * Trading Economics API environment variables schema.
+ * Optional: Used for importing upcoming economic calendar events.
+ * Register for a free API key at: https://tradingeconomics.com/api
+ */
+const tradingEconomicsEnvSchema = z.object({
+  TRADING_ECONOMICS_API_KEY: z.string().min(1).optional(),
+});
+
+/**
+ * Get Trading Economics API key from environment.
+ * Returns null if Trading Economics API key is not configured.
+ */
+export function getTradingEconomicsApiKey(): string | null {
+  const parsed = tradingEconomicsEnvSchema.parse({
+    TRADING_ECONOMICS_API_KEY: process.env.TRADING_ECONOMICS_API_KEY,
+  });
+
+  return parsed.TRADING_ECONOMICS_API_KEY ?? null;
+}
