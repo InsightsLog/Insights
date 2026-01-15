@@ -26,6 +26,10 @@
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { FredClient, FRED_SERIES_CONFIG, FredSeriesId, FredObservation } from "./fred-client";
+import {
+  filterValidObservations,
+  ValidationOptions,
+} from "./validation";
 
 // Default start date: 10+ years of historical data
 const DEFAULT_START_DATE = "2014-01-01";
@@ -172,19 +176,47 @@ async function importSeriesObservations(
   indicatorId: string,
   observations: FredObservation[],
   frequency: string,
-  units: string
+  units: string,
+  validationOptions: ValidationOptions = {}
 ): Promise<{ inserted: number; updated: number; skipped: number }> {
   let inserted = 0;
   let updated = 0;
-  // skipped is currently always 0 - data validation (T401.6) will add skip logic
-  // for duplicate/invalid records. Keeping the field for API consistency.
-  const skipped = 0;
+  let skipped = 0;
 
-  // Prepare all releases data
-  const releasesData = observations.map((obs) => ({
+  // Convert FRED observations to ObservationData format for validation
+  // Note: We extend with { period: string } to ensure period is always defined
+  const observationData = observations.map((obs) => ({
+    ...obs,
+    indicatorId,
+    period: formatPeriod(obs.date, frequency),
+  }));
+
+  // Validate observations (T401.6)
+  const { valid: validObservations, skipped: skippedObs } = filterValidObservations(
+    observationData,
+    validationOptions
+  );
+  skipped = skippedObs.length;
+
+  // Log skipped observations for debugging
+  if (skippedObs.length > 0) {
+    console.log(`    Skipped ${skippedObs.length} invalid observations`);
+    // Group by reason for summary
+    const reasonCounts = new Map<string, number>();
+    for (const { reason } of skippedObs) {
+      reasonCounts.set(reason, (reasonCounts.get(reason) ?? 0) + 1);
+    }
+    for (const [reason, count] of reasonCounts) {
+      console.log(`      - ${reason}: ${count}`);
+    }
+  }
+
+  // Prepare all releases data from validated observations
+  // period is guaranteed to be defined since we set it above in observationData
+  const releasesData = validObservations.map((obs) => ({
     indicator_id: indicatorId,
     release_at: new Date(obs.date).toISOString(),
-    period: formatPeriod(obs.date, frequency),
+    period: obs.period as string, // Safe assertion: period is always set during observation mapping
     actual: obs.value,
     unit: units,
     notes: `Imported from FRED`,
@@ -282,7 +314,8 @@ async function importSeries(
   fredClient: FredClient,
   supabase: SupabaseClient,
   seriesId: FredSeriesId,
-  startDate: string
+  startDate: string,
+  validationOptions: ValidationOptions = {}
 ): Promise<SeriesImportResult> {
   const config = FRED_SERIES_CONFIG[seriesId];
 
@@ -308,13 +341,14 @@ async function importSeries(
     );
     console.log(`  Found ${observations.length} observations`);
 
-    // Import observations
+    // Import observations with validation (T401.6)
     const { inserted, updated, skipped } = await importSeriesObservations(
       supabase,
       indicatorId,
       observations,
       seriesInfo.frequency,
-      seriesInfo.units
+      seriesInfo.units,
+      validationOptions
     );
 
     console.log(
@@ -354,17 +388,22 @@ export async function importFredHistoricalData(
     startDate?: string;
     seriesIds?: FredSeriesId[];
     apiKey?: string;
+    /** Validation options for imported data (T401.6) */
+    validation?: ValidationOptions;
   } = {}
 ): Promise<ImportResult> {
   const startDate = options.startDate ?? DEFAULT_START_DATE;
   const seriesIds =
     options.seriesIds ?? (Object.keys(FRED_SERIES_CONFIG) as FredSeriesId[]);
+  // Default validation: reject missing values (FRED uses "." for missing)
+  const validationOptions: ValidationOptions = options.validation ?? {};
 
   console.log("=".repeat(60));
   console.log("FRED Historical Data Import");
   console.log("=".repeat(60));
   console.log(`Start date: ${startDate}`);
   console.log(`Series to import: ${seriesIds.length}`);
+  console.log(`Validation: ${Object.keys(validationOptions).length > 0 ? JSON.stringify(validationOptions) : "default"}`);
   console.log("");
 
   const fredClient = new FredClient(options.apiKey);
@@ -389,7 +428,8 @@ export async function importFredHistoricalData(
       fredClient,
       supabase,
       seriesId,
-      startDate
+      startDate,
+      validationOptions
     );
     result.seriesResults.push(seriesResult);
 

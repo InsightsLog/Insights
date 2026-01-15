@@ -15,12 +15,27 @@
   - Progress feedback during import
   - Import results display (inserted, updated, errors)
   - Instructions for setting up FRED API key if not configured
+- **Added:** Clear historical/seed data functionality
+  - New `ClearDataButton` component in admin dashboard
+  - Server action `clearHistoricalData` in admin actions
+  - Options to clear seed data, FRED data, or all data
+  - Confirmation prompt for destructive operations
+  - Audit logging for all data clear operations
 - **Updated:** DEPLOY.md with FRED API key configuration and data import instructions
   - Added `FRED_API_KEY` to environment variables table
   - New Section 12: "Importing Real Economic Data (FRED)" with step-by-step guide
   - Troubleshooting guide for common FRED import issues
 
 ### Data Acquisition (L4)
+- **Added:** Data validation and deduplication module (T401.6)
+  - New validation module: `src/lib/data-import/validation.ts`
+  - Zod schemas for FRED observation data validation
+  - Numeric range validation with configurable min/max bounds
+  - Outlier detection using standard deviation
+  - Missing/invalid value handling with skip reasons
+  - Deduplication by (indicator_id, release_at, period) key
+  - Comprehensive test suite (30 tests)
+  - Integrated into FRED import script for automatic validation
 - **Added:** FRED bulk import script for historical economic data (T401.1)
   - Script: `src/lib/data-import/fred-import.ts`
   - FRED API client: `src/lib/data-import/fred-client.ts`

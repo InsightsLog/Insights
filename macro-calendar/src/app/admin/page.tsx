@@ -4,6 +4,7 @@ import { checkAdminRole } from "@/lib/supabase/auth";
 import { getAdminDashboardData } from "@/app/actions/admin";
 import { RoleManager } from "@/app/components/RoleManager";
 import { FredImportButton } from "@/app/components/FredImportButton";
+import { ClearDataButton } from "@/app/components/ClearDataButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -147,6 +148,11 @@ export default async function AdminDashboardPage() {
         {/* FRED Data Import */}
         <div className="mb-6">
           <FredImportButton />
+        </div>
+
+        {/* Clear Data */}
+        <div className="mb-6">
+          <ClearDataButton />
         </div>
 
         {/* Dashboard grid */}

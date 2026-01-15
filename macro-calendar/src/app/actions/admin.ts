@@ -436,3 +436,195 @@ export async function updateUserRole(
     data: { userId, role },
   };
 }
+
+/**
+ * Result of clearing historical data.
+ */
+export type ClearDataResult = {
+  deletedReleases: number;
+  deletedIndicators: number;
+};
+
+// Zod schema for clearHistoricalData input validation
+const clearHistoricalDataInputSchema = z.object({
+  clearSeedData: z.boolean().default(true),
+  clearFredData: z.boolean().default(false),
+  clearAllData: z.boolean().default(false),
+});
+
+/**
+ * Clear historical/seed data from the database.
+ * Requires admin role.
+ * Logs the action to audit_log.
+ *
+ * Options:
+ * - clearSeedData: Delete test seed data (default indicators with known UUIDs)
+ * - clearFredData: Delete FRED imported data (indicators with FRED source)
+ * - clearAllData: Delete all indicators and releases (dangerous!)
+ *
+ * @param options - Options for what data to clear
+ * @returns Count of deleted releases and indicators
+ */
+export async function clearHistoricalData(
+  options: {
+    clearSeedData?: boolean;
+    clearFredData?: boolean;
+    clearAllData?: boolean;
+  } = { clearSeedData: true }
+): Promise<AdminActionResult<ClearDataResult>> {
+  // Validate input
+  const parseResult = clearHistoricalDataInputSchema.safeParse(options);
+  if (!parseResult.success) {
+    const firstError = parseResult.error.issues[0];
+    return {
+      success: false,
+      error: firstError?.message ?? "Invalid input",
+    };
+  }
+
+  const { clearSeedData, clearFredData, clearAllData } = parseResult.data;
+
+  // Check admin role
+  const adminCheck = await checkAdminRole();
+  if (!adminCheck.isAdmin || !adminCheck.userId) {
+    return { success: false, error: "Access denied: Admin role required" };
+  }
+
+  // Use service role client to bypass RLS
+  const supabase = createSupabaseServiceClient();
+
+  let deletedReleases = 0;
+  let deletedIndicators = 0;
+
+  try {
+    if (clearAllData) {
+      // Delete all releases first (due to foreign key)
+      // Using gte with empty string to match all rows (Supabase requires a filter for delete)
+      const { data: releaseData, error: releaseError } = await supabase
+        .from("releases")
+        .delete()
+        .gte("id", "00000000-0000-0000-0000-000000000000") // Match all UUIDs
+        .select("id");
+
+      if (releaseError) {
+        throw new Error(`Failed to delete releases: ${releaseError.message}`);
+      }
+      deletedReleases = releaseData?.length ?? 0;
+
+      // Delete all indicators
+      const { data: indicatorData, error: indicatorError } = await supabase
+        .from("indicators")
+        .delete()
+        .gte("id", "00000000-0000-0000-0000-000000000000") // Match all UUIDs
+        .select("id");
+
+      if (indicatorError) {
+        throw new Error(`Failed to delete indicators: ${indicatorError.message}`);
+      }
+      deletedIndicators = indicatorData?.length ?? 0;
+    } else {
+      // Known seed data indicator UUIDs from 001_test_seed.sql
+      const seedIndicatorIds = [
+        "550e8400-e29b-41d4-a716-446655440000",
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002",
+      ];
+
+      if (clearSeedData) {
+        // Delete releases for seed indicators
+        const { data: seedReleases, error: seedRelError } = await supabase
+          .from("releases")
+          .delete()
+          .in("indicator_id", seedIndicatorIds)
+          .select("id");
+
+        if (seedRelError) {
+          throw new Error(`Failed to delete seed releases: ${seedRelError.message}`);
+        }
+        deletedReleases += seedReleases?.length ?? 0;
+
+        // Delete seed indicators
+        const { data: seedIndicators, error: seedIndError } = await supabase
+          .from("indicators")
+          .delete()
+          .in("id", seedIndicatorIds)
+          .select("id");
+
+        if (seedIndError) {
+          throw new Error(`Failed to delete seed indicators: ${seedIndError.message}`);
+        }
+        deletedIndicators += seedIndicators?.length ?? 0;
+      }
+
+      if (clearFredData) {
+        // Find indicators imported from FRED
+        const { data: fredIndicators, error: fredFetchError } = await supabase
+          .from("indicators")
+          .select("id")
+          .ilike("source_name", "%FRED%");
+
+        if (fredFetchError) {
+          throw new Error(`Failed to fetch FRED indicators: ${fredFetchError.message}`);
+        }
+
+        const fredIndicatorIds = fredIndicators?.map((i) => i.id) ?? [];
+
+        if (fredIndicatorIds.length > 0) {
+          // Delete releases for FRED indicators
+          const { data: fredReleases, error: fredRelError } = await supabase
+            .from("releases")
+            .delete()
+            .in("indicator_id", fredIndicatorIds)
+            .select("id");
+
+          if (fredRelError) {
+            throw new Error(`Failed to delete FRED releases: ${fredRelError.message}`);
+          }
+          deletedReleases += fredReleases?.length ?? 0;
+
+          // Delete FRED indicators
+          const { data: deletedFredInd, error: fredIndError } = await supabase
+            .from("indicators")
+            .delete()
+            .in("id", fredIndicatorIds)
+            .select("id");
+
+          if (fredIndError) {
+            throw new Error(`Failed to delete FRED indicators: ${fredIndError.message}`);
+          }
+          deletedIndicators += deletedFredInd?.length ?? 0;
+        }
+      }
+    }
+
+    // Log the action to audit_log
+    const { error: auditError } = await supabase.from("audit_log").insert({
+      user_id: adminCheck.userId,
+      action: "delete",
+      resource_type: "historical_data",
+      resource_id: null,
+      metadata: {
+        clearSeedData,
+        clearFredData,
+        clearAllData,
+        deletedReleases,
+        deletedIndicators,
+      },
+    });
+
+    if (auditError) {
+      console.error("Failed to log data clear to audit_log:", auditError);
+    }
+
+    return {
+      success: true,
+      data: { deletedReleases, deletedIndicators },
+    };
+  } catch (error) {
+    console.error("Failed to clear historical data:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to clear data",
+    };
+  }
+}

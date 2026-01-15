@@ -577,6 +577,44 @@ Optional environment variables for CLI:
 - Check that the import completed successfully in the admin dashboard
 - Verify the indicators exist in the database
 
+### 12.6 Clearing Historical/Seed Data
+
+To clear existing data before importing fresh data:
+
+**Via Admin Dashboard**:
+1. Navigate to `/admin` (requires admin role)
+2. Find the "Clear Data" section
+3. Choose what to clear:
+   - **Clear Seed Data**: Removes test indicators from initial setup
+   - **Clear FRED Data**: Removes all FRED-imported indicators
+   - **Clear Both**: Removes seed and FRED data
+   - **Clear ALL Data**: Removes everything (use with caution!)
+
+**Via SQL (Supabase)**:
+```sql
+-- Clear seed data only
+DELETE FROM releases WHERE indicator_id IN (
+    '550e8400-e29b-41d4-a716-446655440000',
+    '550e8400-e29b-41d4-a716-446655440001',
+    '550e8400-e29b-41d4-a716-446655440002'
+);
+DELETE FROM indicators WHERE id IN (
+    '550e8400-e29b-41d4-a716-446655440000',
+    '550e8400-e29b-41d4-a716-446655440001',
+    '550e8400-e29b-41d4-a716-446655440002'
+);
+
+-- Clear FRED data only
+DELETE FROM releases WHERE indicator_id IN (
+    SELECT id FROM indicators WHERE source_name ILIKE '%FRED%'
+);
+DELETE FROM indicators WHERE source_name ILIKE '%FRED%';
+
+-- Clear ALL data (dangerous!)
+DELETE FROM releases;
+DELETE FROM indicators;
+```
+
 ---
 
 ## Quick Reference
