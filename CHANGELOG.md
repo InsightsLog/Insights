@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Bug Fixes
+- **Fixed:** CME Group calendar import now properly reports errors when data source is unavailable
+  - Previously, when CME's AJAX endpoint returned 404, the import silently returned 0 events with a "success" message
+  - Now returns HTTP 503 with clear error message: "CME Group calendar data source is unavailable"
+  - Added `dataSourceUnavailable` flag to import result for UI handling
+  - Added `fetchErrors` array with detailed error information (month, status code, message)
+  - Errors are properly logged and surfaced to the admin UI
+  - Affects both `/api/admin/upcoming-import` and `/api/cron/sync-data` endpoints
+
 ### CME Group Calendar Integration (Replaces Paid APIs)
 - **Major Change:** Replaced paid API dependencies (FMP, Finnhub, Trading Economics) with CME Group scraping
   - New `cme-calendar-client.ts`: Scrapes CME Group's Economic Releases Calendar

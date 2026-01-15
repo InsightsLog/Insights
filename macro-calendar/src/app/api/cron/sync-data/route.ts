@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { importCMEEvents } from "@/lib/data-import/cme-import";
+import { importCMEEvents, formatYearMonth } from "@/lib/data-import/cme-import";
 
 /** Maximum number of errors to include in the response */
 const MAX_ERRORS_IN_RESPONSE = 10;
@@ -66,6 +66,28 @@ export async function GET(request: NextRequest) {
 
     console.log("");
     console.log("Cron: Sync completed in", duration, "ms");
+
+    // Check if data source is unavailable
+    if (result.dataSourceUnavailable) {
+      console.error("Cron: CME Group calendar data source is unavailable");
+      return NextResponse.json({
+        success: false,
+        duration_ms: duration,
+        dataSourceUnavailable: true,
+        error: "CME Group calendar data source is unavailable. The website structure may have changed.",
+        source: {
+          name: result.source.name,
+          events: 0,
+          errors: result.source.errors.length,
+        },
+        fetchErrors: result.fetchErrors.map(e => ({
+          month: formatYearMonth(e.year, e.month),
+          statusCode: e.statusCode,
+          message: e.message,
+        })),
+        errors: result.errors.slice(0, MAX_ERRORS_IN_RESPONSE),
+      }, { status: 503 });
+    }
 
     return NextResponse.json({
       success: true,

@@ -32,6 +32,25 @@ export interface CMECalendarEvent {
 }
 
 /**
+ * Result of fetching upcoming events, including any fetch errors.
+ */
+export interface CMEFetchResult {
+  events: CMECalendarEvent[];
+  errors: CMEMonthFetchError[];
+  allMonthsFailed: boolean;
+}
+
+/**
+ * Error details for a failed month fetch.
+ */
+export interface CMEMonthFetchError {
+  year: number;
+  month: number;
+  statusCode?: number;
+  message: string;
+}
+
+/**
  * Map CME country codes to ISO codes.
  * CME uses 2-letter codes that mostly match ISO but some need mapping.
  */
@@ -283,35 +302,62 @@ export class CMECalendarClient {
 
   /**
    * Fetch events for the next N months (including current).
+   * Returns both events and any fetch errors that occurred.
    */
-  async getUpcomingEvents(months: number = 2): Promise<CMECalendarEvent[]> {
+  async getUpcomingEventsWithErrors(months: number = 2): Promise<CMEFetchResult> {
     const allEvents: CMECalendarEvent[] = [];
+    const errors: CMEMonthFetchError[] = [];
     const now = new Date();
+    let successCount = 0;
 
     for (let i = 0; i < months; i++) {
       const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth() + 1;
+      
       try {
-        const events = await this.getMonthlyEvents(
-          targetDate.getFullYear(),
-          targetDate.getMonth() + 1
-        );
+        const events = await this.getMonthlyEvents(year, month);
         allEvents.push(...events);
+        successCount++;
 
         // Small delay between requests to be respectful
         if (i < months - 1) {
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
       } catch (error) {
-        console.warn(
-          `Failed to fetch events for ${targetDate.getFullYear()}-${targetDate.getMonth() + 1}:`,
-          error
-        );
+        const statusCode = error instanceof CMEApiError ? error.statusCode : undefined;
+        const message = error instanceof Error ? error.message : "Unknown error";
+        
+        errors.push({
+          year,
+          month,
+          statusCode,
+          message,
+        });
+        
+        console.warn(`Failed to fetch events for ${year}-${month}:`, error);
       }
     }
 
     // Filter to only future events
     const today = new Date().toISOString().split("T")[0];
-    return allEvents.filter((event) => event.date >= today);
+    const futureEvents = allEvents.filter((event) => event.date >= today);
+
+    return {
+      events: futureEvents,
+      errors,
+      allMonthsFailed: successCount === 0 && months > 0,
+    };
+  }
+
+  /**
+   * Fetch events for the next N months (including current).
+   * @deprecated Since version 2.6.0. Use getUpcomingEventsWithErrors() for better error handling.
+   * This method will be removed in a future version.
+   */
+  async getUpcomingEvents(months: number = 2): Promise<CMECalendarEvent[]> {
+    const result = await this.getUpcomingEventsWithErrors(months);
+    return result.events;
   }
 
   /**
