@@ -193,7 +193,7 @@ async function importSeriesObservations(
     release_at: new Date(obs.date).toISOString(),
     period: obs.period as string,
     actual: obs.value,
-    unit: unit,
+    unit,
     notes: `Imported from BLS`,
   }));
 

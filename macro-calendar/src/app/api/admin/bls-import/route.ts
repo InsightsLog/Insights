@@ -23,8 +23,8 @@ const requestSchema = z.object({
  * Triggers a BLS historical data import for the configured series.
  * Requires admin authentication.
  * 
- * This endpoint allows admins to import real economic data from BLS
- * (Bureau of Labor Statistics) API to replace seed/test data.
+ * This endpoint allows admins to import and update economic data from BLS
+ * (Bureau of Labor Statistics) API. Existing data is deduplicated and updated.
  * 
  * Request body (optional):
  * {
