@@ -119,6 +119,10 @@ In the Vercel project settings, add these environment variables:
 | `STRIPE_PRICE_ENTERPRISE_MONTHLY` | Stripe price ID for Enterprise monthly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
 | `STRIPE_PRICE_ENTERPRISE_YEARLY` | Stripe price ID for Enterprise yearly (optional) | Stripe Dashboard → Products → Enterprise → Price ID |
 | `FRED_API_KEY` | FRED API key for economic data (optional) | Get free at [fred.stlouisfed.org](https://fred.stlouisfed.org/docs/api/api_key.html) |
+| `FMP_API_KEY` | Financial Modeling Prep API key (optional) | Get free at [financialmodelingprep.com](https://financialmodelingprep.com/register) |
+| `FINNHUB_API_KEY` | Finnhub API key (optional) | Get free at [finnhub.io](https://finnhub.io/register) |
+| `TRADING_ECONOMICS_API_KEY` | Trading Economics API key (optional) | Register at [tradingeconomics.com](https://tradingeconomics.com/api) |
+| `CRON_SECRET` | Secret for Vercel Cron authentication | Generate with: `openssl rand -hex 32` |
 
 **Important notes:**
 - Both `NEXT_PUBLIC_` variables are required for the app to run (validated by `src/lib/env.ts`)
@@ -130,6 +134,8 @@ In the Vercel project settings, add these environment variables:
 - `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are required for billing/subscription features
 - `STRIPE_PRICE_*` variables are required for plan upgrades; get price IDs from Stripe Products dashboard
 - `FRED_API_KEY` is optional; enables importing real economic data from Federal Reserve (see Section 12)
+- `FMP_API_KEY`, `FINNHUB_API_KEY`, `TRADING_ECONOMICS_API_KEY` are optional; at least one is required for importing upcoming scheduled releases (see Section 15)
+- `CRON_SECRET` is required for automated data sync; protects the cron endpoint from unauthorized access
 - Environment variables are available to all environments (Production, Preview, Development) by default
 
 ### 2.4 Deploy
@@ -725,6 +731,96 @@ Beyond G20, the platform covers additional economies including:
 
 ---
 
+## 15. Scheduled Releases (Upcoming Events)
+
+The calendar displays upcoming economic releases from multiple data sources. This section explains how to configure and populate the calendar with real scheduled releases.
+
+### 15.1 Overview
+
+Scheduled releases (future economic events) come from external calendar APIs:
+- **Financial Modeling Prep (FMP)**: G20+ global coverage, 250 calls/day (free tier)
+- **Finnhub**: Global economic calendar, 60 calls/minute (free tier)  
+- **Trading Economics**: Comprehensive G20+ data, registration required
+
+At least **one API key** is required to import upcoming events.
+
+### 15.2 Get API Keys
+
+1. **FMP (Recommended for free tier)**:
+   - Go to [financialmodelingprep.com/register](https://financialmodelingprep.com/register)
+   - Create a free account
+   - Copy your API key from the dashboard
+
+2. **Finnhub**:
+   - Go to [finnhub.io/register](https://finnhub.io/register)
+   - Create a free account
+   - Copy your API key from the dashboard
+
+3. **Trading Economics**:
+   - Go to [tradingeconomics.com/api](https://tradingeconomics.com/api)
+   - Request API access (registration required)
+   - Copy your API key when approved
+
+### 15.3 Configure Environment Variables
+
+1. Go to your Vercel project → **Settings** → **Environment Variables**
+2. Add at least one of these:
+   - `FMP_API_KEY` — Your Financial Modeling Prep API key
+   - `FINNHUB_API_KEY` — Your Finnhub API key
+   - `TRADING_ECONOMICS_API_KEY` — Your Trading Economics API key
+3. Add the cron secret for automated sync:
+   - `CRON_SECRET` — Generate with `openssl rand -hex 32`
+4. Click **Redeploy** to apply changes
+
+### 15.4 Import Upcoming Events
+
+#### Option A: Manual Import (Admin Dashboard)
+1. Sign in with an admin account
+2. Go to `/admin`
+3. Find the "Upcoming Releases Import (G20+)" section
+4. Click "Import Upcoming Releases"
+5. The import will fetch events for the next 30 days from configured sources
+
+#### Option B: Automated Sync (Cron Job)
+The app includes a Vercel Cron job that automatically syncs data every 2 hours:
+
+- **Endpoint**: `/api/cron/sync-data`
+- **Schedule**: Every 2 hours (`0 */2 * * *`)
+- **Configuration**: `vercel.json` in the repository root
+
+For the cron job to work:
+1. Ensure `CRON_SECRET` is set in Vercel environment variables
+2. Vercel automatically adds the authorization header for configured crons
+3. Monitor the Functions tab in Vercel for cron execution logs
+
+### 15.5 Verify It's Working
+
+After importing:
+1. Go to the calendar at `/` (home page)
+2. You should see scheduled releases for the next 30 days
+3. Use filters to browse by country or category
+4. Click on any indicator to see details
+
+### 15.6 Troubleshooting
+
+**No releases appearing:**
+- Check that at least one API key is configured in Vercel
+- Verify the API keys are valid (test in browser/curl)
+- Check Vercel function logs for import errors
+- Try a manual import from `/admin`
+
+**Cron job not running:**
+- Verify `CRON_SECRET` is set in Vercel
+- Check the Functions tab in Vercel dashboard for cron logs
+- Cron jobs only run in production (not preview deployments)
+
+**Import errors:**
+- API rate limits may cause partial imports
+- Free tier limits: FMP (250/day), Finnhub (60/min)
+- The import handles rate limits gracefully and imports what it can
+
+---
+
 ## Quick Reference
 
 **Vercel Dashboard**: [https://vercel.com/dashboard](https://vercel.com/dashboard)  
@@ -735,4 +831,4 @@ Beyond G20, the platform covers additional economies including:
 ---
 
 **Last Updated**: January 2026  
-**Version**: L3 (API + Billing)
+**Version**: L4 (Global Data Acquisition)

@@ -105,7 +105,7 @@ npx tsx src/lib/data-import/upcoming-import.ts
 ### Tasks
 - [x] T403.1 Create `/api/cron/sync-data` endpoint
 - [x] T403.2 Configure `vercel.json` cron
-- [ ] T403.3 Test in production
+- [x] T403.3 Document production setup in DEPLOY.md (Section 15)
 
 ### Cron Config
 ```json
