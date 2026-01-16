@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Revert
+- **Reverted:** All L4 features to return to PR #140 state
+  - Removed all data import functionality (FRED, BLS, ECB, IMF, World Bank)
+  - Removed cron job for automated data sync
+  - Removed settings dropdown menu in header
+  - Removed LiveIndicator component and real-time hooks
+  - Removed cheerio dependency
+  - Reverted documentation to L3 state
+
+### L4 Planning
+- **Added:** L4 prerequisites in BACKLOG.md before starting L4 development:
+  - Scrape ForexFactory (primary) with Investing.com as backup for release schedules
+  - Pull release data from API sources at the times obtained from scraping
+
 ### Additional Enhancements (L3)
 - **Added:** Mobile-responsive improvements and PWA support (T342)
   - PWA manifest (`public/manifest.json`) for app-like mobile experience:
