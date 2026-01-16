@@ -3,14 +3,6 @@ import Link from "next/link";
 import { checkAdminRole } from "@/lib/supabase/auth";
 import { getAdminDashboardData } from "@/app/actions/admin";
 import { RoleManager } from "@/app/components/RoleManager";
-import { FredImportButton } from "@/app/components/FredImportButton";
-import { BLSImportButton } from "@/app/components/BLSImportButton";
-import { ECBImportButton } from "@/app/components/ECBImportButton";
-import { WorldBankImportButton } from "@/app/components/WorldBankImportButton";
-import { IMFImportButton } from "@/app/components/IMFImportButton";
-import { ClearDataButton } from "@/app/components/ClearDataButton";
-import { UpcomingReleasesImportButton } from "@/app/components/UpcomingReleasesImportButton";
-import { ManualSyncButton } from "@/app/components/ManualSyncButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -149,46 +141,6 @@ export default async function AdminDashboardPage() {
           >
             Upload CSV
           </Link>
-        </div>
-
-        {/* Upcoming Releases Import - G20+ Global Coverage */}
-        <div className="mb-6">
-          <UpcomingReleasesImportButton />
-        </div>
-
-        {/* Manual Data Sync - Run cron job on demand */}
-        <div className="mb-6">
-          <ManualSyncButton />
-        </div>
-
-        {/* FRED Data Import */}
-        <div className="mb-6">
-          <FredImportButton />
-        </div>
-
-        {/* BLS Data Import */}
-        <div className="mb-6">
-          <BLSImportButton />
-        </div>
-
-        {/* ECB Data Import */}
-        <div className="mb-6">
-          <ECBImportButton />
-        </div>
-
-        {/* World Bank Data Import */}
-        <div className="mb-6">
-          <WorldBankImportButton />
-        </div>
-
-        {/* IMF Data Import */}
-        <div className="mb-6">
-          <IMFImportButton />
-        </div>
-
-        {/* Clear Data */}
-        <div className="mb-6">
-          <ClearDataButton />
         </div>
 
         {/* Dashboard grid */}
