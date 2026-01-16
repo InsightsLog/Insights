@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { checkAdminRole, logAuditAction } from "@/lib/supabase/auth";
-import { importCMEEvents } from "@/lib/data-import/cme-import";
+import { importCMEEvents, formatYearMonth } from "@/lib/data-import/cme-import";
 
 /**
  * Request body schema for upcoming events import.
@@ -95,8 +95,30 @@ export async function POST(request: NextRequest) {
         releasesUpdated: result.releasesUpdated,
         schedulesChanged: result.schedulesChanged.length,
         countriesCovered: result.countriesCovered.length,
+        dataSourceUnavailable: result.dataSourceUnavailable,
       }
     );
+
+    // Check if data source is unavailable
+    if (result.dataSourceUnavailable) {
+      return NextResponse.json({
+        success: false,
+        message: "CME Group calendar data source is unavailable. The website structure may have changed.",
+        dataSourceUnavailable: true,
+        result: {
+          source: result.source,
+          totalEvents: 0,
+          releasesCreated: 0,
+          releasesUpdated: 0,
+          fetchErrors: result.fetchErrors.map(e => ({
+            month: formatYearMonth(e.year, e.month),
+            statusCode: e.statusCode,
+            message: e.message,
+          })),
+          errors: result.errors,
+        },
+      }, { status: 503 });
+    }
 
     // Return success response
     const hasErrors = result.errors.length > 0;

@@ -4,11 +4,13 @@
  * Scrapes economic event data from CME Group's Economic Releases Calendar.
  * No API key required - this is a free, in-house solution.
  *
- * Source: https://www.cmegroup.com/education/events/economic-releases-calendar.html
+ * Primary Source: https://www.cmegroup.com/education/events/economic-releases-calendar.html
+ * Fallback Source: https://tradingeconomics.com/calendar (scraped, no API key)
  * 
  * The calendar is loaded via AJAX from:
  * https://www.cmegroup.com/content/cmegroup/en/education/events/economic-releases-calendar/jcr:content/full-par/cmelayoutfull/full-par/cmeeconomycalendar.ajax.{month-1}.{year}.html
  *
+ * If CME is unavailable, falls back to scraping TradingEconomics public calendar.
  * This replaces the paid FMP, Finnhub, and Trading Economics APIs.
  */
 
@@ -16,6 +18,7 @@ import * as cheerio from "cheerio";
 import type { AnyNode } from "domhandler";
 
 const CME_BASE_URL = "https://www.cmegroup.com";
+const TE_CALENDAR_URL = "https://tradingeconomics.com/calendar";
 
 /**
  * CME Calendar event structure.
@@ -29,6 +32,27 @@ export interface CMECalendarEvent {
   hasReport: boolean; // Whether CME has a detailed report for this event
   impact: "Low" | "Medium" | "High"; // Estimated impact level
   category: string; // Event category
+}
+
+/**
+ * Result of fetching upcoming events, including any fetch errors.
+ */
+export interface CMEFetchResult {
+  events: CMECalendarEvent[];
+  errors: CMEMonthFetchError[];
+  allMonthsFailed: boolean;
+  usedFallback?: boolean; // True if TradingEconomics fallback was used
+  source?: "cme" | "tradingeconomics"; // Which source provided the data
+}
+
+/**
+ * Error details for a failed month fetch.
+ */
+export interface CMEMonthFetchError {
+  year: number;
+  month: number;
+  statusCode?: number;
+  message: string;
 }
 
 /**
@@ -69,6 +93,41 @@ const CME_COUNTRY_TO_ISO: Record<string, string> = {
   SG: "SG",
   HK: "HK",
   TW: "TW",
+};
+
+/**
+ * Map TradingEconomics 2-letter ISO codes to standard codes.
+ */
+const TE_ISO_MAP: Record<string, string> = {
+  US: "US",
+  GB: "GB",
+  DE: "DE",
+  FR: "FR",
+  IT: "IT",
+  ES: "ES",
+  JP: "JP",
+  CN: "CN",
+  CA: "CA",
+  AU: "AU",
+  BR: "BR",
+  IN: "IN",
+  RU: "RU",
+  KR: "KR",
+  MX: "MX",
+  ID: "ID",
+  TR: "TR",
+  SA: "SA",
+  AR: "AR",
+  ZA: "ZA",
+  CH: "CH",
+  NL: "NL",
+  SE: "SE",
+  NO: "NO",
+  PL: "PL",
+  SG: "SG",
+  NZ: "NZ",
+  HK: "HK",
+  EU: "EU", // Euro Area
 };
 
 /**
@@ -283,35 +342,191 @@ export class CMECalendarClient {
 
   /**
    * Fetch events for the next N months (including current).
+   * Returns both events and any fetch errors that occurred.
+   * Falls back to TradingEconomics scraping if CME fails.
    */
-  async getUpcomingEvents(months: number = 2): Promise<CMECalendarEvent[]> {
+  async getUpcomingEventsWithErrors(months: number = 2): Promise<CMEFetchResult> {
     const allEvents: CMECalendarEvent[] = [];
+    const errors: CMEMonthFetchError[] = [];
     const now = new Date();
+    let successCount = 0;
 
+    // First try CME source
     for (let i = 0; i < months; i++) {
       const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth() + 1;
+      
       try {
-        const events = await this.getMonthlyEvents(
-          targetDate.getFullYear(),
-          targetDate.getMonth() + 1
-        );
+        const events = await this.getMonthlyEvents(year, month);
         allEvents.push(...events);
+        successCount++;
 
         // Small delay between requests to be respectful
         if (i < months - 1) {
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
       } catch (error) {
-        console.warn(
-          `Failed to fetch events for ${targetDate.getFullYear()}-${targetDate.getMonth() + 1}:`,
-          error
-        );
+        const statusCode = error instanceof CMEApiError ? error.statusCode : undefined;
+        const message = error instanceof Error ? error.message : "Unknown error";
+        
+        errors.push({
+          year,
+          month,
+          statusCode,
+          message,
+        });
+        
+        console.warn(`Failed to fetch events for ${year}-${month}:`, error);
+      }
+    }
+
+    // If all CME fetches failed, try TradingEconomics as fallback
+    let usedFallback = false;
+    if (successCount === 0 && months > 0) {
+      console.log("CME source unavailable, trying TradingEconomics fallback...");
+      try {
+        const teEvents = await this.scrapeTradingEconomics();
+        if (teEvents.length > 0) {
+          allEvents.push(...teEvents);
+          successCount = 1; // Mark as successful
+          usedFallback = true;
+          console.log(`TradingEconomics fallback: found ${teEvents.length} events`);
+        }
+      } catch (teError) {
+        console.error("TradingEconomics fallback also failed:", teError);
+        errors.push({
+          year: now.getFullYear(),
+          month: now.getMonth() + 1,
+          message: `TradingEconomics fallback failed: ${teError instanceof Error ? teError.message : "Unknown error"}`,
+        });
       }
     }
 
     // Filter to only future events
     const today = new Date().toISOString().split("T")[0];
-    return allEvents.filter((event) => event.date >= today);
+    const futureEvents = allEvents.filter((event) => event.date >= today);
+
+    // Determine source explicitly
+    const source = usedFallback ? "tradingeconomics" as const : "cme" as const;
+
+    return {
+      events: futureEvents,
+      errors,
+      allMonthsFailed: successCount === 0 && months > 0,
+      usedFallback,
+      source,
+    };
+  }
+
+  /**
+   * Scrape economic calendar from TradingEconomics as a fallback source.
+   * No API key required - uses web scraping.
+   */
+  private async scrapeTradingEconomics(): Promise<CMECalendarEvent[]> {
+    const response = await fetch(TE_CALENDAR_URL, {
+      headers: {
+        "User-Agent": this.userAgent,
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+      },
+    });
+
+    if (!response.ok) {
+      throw new CMEApiError(
+        `Failed to fetch TradingEconomics calendar: ${response.status} ${response.statusText}`,
+        response.status
+      );
+    }
+
+    const html = await response.text();
+    return this.parseTradingEconomicsHtml(html);
+  }
+
+  /**
+   * Parse TradingEconomics calendar HTML.
+   */
+  private parseTradingEconomicsHtml(html: string): CMECalendarEvent[] {
+    const events: CMECalendarEvent[] = [];
+    const $ = cheerio.load(html);
+    let currentDate: string | null = null;
+
+    // Find calendar table
+    const $table = $("#calendar");
+    if (!$table.length) {
+      console.warn("TradingEconomics calendar table not found");
+      return events;
+    }
+
+    // Process each row
+    $table.find("tr[data-url]").each((_, row) => {
+      const $row = $(row);
+      
+      try {
+        // Get event URL (for building the link)
+        const eventUrl = $row.attr("data-url") || "";
+        const country = $row.attr("data-country") || "";
+        const eventName = $row.attr("data-event") || "";
+        
+        // Get the date class to extract date
+        const $timeCell = $row.find("td").first();
+        const dateClass = $timeCell.attr("class") || "";
+        const dateMatch = dateClass.match(/(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+          currentDate = dateMatch[1];
+        }
+
+        // Get time from the span
+        const timeText = $timeCell.find("span").text().trim();
+        const time = parseTime(timeText);
+
+        // Get country ISO code
+        const $isoCell = $row.find(".calendar-iso");
+        const isoCode = $isoCell.text().trim().toUpperCase();
+        const normalizedCountry = TE_ISO_MAP[isoCode] || isoCode || country.substring(0, 2).toUpperCase();
+
+        // Get actual event name from link
+        const $eventLink = $row.find(".calendar-event");
+        const displayName = $eventLink.text().trim() || eventName;
+
+        // Skip if no date or event
+        if (!currentDate || !displayName) return;
+
+        // Determine impact from the event class
+        const eventClass = $timeCell.find("span").attr("class") || "";
+        let impact: "Low" | "Medium" | "High" = "Low";
+        if (eventClass.includes("event-3")) {
+          impact = "High";
+        } else if (eventClass.includes("event-2")) {
+          impact = "Medium";
+        }
+
+        events.push({
+          country: normalizedCountry,
+          event: displayName,
+          date: currentDate,
+          time,
+          link: `https://tradingeconomics.com${eventUrl}`,
+          hasReport: false,
+          impact,
+          category: categorizeEvent(displayName),
+        });
+      } catch (error) {
+        console.warn("Failed to parse TradingEconomics row:", error);
+      }
+    });
+
+    return events;
+  }
+
+  /**
+   * Fetch events for the next N months (including current).
+   * @deprecated Since version 2.6.0. Use getUpcomingEventsWithErrors() for better error handling.
+   * This method will be removed in a future version.
+   */
+  async getUpcomingEvents(months: number = 2): Promise<CMECalendarEvent[]> {
+    const result = await this.getUpcomingEventsWithErrors(months);
+    return result.events;
   }
 
   /**

@@ -21,7 +21,7 @@
  */
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { CMECalendarClient, CMECalendarEvent } from "./cme-calendar-client";
+import { CMECalendarClient, CMECalendarEvent, CMEMonthFetchError } from "./cme-calendar-client";
 
 // Default: import 2 months of upcoming events
 const DEFAULT_MONTHS = 2;
@@ -57,6 +57,10 @@ export interface CMEImportResult {
   schedulesChanged: ScheduleChange[];
   countriesCovered: string[];
   errors: string[];
+  /** True if all month fetches failed (data source unavailable) */
+  dataSourceUnavailable: boolean;
+  /** Detailed fetch errors for each failed month */
+  fetchErrors: CMEMonthFetchError[];
 }
 
 /**
@@ -70,6 +74,22 @@ export interface ScheduleChange {
   oldValue?: string;
   newValue?: string;
   releaseId?: string;
+}
+
+/**
+ * Format a fetch error for display.
+ */
+function formatFetchError(error: CMEMonthFetchError): string {
+  const monthStr = `${error.year}-${String(error.month).padStart(2, "0")}`;
+  const statusStr = error.statusCode ? ` (HTTP ${error.statusCode})` : "";
+  return `${monthStr}: ${error.message}${statusStr}`;
+}
+
+/**
+ * Format year-month for display (YYYY-MM format).
+ */
+export function formatYearMonth(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
 }
 
 /**
@@ -229,15 +249,40 @@ export async function importCMEEvents(
     schedulesChanged: [],
     countriesCovered: [],
     errors: [],
+    dataSourceUnavailable: false,
+    fetchErrors: [],
   };
 
   try {
     // Fetch events from CME
     console.log("Fetching from CME Group Economic Calendar...");
     const client = new CMECalendarClient();
-    const cmeEvents = await client.getUpcomingEvents(months);
+    const fetchResult = await client.getUpcomingEventsWithErrors(months);
+    const cmeEvents = fetchResult.events;
+    
+    // Track fetch errors
+    result.fetchErrors = fetchResult.errors;
+    for (const fetchError of fetchResult.errors) {
+      result.source.errors.push(`Fetch failed for ${formatFetchError(fetchError)}`);
+    }
+    
+    // Check if all months failed (data source unavailable)
+    if (fetchResult.allMonthsFailed) {
+      result.dataSourceUnavailable = true;
+      const errorMsg = "CME Group calendar data source is unavailable. All fetch attempts failed.";
+      result.errors.push(errorMsg);
+      console.error("ERROR: " + errorMsg);
+      console.error("Fetch errors:");
+      for (const fetchError of fetchResult.errors) {
+        console.error(`  - ${formatFetchError(fetchError)}`);
+      }
+      return result;
+    }
 
     console.log(`  Found ${cmeEvents.length} events`);
+    if (fetchResult.errors.length > 0) {
+      console.warn(`  (${fetchResult.errors.length} month(s) failed to fetch)`);
+    }
     result.source.events = cmeEvents.length;
 
     if (cmeEvents.length === 0) {
