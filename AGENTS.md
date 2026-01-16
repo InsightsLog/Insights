@@ -3,21 +3,21 @@
 You are working in a production-bound repo. Follow these rules:
 
 ## Scope
-- If asked to do something outside L3, stop and propose an issue for L4 instead.
-- L3 scope: webhooks, public REST API, billing & quotas, multi-tenant admin, data export
+- If asked to do something outside L4, stop and propose an issue for L5 instead.
+- L4 scope: data acquisition, mobile app, calendar integrations, historical data API, advanced analytics
 
 ## Workflow
 - Small changes only: one task per PR.
 - Before coding: restate acceptance criteria + test steps.
 - After coding: list files changed + how to test + risks/edge cases.
 - Update CHANGELOG.md for every user-visible change.
-- When you identify an L3 improvement during work, append it to BACKLOG.md under the appropriate section.
+- When you identify an L4 improvement during work, append it to BACKLOG.md under the appropriate section.
 
 ## GitHub Issues & PRs
 - Use issue templates when creating issues (Bug, Feature, Task)
 - Apply appropriate labels to issues and PRs
 - Link PRs to issues with "Closes #123" or "Fixes #123"
-- Assign issues to milestones (L2, L3) based on scope
+- Assign issues to milestones (L3, L4) based on scope
 
 ## MCP Tools
 

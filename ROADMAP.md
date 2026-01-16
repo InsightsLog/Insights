@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current focus:** L3 — API, webhooks, and monetization foundations.
+**Current focus:** L4 — Data acquisition, mobile app, and advanced analytics.
 
 ## L0 (Shipped)
 - Public calendar list + search/filter
@@ -22,15 +22,23 @@
 - API key generation for authenticated users
 - Request logging for abuse detection
 
-## L3 (In Progress)
+## L3 (Shipped)
 - Webhook/push notifications for instant release alerts
 - Full REST API with versioning (/api/v1/)
 - Billing integration with Stripe and usage quotas
 - Multi-tenant admin dashboard with organizations
 - Data export (CSV, JSON, iCal)
 
-## L4 (Planned)
+## L4 (In Progress)
+- Data acquisition: ForexFactory/Investing.com scraping for release schedules
+- Automated data import from API sources (FRED, BLS, ECB, etc.)
 - Mobile app (React Native)
 - Calendar integrations (Google Calendar, Outlook)
 - Historical data API for backtesting
 - Advanced analytics and charting
+
+## L5 (Planned)
+- Custom alert conditions (threshold-based alerts)
+- Machine learning predictions for release values
+- Social features (comments, community watchlists)
+- Broker integrations for trade execution

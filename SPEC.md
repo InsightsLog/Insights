@@ -1,13 +1,13 @@
-# Macro Calendar — Product Spec (L3)
+# Macro Calendar — Product Spec (L4)
 
 ## Goal
-Add webhooks, public REST API, billing integration, and multi-tenant admin features on top of the existing calendar, watchlist, and email alert features.
+Add automated data acquisition, mobile app, calendar integrations, and advanced analytics on top of the existing calendar, watchlist, alerts, webhooks, API, and billing features.
 
-## Non-goals (for L3)
-- Mobile app (L4)
-- Calendar integrations (Google Calendar, Outlook) (L4)
-- Historical data API for backtesting (L4)
-- Advanced analytics and charting (L4)
+## Non-goals (for L4)
+- Machine learning predictions (L5)
+- Social features (comments, community watchlists) (L5)
+- Broker integrations for trade execution (L5)
+- Custom alert conditions beyond analytics thresholds (L5)
 
 ## L1 User Stories (Shipped)
 1. As a visitor, I can browse upcoming releases (next 7/30 days) with search and filters.
@@ -29,7 +29,7 @@ Add webhooks, public REST API, billing integration, and multi-tenant admin featu
 9. As a signed-in user, I can revoke my API keys.
 10. As a signed-in user, I can view my API key usage.
 
-## L3 User Stories
+## L3 User Stories (Shipped)
 ### Webhooks
 1. As a signed-in user, I can register webhook endpoints to receive release notifications.
 2. As a user with webhooks configured, I receive HTTP POST requests when releases are published.
@@ -54,145 +54,170 @@ Add webhooks, public REST API, billing integration, and multi-tenant admin featu
 13. As a signed-in user, I can export my watchlist releases to CSV/JSON.
 14. As a signed-in user, I can generate an iCal feed for my watchlist.
 
-## Data Model (L3)
+## L4 User Stories
+### Data Acquisition
+1. As an admin, I can configure data sources for automatic release schedule imports.
+2. As a user, release schedules are automatically populated from ForexFactory/Investing.com.
+3. As a user, actual release values are automatically imported from FRED, BLS, and ECB APIs.
+4. As an admin, I can view data sync logs and manually trigger syncs.
 
-### Existing Tables (L1-L2)
-- indicators, releases, profiles, watchlist, alert_preferences, user_roles, audit_log, api_keys, request_logs
+### Mobile App
+5. As a mobile user, I can sign in with magic link and view the calendar.
+6. As a mobile user, I can manage my watchlist and receive push notifications.
+7. As a mobile user, I have a native app experience on iOS and Android.
 
-### Table: webhook_endpoints (new)
+### Calendar Integrations
+8. As a signed-in user, I can connect my Google Calendar account.
+9. As a signed-in user, I can connect my Outlook Calendar account.
+10. As a user with connected calendar, my watchlist releases sync to my calendar.
+11. As a user, I can configure reminder times for calendar events.
+
+### Historical Data API
+12. As a developer, I can access historical time series data via the API.
+13. As a developer, I can bulk export historical data for backtesting.
+
+### Advanced Analytics
+14. As a user, I can view actual vs forecast comparisons for indicators.
+15. As a user, I can see correlations between different indicators.
+16. As a user, I can set alerts based on analytics thresholds (surprise exceeds X).
+
+## Data Model (L4)
+
+### Existing Tables (L1-L3)
+- indicators, releases, profiles, watchlist, alert_preferences, user_roles, audit_log
+- api_keys, request_logs, webhook_endpoints, webhook_deliveries
+- plans, subscriptions, organizations, organization_members, usage_alerts_sent
+
+### Table: data_sources (new)
 - id (uuid, pk, default gen_random_uuid())
-- user_id (uuid, fk -> profiles.id)
-- url (text, not null) — HTTPS URL to receive webhooks
-- secret (text, not null) — HMAC signing secret
-- events (text[], default '{release.published}') — subscribed event types
+- name (text, not null) — 'ForexFactory', 'FRED', 'BLS', 'ECB'
+- type (text, not null) — 'scraper', 'api'
+- base_url (text, not null)
+- auth_config (jsonb, default '{}') — encrypted API credentials
 - enabled (boolean, default true)
+- last_sync_at (timestamptz, nullable)
 - created_at (timestamptz, default now())
-- updated_at (timestamptz, default now())
-- last_triggered_at (timestamptz, nullable)
-- RLS: users can CRUD only their own webhooks
-
-### Table: webhook_deliveries (new)
-- id (uuid, pk, default gen_random_uuid())
-- webhook_id (uuid, fk -> webhook_endpoints.id)
-- event_type (text, not null)
-- payload (jsonb, not null)
-- response_code (int, nullable)
-- response_body (text, nullable)
-- attempted_at (timestamptz, default now())
 - No RLS (admin-only access via service role)
 
-### Table: plans (new)
+### Table: sync_logs (new)
 - id (uuid, pk, default gen_random_uuid())
-- name (text, not null) — 'Free', 'Pro', 'Enterprise'
-- price_monthly (int, not null) — cents
-- price_yearly (int, nullable) — cents
-- api_calls_limit (int, not null) — monthly API call limit
-- webhook_limit (int, not null) — max webhook endpoints
-- features (jsonb, default '{}')
+- data_source_id (uuid, fk -> data_sources.id)
+- status (text, not null) — 'success', 'partial', 'failed'
+- records_processed (int, default 0)
+- error_message (text, nullable)
+- started_at (timestamptz, default now())
+- completed_at (timestamptz, nullable)
+- No RLS (admin-only access via service role)
 
-### Table: subscriptions (new)
+### Table: calendar_integrations (new)
 - id (uuid, pk, default gen_random_uuid())
 - user_id (uuid, fk -> profiles.id)
-- plan_id (uuid, fk -> plans.id)
-- stripe_subscription_id (text, nullable)
-- status (text, check in ('active', 'canceled', 'past_due', 'trialing'))
-- current_period_end (timestamptz, nullable)
+- provider (text, not null) — 'google', 'outlook'
+- access_token (text, encrypted)
+- refresh_token (text, encrypted)
+- token_expires_at (timestamptz)
+- calendar_id (text, nullable) — specific calendar to sync to
+- reminder_minutes (int, default 15)
+- enabled (boolean, default true)
 - created_at (timestamptz, default now())
-- RLS: users can read only their own subscription
+- RLS: users can CRUD only their own integrations
 
-### Table: organizations (new)
+### Table: push_subscriptions (new)
 - id (uuid, pk, default gen_random_uuid())
-- name (text, not null)
-- slug (text, unique, not null) — URL-friendly identifier
-- owner_id (uuid, fk -> profiles.id)
-- created_at (timestamptz, default now())
-
-### Table: organization_members (new)
-- id (uuid, pk, default gen_random_uuid())
-- org_id (uuid, fk -> organizations.id)
 - user_id (uuid, fk -> profiles.id)
-- role (text, check in ('owner', 'admin', 'member'))
-- invited_at (timestamptz, default now())
-- joined_at (timestamptz, nullable)
-- RLS: org members can read; org admins can write
+- expo_push_token (text, not null)
+- device_type (text) — 'ios', 'android'
+- created_at (timestamptz, default now())
+- RLS: users can CRUD only their own subscriptions
 
-### Column Addition: watchlist.org_id (optional)
-- org_id (uuid, fk -> organizations.id, nullable)
-- NULL for personal watchlists, set for shared org watchlists
+### Column Addition: releases.surprise (computed)
+- surprise (numeric) — actual - forecast, computed on insert/update
 
-## Core Screens (L3)
+## Core Screens (L4)
 
 ### New Screens
 
-1) "/settings/webhooks" (new)
-- Webhook endpoint management
-- Create/edit/delete webhook URLs
-- Test webhook with sample payload
-- View delivery history
+1) "/admin/data-sources" (new)
+- Data source management
+- Configure scrapers and API sources
+- View sync logs and status
+- Manual sync triggers
 
-2) "/docs/api" (new)
-- Interactive API documentation
-- Code examples in multiple languages
-- API key instructions
+2) "/settings/integrations" (new)
+- Calendar integration management
+- Connect Google/Outlook accounts
+- Configure sync settings
+- Manage reminder preferences
 
-3) "/settings/billing" (new)
-- Current plan and usage display
-- Upgrade/downgrade options
-- Payment history
-- Cancel subscription
+3) "/indicator/:id/analytics" (new)
+- Actual vs forecast chart
+- Surprise history
+- Forecast accuracy metrics
+- Correlation with other indicators
 
-4) "/org/:slug" (new)
-- Organization dashboard
-- Member list with roles
-- Shared watchlists
-- Organization settings
+4) "/docs/api" (modified from L3)
+- Add historical data endpoints
+- Add bulk export documentation
+- Add backtesting examples
 
-5) "/org/:slug/settings" (new)
-- Manage organization name, slug
-- Invite/remove members
-- Assign roles
-- Transfer ownership
+### Mobile App Screens
 
-### Modified Screens
+1) Calendar Screen
+- Upcoming releases list
+- Country/category filters
+- Pull-to-refresh
 
-1) "/settings/api-keys" (modified from L2)
-- Add usage statistics
-- Show plan limits
-- Link to upgrade
+2) Watchlist Screen
+- Saved indicators
+- Alert toggles
+- Add/remove buttons
 
-2) "/watchlist" (modified)
-- Toggle between personal and org watchlists
-- Create shared watchlist (for org members)
+3) Indicator Detail Screen
+- Indicator info
+- Historical releases
+- Charts and analytics
+
+4) Settings Screen
+- Profile management
+- Notification preferences
+- Push notification toggle
 
 ### API Routes (new)
 
-1) GET /api/v1/indicators
-- List all indicators with pagination
+1) GET /api/v1/historical/:indicator_id
+- Historical time series data
 - Auth: API key required
 
-2) GET /api/v1/indicators/:id
-- Get single indicator with releases
+2) GET /api/v1/historical/bulk
+- Multi-indicator export
 - Auth: API key required
 
-3) GET /api/v1/releases
-- List releases with filters
-- Auth: API key required
+3) POST /api/integrations/google/callback
+- Google OAuth callback
+- Auth: Session required
 
-4) GET /api/v1/calendar
-- Get upcoming releases
-- Auth: API key required
+4) POST /api/integrations/outlook/callback
+- Outlook OAuth callback
+- Auth: Session required
 
-5) POST /api/stripe/webhook
-- Handle Stripe payment events
-- Auth: Stripe signature validation
+### Modified Screens
+
+1) "/admin" (modified from L2)
+- Add data sources section
+- Add sync status overview
+
+2) "/settings" (modified)
+- Add integrations link
+- Add mobile app section
 
 ## Quality Bar
 - Every feature must have acceptance criteria and manual test steps
 - No silent refactors
-- No new feature outside L3 without updating this spec
+- No new feature outside L4 without updating this spec
 - Security: RLS enforced for all user-specific tables; role checks for admin features
 - Audit logging for all admin actions
 - API rate limiting and quota enforcement
+- Data acquisition must handle source failures gracefully
 
 ## Deployment
 - Vercel for app hosting
@@ -200,4 +225,5 @@ Add webhooks, public REST API, billing integration, and multi-tenant admin featu
 - Resend or SendGrid for email delivery
 - Stripe for payment processing
 - Upstash Redis for rate limiting
-- Environment variables: existing + Stripe keys
+- Expo for mobile app builds
+- Environment variables: existing + Google/Outlook OAuth credentials
