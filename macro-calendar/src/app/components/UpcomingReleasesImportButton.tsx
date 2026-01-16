@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-interface CMESourceInfo {
+interface SourceInfo {
   name: string;
   description: string;
   coverage: string;
@@ -13,7 +13,7 @@ interface CMESourceInfo {
 
 interface UpcomingImportStatus {
   configured: boolean;
-  source: CMESourceInfo;
+  source: SourceInfo;
   message: string;
   supportedCountries: string[];
 }
@@ -71,8 +71,8 @@ const resultTextStyles = {
 
 /**
  * UpcomingReleasesImportButton component for admin dashboard.
- * Displays CME calendar status and allows triggering upcoming events imports.
- * Uses CME Group's Economic Releases Calendar - no API key required.
+ * Displays economic calendar status and allows triggering upcoming events imports.
+ * Uses TradingEconomics as the primary source - no API key required.
  */
 export function UpcomingReleasesImportButton() {
   const [status, setStatus] = useState<UpcomingImportStatus | null>(null);
@@ -136,7 +136,7 @@ export function UpcomingReleasesImportButton() {
         <div className="flex items-center gap-2">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            Checking CME calendar status...
+            Checking economic calendar status...
           </span>
         </div>
       </div>
@@ -150,10 +150,10 @@ export function UpcomingReleasesImportButton() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              📊 Upcoming Releases Import (CME Group)
+              📊 Upcoming Releases Import (TradingEconomics)
             </h3>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Import economic events from CME&apos;s calendar - no API key required
+              Import economic events via web scraping - no API key required
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ export function UpcomingReleasesImportButton() {
 
         <div>
           <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-            Import upcoming economic events for the next 2 months from CME Group&apos;s calendar.
+            Import upcoming economic events for the next 2 months via web scraping.
             Schedule changes are automatically detected and tracked.
           </p>
           
@@ -256,10 +256,10 @@ export function UpcomingReleasesImportButton() {
             {importing ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Importing... (this may take a minute)
+                Scraping TradingEconomics...
               </>
             ) : (
-              "🚀 Import Upcoming Releases"
+              "🚀 Scrape Economic Calendar"
             )}
           </button>
 
