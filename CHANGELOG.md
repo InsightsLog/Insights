@@ -2,8 +2,26 @@
 
 ## [Unreleased]
 
+### L4 Kickoff
+- **Milestone:** L3 marked as shipped; L4 development now in progress
+- **Focus:** Data acquisition, mobile app, calendar integrations, historical data API, advanced analytics
+- **Added:** TASKS_L4.md with structured L4 task definitions
+  - T400-T408: Data acquisition feature (scrapers and API integrations)
+  - T410-T415: Mobile app (React Native with Expo)
+  - T420-T424: Calendar integrations (Google Calendar, Outlook)
+  - T430-T432: Historical data API for backtesting
+  - T440-T443: Advanced analytics and charting
+- **Updated:** ROADMAP.md - L3 marked shipped, L4 in progress, L5 planned
+- **Updated:** SPEC.md - Added L4 user stories and data model (data_sources, sync_logs, calendar_integrations, push_subscriptions tables)
+- **Updated:** AGENTS.md - Scope changed to L4, added L5 backlog references
+- **Updated:** BACKLOG.md - Items moved to L5+, L4 section updated
+- **Updated:** Issue templates - Task template now references TASKS_L4.md
+- **Updated:** PR template - Checklist now references L4 scope
+
+## [3.0.0] - L3 Release - 2026-01-16
+
 ### Revert
-- **Reverted:** All L4 features to return to PR #140 state
+- **Reverted:** All premature L4 features to return to PR #140 state
   - Removed all data import functionality (FRED, BLS, ECB, IMF, World Bank)
   - Removed cron job for automated data sync
   - Removed settings dropdown menu in header
@@ -11,8 +29,8 @@
   - Removed cheerio dependency
   - Reverted documentation to L3 state
 
-### L4 Planning
-- **Added:** L4 prerequisites in BACKLOG.md before starting L4 development:
+### L4 Planning (Preparatory)
+- **Added:** L4 prerequisites documented in BACKLOG.md:
   - Scrape ForexFactory (primary) with Investing.com as backup for release schedules
   - Pull release data from API sources at the times obtained from scraping
 

@@ -2,25 +2,20 @@
 
 Items discovered during development that are out of current scope.
 
-## L3 (In Progress)
-See TASKS_L3.md for detailed task definitions:
-- Webhook/push notifications for instant release alerts
-- Full REST API with API keys and versioning
-- Billing integration (Stripe) and usage quotas
-- Multi-tenant admin dashboard
-- Data export (CSV, JSON, iCal)
-
-## L4 Prerequisites (Before Starting L4 Development)
-**Data Acquisition Strategy:**
-1. **Release Schedule Scraping**:
-   - Primary source: Scrape ForexFactory for economic release schedules
-   - Backup source: Investing.com calendar as fallback
-2. **Release Data Import**:
-   - Aggresivly pull release data from API sources (FRED, BLS, ECB, etc.) at the times obtained from ForexFactory/Investing.com scraping
-
-## L4+ Ideas
-- Mobile app (React Native)
+## L4 (In Progress)
+See TASKS_L4.md for detailed task definitions:
+- Data acquisition from ForexFactory/Investing.com (scraping)
+- Automated data import from FRED, BLS, ECB APIs
+- Mobile app (React Native with Expo)
 - Calendar integrations (Google Calendar, Outlook)
 - Historical data API for backtesting
 - Advanced analytics and charting
+
+## L5+ Ideas
 - Custom alert conditions (threshold-based alerts)
+- Machine learning predictions for release values
+- Social features (comments, community watchlists)
+- Broker integrations for trade execution
+- Real-time streaming updates via WebSockets
+- Multi-language support (i18n)
+- White-label/embedded widget for third-party sites
