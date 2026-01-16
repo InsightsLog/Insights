@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+### L4 Data Acquisition
+- **Added:** data_sources table for managing data acquisition sources (T400)
+  - Migration: `023_create_data_sources.sql`
+  - Schema: id, name, type, base_url, auth_config, enabled, last_sync_at, created_at
+  - Types: 'scraper' (web scraping) or 'api' (REST API)
+  - Stores API credentials in auth_config JSONB (encrypted at rest by Supabase)
+  - Pre-seeded with ForexFactory, Investing.com, FRED, BLS, ECB (disabled by default)
+  - Unique constraint on name to prevent duplicates
+  - No RLS (admin-only access via service role)
+- **Added:** sync_logs table for tracking data sync attempts (T400)
+  - Schema: id, data_source_id, status, records_processed, error_message, started_at, completed_at
+  - Status values: 'success', 'partial', 'failed', 'in_progress'
+  - Foreign key to data_sources with CASCADE delete
+  - Indexes for efficient querying by data source, status, and date
+- **Added:** Server actions for data source management (`src/app/actions/data-sources.ts`)
+  - `getDataSources()` - List all data sources
+  - `getDataSource(id)` - Get single data source
+  - `createDataSource(input)` - Create new data source
+  - `updateDataSource(id, input)` - Update data source
+  - `deleteDataSource(id)` - Delete data source and cascade sync logs
+  - `toggleDataSource(id)` - Toggle enabled/disabled status
+  - `getSyncLogs(options)` - List sync logs with optional filters
+  - `createSyncLog(dataSourceId)` - Create sync log entry
+  - `updateSyncLog(id, updates)` - Update sync log with results
+  - `updateLastSyncAt(id)` - Update last sync timestamp
+  - All actions require admin role
+- **Added:** Unit tests for data source actions (38 tests)
+- **Added:** Test migration file for verification (`023_test_data_sources.sql`)
+
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
 - **Focus:** Data acquisition, mobile app, calendar integrations, historical data API, advanced analytics

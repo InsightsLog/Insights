@@ -7,7 +7,7 @@ L4 focuses on data acquisition, mobile experience, and advanced analytics.
 
 ## 0) Data Acquisition
 
-- [ ] T400 Add data_sources table
+- [x] T400 Add data_sources table
   - Migration: data_sources(id, name, type, base_url, auth_config, enabled, last_sync_at, created_at)
   - Types: 'scraper', 'api'
   - Store API credentials encrypted in auth_config (JSONB)
