@@ -16,7 +16,7 @@ See TASKS_L3.md for detailed task definitions:
    - Primary source: Scrape ForexFactory for economic release schedules
    - Backup source: Investing.com calendar as fallback
 2. **Release Data Import**:
-   - Pull release data from our API sources (FRED, BLS, ECB, etc.) at the times obtained from ForexFactory/Investing.com scraping
+   - Aggresivly pull release data from API sources (FRED, BLS, ECB, etc.) at the times obtained from ForexFactory/Investing.com scraping
 
 ## L4+ Ideas
 - Mobile app (React Native)
