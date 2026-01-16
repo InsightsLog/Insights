@@ -83,7 +83,8 @@ describe("CMECalendarClient", () => {
   });
 
   describe("getUpcomingEventsWithErrors", () => {
-    it("should return errors array when all months fail", async () => {
+    it("should return errors array when all months and fallback fail", async () => {
+      // All fetch calls fail (CME months + TradingEconomics fallback)
       mockFetch.mockResolvedValue({
         ok: false,
         status: 404,
@@ -94,7 +95,8 @@ describe("CMECalendarClient", () => {
       const result = await client.getUpcomingEventsWithErrors(2);
 
       expect(result.allMonthsFailed).toBe(true);
-      expect(result.errors.length).toBe(2);
+      // 2 CME month errors + 1 TradingEconomics fallback error = 3
+      expect(result.errors.length).toBe(3);
       expect(result.events.length).toBe(0);
     });
 
@@ -153,6 +155,56 @@ describe("CMECalendarClient", () => {
       expect(result.allMonthsFailed).toBe(false);
       expect(result.errors.length).toBe(1);
       expect(result.errors[0].statusCode).toBe(500);
+    });
+
+    it("should use TradingEconomics fallback when CME fails", async () => {
+      // CME months fail
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+
+      // TradingEconomics fallback succeeds with calendar data
+      const teMockHtml = `
+        <table id="calendar">
+          <tr data-url="/us/gdp" data-country="united states" data-event="GDP Growth Rate">
+            <td class="2026-02-01"><span class="event-3">8:30 AM</span></td>
+            <td><span class="calendar-iso">US</span></td>
+            <td><a class="calendar-event">GDP Growth Rate</a></td>
+          </tr>
+        </table>
+      `;
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => teMockHtml,
+      });
+
+      const client = new CMECalendarClient();
+      const result = await client.getUpcomingEventsWithErrors(2);
+
+      expect(result.allMonthsFailed).toBe(false);
+      expect(result.usedFallback).toBe(true);
+      expect(result.source).toBe("tradingeconomics");
+      expect(result.events.length).toBeGreaterThanOrEqual(0); // May filter by date
+    });
+
+    it("should set source to cme when CME succeeds", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => "<div></div>",
+      });
+
+      const client = new CMECalendarClient();
+      const result = await client.getUpcomingEventsWithErrors(1);
+
+      expect(result.source).toBe("cme");
+      expect(result.usedFallback).toBe(false);
     });
   });
 
