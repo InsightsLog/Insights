@@ -96,11 +96,11 @@ With $5 risk per trade:
 Focus on these high-impact releases (use Insights watchlist):
 
 **US Indicators** (Most Important):
-- Nonfarm Payrolls (NFP) - First Friday of month
-- CPI (Consumer Price Index) - Monthly
-- FOMC Interest Rate Decision - 8 times/year
-- GDP - Quarterly
-- Retail Sales - Monthly
+- Nonfarm Payrolls (NFP) - First Friday of month, 8:30 AM ET
+- CPI (Consumer Price Index) - Monthly, typically 8:30 AM ET
+- FOMC Interest Rate Decision - 8 times/year, 2:00 PM ET
+- GDP - Quarterly, 8:30 AM ET
+- Retail Sales - Monthly, 8:30 AM ET
 
 **Other Major Economies**:
 - ECB Interest Rate Decision (EUR)
@@ -369,11 +369,11 @@ Once you've proven consistency for 3-6 months:
 - Economic calendars: Free (Forex Factory, etc.)
 
 ### Paid (Optional)
-- Insights Plus Plan: ~$10-30/month (for higher API limits)
+- Insights paid plans: For higher API limits (see Settings → Billing for current pricing)
 - VPS for automated systems: $5-20/month (only if automating)
 - Charting tools Pro: $10-30/month (TradingView Pro)
 
-**Total monthly cost**: $0-80 depending on needs
+**Total monthly cost**: $0-60+ depending on needs
 
 ## Conclusion: The Path to Profit
 

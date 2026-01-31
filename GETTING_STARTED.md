@@ -110,8 +110,12 @@ Economic data releases can significantly impact markets:
   - Actual > Forecast (usually bullish for currency)
   - Actual < Forecast (usually bearish for currency)
 - **Surprise Thresholds**: What counts as "significant" varies by indicator
-  - **For percentage-based indicators** (CPI, GDP growth): 0.3-0.5% deviation
-  - **For count-based indicators** (NFP jobs): 50K-100K jobs deviation
+  - **For percentage-based indicators** (CPI, GDP growth): 
+    - 0.3% deviation = tradeable signal
+    - 0.5%+ deviation = strong signal
+  - **For count-based indicators** (NFP jobs): 
+    - 50K deviation = tradeable signal
+    - 100K+ deviation = strong signal
   - **For rate decisions**: Any change (25 basis points = 0.25%) is significant
   - Check historical volatility of each indicator to set appropriate thresholds
 - **Previous Revisions**: Watch for revisions to understand trend changes
@@ -163,11 +167,13 @@ If you want to trade based on economic releases with $250:
    - Crypto exchange (for crypto trading)
    - Stock broker (for equity trading)
 
-2. **Capital Allocation** (for crypto example):
+2. **Capital Allocation** (for crypto example with DeFi/DEX):
    - USDC/USDT for stable value (50-70%)
    - ETH/BTC for major crypto exposure (20-30%)
-   - Gas fees reserve: $20-30 for transaction costs
+   - Gas fees reserve: $20-30 for DeFi transaction costs (not needed for CEX)
    - Trading capital: $180-200 actual
+   
+   **Note**: If trading on centralized exchanges (Binance, Coinbase, Kraken), you don't need gas fee reserves. All $250 can be trading capital.
 
 3. **Risk Management**:
    - Never risk more than 2% per trade
