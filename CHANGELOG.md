@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Documentation
+- **Added:** GETTING_STARTED.md - Comprehensive user guide for deployed application
+  - Clarifies app purpose (economic calendar, not trading bot)
+  - Explains how to use watchlists, alerts, and API features
+  - Addresses common misconceptions about the application
+- **Added:** TRADING_GUIDE.md - Educational guide on using macro data for trading
+  - Step-by-step guide for beginners starting with $250
+  - Capital allocation strategies (forex, crypto, stocks)
+  - Risk management rules and position sizing
+  - Event-based trading strategies
+  - Realistic profit expectations and time investment
+- **Updated:** README.md - Added documentation section linking to new guides
+
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
 - **Focus:** Data acquisition, mobile app, calendar integrations, historical data API, advanced analytics

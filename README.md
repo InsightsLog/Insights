@@ -10,6 +10,9 @@ A public macroeconomic release calendar with authenticated watchlists. Users can
 ```
 Insights/
 ├── SPEC.md              # Product specification (L2 scope)
+├── DEPLOY.md            # Deployment guide (Vercel + Supabase)
+├── GETTING_STARTED.md   # User guide for deployed application
+├── TRADING_GUIDE.md     # How to use macro data for trading
 ├── TASKS.md             # L0 task archive
 ├── TASKS_L1.md          # L1 task archive (shipped)
 ├── TASKS_L2.md          # Current implementation task list
@@ -80,6 +83,13 @@ Insights/
 - **Styling:** Tailwind CSS
 - **Validation:** Zod
 - **Deployment:** Vercel
+
+## Documentation
+
+- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete user guide for the deployed application
+- **[TRADING_GUIDE.md](TRADING_GUIDE.md)** - How to use macro economic data for trading decisions
+- **[DEPLOY.md](DEPLOY.md)** - Step-by-step deployment instructions
+- **[SPEC.md](SPEC.md)** - Product specification and feature roadmap
 
 ## Contributing
 See [AGENTS.md](AGENTS.md) for coding standards and workflow rules.
