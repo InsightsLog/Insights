@@ -33,17 +33,19 @@ First, decide where you'll trade:
 - $200 (80%) - Active trading capital
 - No crypto needed, no gas fees
 
-#### Option B: Crypto Trading
-- **Exchange**: Binance, Coinbase, Kraken
-- **What you trade**: BTC, ETH against USD/stablecoins
+#### Option B: Crypto Trading (DeFi/DEX)
+- **Platform**: Uniswap, dYdX, GMX (decentralized exchanges)
+- **What you trade**: BTC, ETH, and other tokens using smart contracts
 - **Why**: Macro data affects crypto markets (especially inflation data)
-- **Minimum**: $250 works but fees eat into profits
+- **Minimum**: $250 works but gas fees eat into profits significantly
 
 **Allocation**:
-- $30 (12%) - ETH for gas fees and network costs
+- $30 (12%) - ETH for gas fees (on-chain transactions)
 - $70 (28%) - Reserve in USDC (stablecoin)
 - $150 (60%) - Active trading capital in USDC
 - Total: $250
+
+**Note**: For centralized exchanges (CEX) like Binance, Coinbase, or Kraken, you don't need gas fees. The entire $250 can be trading capital, though CEX fees still apply per trade (typically 0.1-0.5%).
 
 #### Option C: Stock Trading
 - **Broker**: Robinhood, TD Ameritrade, Fidelity
@@ -119,8 +121,9 @@ Start with just 5-7 indicators. Don't try to trade everything.
 **Execution (on your broker)**:
 1. Wait for data release (Insights alerts you)
 2. Check if actual differs significantly from forecast:
-   - Surprise > 0.3% = tradeable
-   - Surprise > 0.5% = strong signal
+   - **For percentage indicators** (CPI, GDP): Surprise > 0.3% = tradeable, > 0.5% = strong
+   - **For count indicators** (NFP): Surprise > 50K = tradeable, > 100K = strong
+   - **For rates**: Any change is significant (typically 25 bps increments)
 3. Enter trade in direction of surprise:
    - Actual > Forecast = Buy currency
    - Actual < Forecast = Sell currency
@@ -131,7 +134,7 @@ Start with just 5-7 indicators. Don't try to trade everything.
 ```
 Indicator: US Nonfarm Payrolls
 Forecast: 150K jobs
-Actual: 220K jobs (much better than expected)
+Actual: 220K jobs (70K above forecast = strong signal)
 
 Action:
 - Buy USD (via USD/JPY, EUR/USD short, etc.)
@@ -216,7 +219,7 @@ Action (2 hours before):
 - Study forecasts and previous trends
 - Check economic calendar for conflicts
 
-### Release Day (e.g., Wednesday NFP)
+### Release Day (e.g., Friday NFP)
 - 1 hour before: Check forecast hasn't changed
 - 30 minutes before: Prepare trading platform
 - At release: Wait for Insights alert

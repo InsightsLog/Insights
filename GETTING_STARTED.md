@@ -109,6 +109,11 @@ Economic data releases can significantly impact markets:
 - **Forecast vs Actual**: When actual differs significantly from forecast, markets react
   - Actual > Forecast (usually bullish for currency)
   - Actual < Forecast (usually bearish for currency)
+- **Surprise Thresholds**: What counts as "significant" varies by indicator
+  - **For percentage-based indicators** (CPI, GDP growth): 0.3-0.5% deviation
+  - **For count-based indicators** (NFP jobs): 50K-100K jobs deviation
+  - **For rate decisions**: Any change (25 basis points = 0.25%) is significant
+  - Check historical volatility of each indicator to set appropriate thresholds
 - **Previous Revisions**: Watch for revisions to understand trend changes
 
 ### Example Trading Strategy (Manual)
