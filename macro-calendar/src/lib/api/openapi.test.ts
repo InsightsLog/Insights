@@ -273,7 +273,7 @@ describe("getOpenApiJson", () => {
   it("contains all defined paths", () => {
     const json = getOpenApiJson();
     const parsed = JSON.parse(json);
-    expect(Object.keys(parsed.paths)).toHaveLength(5);
+    expect(Object.keys(parsed.paths)).toHaveLength(7);
   });
 });
 

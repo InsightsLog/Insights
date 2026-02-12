@@ -2,6 +2,54 @@
 
 ## [Unreleased]
 
+### L4 — Data Acquisition Foundation (T400, T404-T406)
+- **Added:** `data_sources` and `sync_logs` tables (migration 023)
+  - `data_sources`: name, type (scraper/api), base_url, auth_config (JSONB), enabled, last_sync_at
+  - `sync_logs`: status (success/partial/failed), records_processed, error tracking
+  - RLS enabled with no public policies (admin-only via service role)
+  - CHECK constraints on type and status fields
+  - Cascade delete from data_sources to sync_logs
+- **Added:** Data source server actions (`src/app/actions/data-sources.ts`)
+  - CRUD operations: listDataSources, getDataSource, createDataSource, updateDataSource, deleteDataSource
+  - Sync log management: getSyncLogs, createSyncLog, completeSyncLog
+  - All operations require admin role, validated with Zod
+- **Added:** FRED API client (`src/lib/data-sources/fred.ts`)
+  - Fetch series metadata and historical observations from Federal Reserve Economic Data
+  - Maps 28 common FRED series to indicator names (CPI, NFP, GDP, etc.)
+  - Retry logic with exponential backoff for transient failures
+  - Batch fetching with rate limit awareness (5 series per batch)
+- **Added:** BLS API client (`src/lib/data-sources/bls.ts`)
+  - Fetch employment and price data from Bureau of Labor Statistics v2 API
+  - Maps 16 common BLS series (Nonfarm Payrolls, CPI, PPI, etc.)
+  - Supports up to 50 series per request (BLS API limit)
+  - Period parsing (monthly M01-M12, quarterly Q1-Q4, annual)
+- **Added:** ECB API client (`src/lib/data-sources/ecb.ts`)
+  - Fetch European economic data from ECB Statistical Data Warehouse (SDMX API)
+  - Maps 11 ECB series (HICP, GDP, unemployment, interest rates, M3, PMI)
+  - Handles SDMX JSON response format with time period parsing
+  - No API key required (public API)
+- **Added:** Data source environment variables in `src/lib/env.ts`
+  - `FRED_API_KEY` and `BLS_API_KEY` (optional, validated with Zod)
+  - `getDataSourceEnv()` function following existing env pattern
+- **Added:** Unit tests for all three API clients (fred.test.ts, bls.test.ts, ecb.test.ts)
+
+### L4 — Historical Data API (T430-T432)
+- **Added:** `GET /api/v1/historical/:indicator_id` endpoint
+  - Returns historical time series data for a specific indicator
+  - Chronological ordering (oldest first) for backtesting use cases
+  - Computed `surprise` field (actual - forecast) for each data point
+  - Pagination with higher limits (500 max, 100 default)
+  - Date range filtering (from_date, to_date)
+  - API key auth and quota enforcement
+- **Added:** `GET /api/v1/historical/bulk` endpoint
+  - Bulk export for up to 10 indicators per request
+  - JSON and CSV output formats (Content-Disposition header for CSV)
+  - Indicator summary with per-indicator data point counts
+  - Date range filtering and per-indicator limits
+- **Updated:** OpenAPI spec with Historical tag and 3 new schemas
+  - HistoricalDataPoint, BulkDataPoint, IndicatorMeta schemas
+  - Full parameter and response documentation
+
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
 - **Focus:** Data acquisition, mobile app, calendar integrations, historical data API, advanced analytics

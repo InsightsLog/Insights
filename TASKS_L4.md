@@ -7,7 +7,7 @@ L4 focuses on data acquisition, mobile experience, and advanced analytics.
 
 ## 0) Data Acquisition
 
-- [ ] T400 Add data_sources table
+- [x] T400 Add data_sources table
   - Migration: data_sources(id, name, type, base_url, auth_config, enabled, last_sync_at, created_at)
   - Types: 'scraper', 'api'
   - Store API credentials encrypted in auth_config (JSONB)
@@ -34,20 +34,20 @@ L4 focuses on data acquisition, mobile experience, and advanced analytics.
   - Logs sync results to sync_logs table
   - Test: cron job populates release_at for upcoming releases
 
-- [ ] T404 Add FRED API integration
+- [x] T404 Add FRED API integration
   - Module: src/lib/data-sources/fred.ts
   - Fetch economic data from Federal Reserve Economic Data API
   - Map FRED series to indicators (e.g., CPIAUCSL → CPI)
   - Handle rate limiting and retries
   - Test: can fetch and parse FRED data
 
-- [ ] T405 Add BLS API integration
+- [x] T405 Add BLS API integration
   - Module: src/lib/data-sources/bls.ts
   - Fetch employment data from Bureau of Labor Statistics API
   - Map BLS series to indicators (e.g., CES0000000001 → NFP)
   - Test: can fetch and parse BLS data
 
-- [ ] T406 Add ECB API integration
+- [x] T406 Add ECB API integration
   - Module: src/lib/data-sources/ecb.ts
   - Fetch European economic data from ECB Statistical Data Warehouse
   - Map ECB series to indicators
@@ -145,21 +145,21 @@ L4 focuses on data acquisition, mobile experience, and advanced analytics.
 
 ## 3) Historical Data API
 
-- [ ] T430 Add /api/v1/historical endpoint
+- [x] T430 Add /api/v1/historical endpoint
   - GET /api/v1/historical/:indicator_id
   - Query params: from_date, to_date, limit, offset
   - Returns time series data with pagination
   - Requires API key with appropriate plan
   - Test: historical data returned; pagination works
 
-- [ ] T431 Add bulk historical data export
+- [x] T431 Add bulk historical data export
   - GET /api/v1/historical/bulk
   - Export multiple indicators in single request
   - Supports CSV and JSON formats
   - Rate limited based on plan
   - Test: bulk export works; rate limits enforced
 
-- [ ] T432 Add historical data documentation
+- [x] T432 Add historical data documentation
   - Update /docs/api with historical endpoints
   - Add backtesting examples
   - Include sample code for common use cases

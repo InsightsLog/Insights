@@ -188,3 +188,41 @@ export function getStripePriceEnv(): StripePriceConfig {
     },
   };
 }
+
+/**
+ * Data source API key environment variables schema.
+ * Optional: Used by data acquisition modules (T404-T406) to fetch
+ * economic data from external APIs.
+ *
+ * FRED_API_KEY: Federal Reserve Economic Data (https://fred.stlouisfed.org/docs/api/)
+ * BLS_API_KEY: Bureau of Labor Statistics (https://www.bls.gov/developers/)
+ */
+const dataSourceEnvSchema = z.object({
+  FRED_API_KEY: z.string().min(1).optional(),
+  BLS_API_KEY: z.string().min(1).optional(),
+});
+
+/**
+ * Data source API key configuration.
+ */
+export type DataSourceKeyConfig = {
+  fredApiKey?: string;
+  blsApiKey?: string;
+};
+
+/**
+ * Get data source API keys from environment variables.
+ * Returns an object with available API keys (undefined if not configured).
+ * ECB does not require an API key.
+ */
+export function getDataSourceEnv(): DataSourceKeyConfig {
+  const parsed = dataSourceEnvSchema.parse({
+    FRED_API_KEY: process.env.FRED_API_KEY,
+    BLS_API_KEY: process.env.BLS_API_KEY,
+  });
+
+  return {
+    fredApiKey: parsed.FRED_API_KEY,
+    blsApiKey: parsed.BLS_API_KEY,
+  };
+}

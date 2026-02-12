@@ -103,6 +103,10 @@ Common HTTP status codes:
       name: "Calendar",
       description: "Upcoming release schedule",
     },
+    {
+      name: "Historical",
+      description: "Historical time series data for backtesting and analysis",
+    },
   ],
   paths: {
     "/indicators": {
@@ -295,6 +299,188 @@ Common HTTP status codes:
               "application/json": {
                 schema: {
                   $ref: "#/components/schemas/ReleaseWithIndicator",
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/BadRequest" },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+          "429": { $ref: "#/components/responses/RateLimited" },
+          "500": { $ref: "#/components/responses/InternalError" },
+        },
+        security: [{ apiKey: [] }],
+      },
+    },
+    "/historical/{indicator_id}": {
+      get: {
+        tags: ["Historical"],
+        summary: "Get historical data for an indicator",
+        description:
+          "Returns historical time series data for a specific indicator. Data is sorted chronologically (oldest first) for backtesting use cases. Includes a computed 'surprise' field (actual - forecast) when both values are numeric.",
+        operationId: "getHistoricalData",
+        parameters: [
+          {
+            name: "indicator_id",
+            in: "path",
+            description: "Indicator UUID",
+            required: true,
+            schema: {
+              type: "string",
+              format: "uuid",
+            },
+          },
+          {
+            name: "from_date",
+            in: "query",
+            description: "Filter data from this date (ISO 8601)",
+            schema: {
+              type: "string",
+              format: "date-time",
+            },
+          },
+          {
+            name: "to_date",
+            in: "query",
+            description: "Filter data until this date (ISO 8601)",
+            schema: {
+              type: "string",
+              format: "date-time",
+            },
+          },
+          {
+            name: "limit",
+            in: "query",
+            description: "Number of data points to return (max 500)",
+            schema: {
+              type: "integer",
+              minimum: 1,
+              maximum: 500,
+              default: 100,
+            },
+          },
+          { $ref: "#/components/parameters/offset" },
+        ],
+        responses: {
+          "200": {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    indicator: { $ref: "#/components/schemas/IndicatorMeta" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/HistoricalDataPoint" },
+                    },
+                    pagination: { $ref: "#/components/schemas/Pagination" },
+                  },
+                  required: ["indicator", "data", "pagination"],
+                },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/BadRequest" },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "404": { $ref: "#/components/responses/NotFound" },
+          "429": { $ref: "#/components/responses/RateLimited" },
+          "500": { $ref: "#/components/responses/InternalError" },
+        },
+        security: [{ apiKey: [] }],
+      },
+    },
+    "/historical/bulk": {
+      get: {
+        tags: ["Historical"],
+        summary: "Bulk export historical data",
+        description:
+          "Export historical data for multiple indicators in a single request. Supports JSON and CSV output formats. Maximum 10 indicators per request.",
+        operationId: "bulkHistoricalExport",
+        parameters: [
+          {
+            name: "indicator_ids",
+            in: "query",
+            description: "Comma-separated list of indicator UUIDs (max 10)",
+            required: true,
+            schema: {
+              type: "string",
+            },
+          },
+          {
+            name: "from_date",
+            in: "query",
+            description: "Filter data from this date (ISO 8601)",
+            schema: {
+              type: "string",
+              format: "date-time",
+            },
+          },
+          {
+            name: "to_date",
+            in: "query",
+            description: "Filter data until this date (ISO 8601)",
+            schema: {
+              type: "string",
+              format: "date-time",
+            },
+          },
+          {
+            name: "format",
+            in: "query",
+            description: "Output format",
+            schema: {
+              type: "string",
+              enum: ["json", "csv"],
+              default: "json",
+            },
+          },
+          {
+            name: "limit",
+            in: "query",
+            description: "Max data points per indicator (max 500)",
+            schema: {
+              type: "integer",
+              minimum: 1,
+              maximum: 500,
+              default: 100,
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Successful response (JSON or CSV based on format parameter)",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    indicators: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          id: { type: "string", format: "uuid" },
+                          name: { type: "string" },
+                          country_code: { type: "string" },
+                          category: { type: "string" },
+                          data_points: { type: "integer" },
+                        },
+                      },
+                    },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/BulkDataPoint" },
+                    },
+                    total_records: { type: "integer" },
+                  },
+                  required: ["indicators", "data", "total_records"],
+                },
+              },
+              "text/csv": {
+                schema: {
+                  type: "string",
+                  description: "CSV data with headers",
                 },
               },
             },
@@ -640,6 +826,56 @@ Common HTTP status codes:
           "period",
           "has_revisions",
         ],
+      },
+      IndicatorMeta: {
+        type: "object",
+        description: "Indicator summary metadata",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          country_code: { type: "string" },
+          category: { type: "string" },
+          source_name: { type: "string" },
+        },
+        required: ["id", "name", "country_code", "category", "source_name"],
+      },
+      HistoricalDataPoint: {
+        type: "object",
+        description: "A single historical data point in a time series",
+        properties: {
+          release_id: { type: "string", format: "uuid" },
+          date: { type: "string", format: "date-time", description: "Release date (UTC)" },
+          period: { type: "string", description: "Period covered (e.g., 'Jan 2026')" },
+          actual: { type: "string", nullable: true },
+          forecast: { type: "string", nullable: true },
+          previous: { type: "string", nullable: true },
+          revised: { type: "string", nullable: true },
+          unit: { type: "string", nullable: true },
+          surprise: {
+            type: "number",
+            nullable: true,
+            description: "Difference between actual and forecast (actual - forecast)",
+          },
+        },
+        required: ["release_id", "date", "period"],
+      },
+      BulkDataPoint: {
+        type: "object",
+        description: "A data point in a bulk export with indicator context",
+        properties: {
+          indicator_id: { type: "string", format: "uuid" },
+          indicator_name: { type: "string" },
+          country_code: { type: "string" },
+          category: { type: "string" },
+          date: { type: "string", format: "date-time" },
+          period: { type: "string" },
+          actual: { type: "string", nullable: true },
+          forecast: { type: "string", nullable: true },
+          previous: { type: "string", nullable: true },
+          revised: { type: "string", nullable: true },
+          unit: { type: "string", nullable: true },
+        },
+        required: ["indicator_id", "indicator_name", "country_code", "category", "date", "period"],
       },
       Revision: {
         type: "object",
