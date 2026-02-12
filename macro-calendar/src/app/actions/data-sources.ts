@@ -65,9 +65,7 @@ const syncLogSchema = z.object({
 
 const createDataSourceInputSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name too long"),
-  type: z.enum(["scraper", "api"], {
-    errorMap: () => ({ message: "Type must be 'scraper' or 'api'" }),
-  }),
+  type: z.enum(["scraper", "api"]),
   base_url: z.string().url("Must be a valid URL"),
   auth_config: z.record(z.string(), z.unknown()).optional(),
   enabled: z.boolean().optional(),
