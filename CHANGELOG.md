@@ -3,7 +3,11 @@
 ## [Unreleased]
 
 ### Added
+- **T452:** Stripe billing integration — `/api/billing/checkout` route creates a Stripe Checkout session for the Pro plan and returns a redirect URL; `/api/billing/webhook` route handles `checkout.session.completed` and `customer.subscription.deleted` events and updates the `subscriptions` table with signature validation. Added `STRIPE_PRO_PRICE_ID` env var support in `src/lib/env.ts`.
 - **T440:** Indicator detail page enhancements — historical trend line chart (last 12 releases, using Recharts), upcoming releases section (next 3), and full dark theme redesign for `/indicator/[id]`
+
+### Fixed
+- **env.ts:** Removed duplicate `dataSourceEnvSchema` and `getDataSourceEnv` declarations that were causing build and test failures.
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
