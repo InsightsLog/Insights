@@ -3,11 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- **T421:** Weekly email digest — opted-in users receive a Monday morning summary of upcoming high-impact economic releases for the next 7 days
-  - New Supabase Edge Function `send-weekly-digest` sends grouped HTML + plain-text digest emails via Resend API
-  - Migration 023 adds `digest_weekly` opt-in column to `alert_preferences` and `importance` level (`low`/`medium`/`high`) to `indicators`
-  - `RESEND_API_KEY` documented in `src/lib/env.ts` as an optional server env var
-  - Cron schedule: every Monday at 06:00 UTC (configure via pg_cron + pg_net, see migration 023 comments)
+- **T440:** Indicator detail page enhancements — historical trend line chart (last 12 releases, using Recharts), upcoming releases section (next 3), and full dark theme redesign for `/indicator/[id]`
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
