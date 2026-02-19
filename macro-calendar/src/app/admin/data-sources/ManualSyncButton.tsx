@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState, useEffect, useRef } from "react";
-import { getServerEnv } from "@/lib/env";
 
 type ManualSyncButtonProps = {
   dataSourceId: string;

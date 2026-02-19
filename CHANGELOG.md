@@ -2,15 +2,17 @@
 
 ## [Unreleased]
 
-### Added
-- **T405:** BLS API integration module (L4 Data Acquisition)
-  - Created `src/lib/data-sources/bls.ts` — typed module for fetching employment/economic data from Bureau of Labor Statistics API
-  - Exports `fetchBlsSeries(seriesIds: string[], params?: BlsParams)` with support for batch requests (up to 50 series)
-  - Zod-validated request/response schemas for type safety
-  - Exponential backoff retry logic (max 3 retries) for transient errors
-  - `BLS_SERIES_MAP` constant mapping BLS series IDs to indicator names (e.g., CES0000000001 → Non-Farm Payrolls, LNS14000000 → Unemployment Rate)
-  - Added `BLS_API_KEY` support in `src/lib/env.ts` via `getDataSourceEnv()` function
-  - Comprehensive unit tests with mocked fetch in `src/lib/data-sources/bls.test.ts`
+### L4 Data Acquisition - T408
+- **Added:** Data source admin UI at `/admin/data-sources` (T408)
+  - Migration: `023_create_data_sources.sql` - Creates `data_sources` and `sync_logs` tables
+  - Server actions: `getDataSources()`, `getSyncLogs()`, `toggleDataSource()`, `createSyncLog()`, `updateSyncLog()`, `updateLastSyncAt()`
+  - Admin page displays all data sources with type (api/scraper), enabled status, and last sync timestamp
+  - Toggle enable/disable button per data source
+  - Manual sync button to trigger `sync-release-schedules` edge function
+  - Sync logs table showing recent sync attempts with status, records processed, and error messages
+  - Dark theme styling: `bg-[#0b0e11]`, `border-[#1e2530]`
+  - Link added to admin dashboard
+  - API endpoint: `POST /api/admin/sync-data-source`
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
