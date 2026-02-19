@@ -132,6 +132,32 @@ export function getStripeEnv(): { secretKey: string; webhookSecret: string } | n
 }
 
 /**
+ * FRED API environment variables schema.
+ * Optional: API key for Federal Reserve Economic Data (FRED) integration.
+ */
+const fredEnvSchema = z.object({
+  FRED_API_KEY: z.string().optional(),
+});
+
+/**
+ * Get FRED API environment variables.
+ * Returns null if FRED API is not configured.
+ */
+export function getFredEnv(): { apiKey: string } | null {
+  const result = fredEnvSchema.safeParse({
+    FRED_API_KEY: process.env.FRED_API_KEY,
+  });
+
+  if (!result.success || !result.data.FRED_API_KEY) {
+    return null;
+  }
+
+  return {
+    apiKey: result.data.FRED_API_KEY,
+  };
+}
+
+/**
  * Stripe price ID environment variables schema.
  * Optional: Maps plan names to Stripe price IDs for subscriptions.
  * These can be set as environment variables or stored in the database.
