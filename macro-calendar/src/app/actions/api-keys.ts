@@ -17,6 +17,17 @@ const apiKeyNameSchema = z
 // Schema for validating API key ID
 const apiKeyIdSchema = z.string().uuid("Invalid API key ID");
 
+// Default API key limits per plan name (used when no subscription exists)
+const DEFAULT_API_KEY_LIMITS: Record<string, number> = {
+  Free: 1,
+  Plus: 3,
+  Pro: 10,
+  Enterprise: 50,
+};
+
+// Default limit for users with no subscription (free tier)
+const FREE_TIER_API_KEY_LIMIT = 1;
+
 /**
  * API key record from the database (without the actual key).
  */
@@ -103,6 +114,7 @@ export async function getApiKeys(): Promise<ApiKeyActionResult<ApiKey[]>> {
 /**
  * Create a new API key for the current user.
  * Returns the plain key ONLY ONCE - it cannot be retrieved later.
+ * Enforces plan-based limits on the number of active keys.
  *
  * @param name - A user-friendly name for the key
  * @returns The created API key (including plain key shown only once)
@@ -138,6 +150,39 @@ export async function createApiKey(
 
   if (authError || !user) {
     return { success: false, error: "Not authenticated" };
+  }
+
+  // Determine the user's API key limit from their subscription plan
+  let apiKeyLimit = FREE_TIER_API_KEY_LIMIT;
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("plans (name, api_keys_limit)")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .single();
+
+  if (subscription?.plans) {
+    const plan = subscription.plans as unknown as { name: string; api_keys_limit: number };
+    apiKeyLimit =
+      plan.api_keys_limit ?? DEFAULT_API_KEY_LIMITS[plan.name] ?? FREE_TIER_API_KEY_LIMIT;
+  }
+
+  // Count existing active (non-revoked) keys for the user
+  const { count: activeKeyCount, error: countError } = await supabase
+    .from("api_keys")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("revoked_at", null);
+
+  if (countError) {
+    return { success: false, error: "Failed to check API key limit" };
+  }
+
+  if ((activeKeyCount ?? 0) >= apiKeyLimit) {
+    return {
+      success: false,
+      error: `API key limit reached. Your plan allows ${apiKeyLimit} active key${apiKeyLimit === 1 ? "" : "s"}. Revoke an existing key or upgrade your plan.`,
+    };
   }
 
   // Generate secure API key

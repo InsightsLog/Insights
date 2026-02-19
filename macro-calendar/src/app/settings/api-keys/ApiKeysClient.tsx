@@ -26,6 +26,72 @@ function formatDateTime(isoString: string): string {
 }
 
 /**
+ * Modal that shows a newly created API key exactly once.
+ * The key is never retrievable after this modal is dismissed.
+ */
+function NewKeyModal({
+  apiKey,
+  onDismiss,
+}: {
+  apiKey: string;
+  onDismiss: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(apiKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="w-full max-w-lg rounded-xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="mb-4 flex items-start justify-between">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            API Key Created
+          </h2>
+          <button
+            onClick={onDismiss}
+            aria-label="Close"
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-900/20">
+          <p className="text-sm font-medium text-amber-800 dark:text-amber-400">
+            ⚠ Copy your API key now — you won&apos;t be able to see it again.
+          </p>
+        </div>
+
+        <div className="mb-6 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800">
+          <code className="flex-1 break-all font-mono text-sm text-zinc-900 dark:text-zinc-100">
+            {apiKey}
+          </code>
+          <button
+            onClick={handleCopy}
+            className="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </div>
+
+        <button
+          onClick={onDismiss}
+          className="w-full rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        >
+          I&apos;ve saved my key
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * API Keys management client component.
  * Displays list of API keys and allows creation/revocation.
  */
@@ -86,7 +152,6 @@ export function ApiKeysClient() {
 
     setCreating(true);
     setError(null);
-    setCreatedKey(null);
 
     const result = await createApiKey(newKeyName.trim());
     if (result.success) {
@@ -131,20 +196,18 @@ export function ApiKeysClient() {
     setDeletingKeyId(null);
   };
 
-  // Copy key to clipboard
-  const handleCopyKey = async () => {
-    if (createdKey) {
-      await navigator.clipboard.writeText(createdKey);
-    }
-  };
-
-  // Dismiss the created key banner
+  // Dismiss the created key modal
   const handleDismissKey = () => {
     setCreatedKey(null);
   };
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      {/* Show new key in a modal (visible only once) */}
+      {createdKey && (
+        <NewKeyModal apiKey={createdKey} onDismiss={handleDismissKey} />
+      )}
+
       <main className="mx-auto max-w-4xl px-4 py-6">
         {/* Header */}
         <div className="mb-6">
@@ -168,52 +231,6 @@ export function ApiKeysClient() {
             <p className="text-sm font-medium text-red-800 dark:text-red-400">
               {error}
             </p>
-          </div>
-        )}
-
-        {/* Created key banner */}
-        {createdKey && (
-          <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-4 dark:border-green-900/50 dark:bg-green-900/20">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-green-800 dark:text-green-400">
-                  API Key Created Successfully
-                </h3>
-                <p className="mt-1 text-sm text-green-700 dark:text-green-300">
-                  Copy your API key now. You won&apos;t be able to see it again!
-                </p>
-                <div className="mt-3 flex items-center gap-2">
-                  <code className="rounded bg-green-100 px-2 py-1 font-mono text-sm text-green-900 dark:bg-green-900/40 dark:text-green-200">
-                    {createdKey}
-                  </code>
-                  <button
-                    onClick={handleCopyKey}
-                    className="rounded-md bg-green-600 px-3 py-1 text-sm font-medium text-white hover:bg-green-700"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={handleDismissKey}
-                className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
-                aria-label="Dismiss"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
           </div>
         )}
 
@@ -411,3 +428,4 @@ export function ApiKeysClient() {
     </div>
   );
 }
+
