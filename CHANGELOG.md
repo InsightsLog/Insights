@@ -2,12 +2,12 @@
 
 ## [Unreleased]
 
-### T420 – Web Push Notifications
-- **Added:** `push_subscriptions` table (migration `023_push_subscriptions.sql`) with RLS (users see own rows only)
-- **Added:** `NEXT_PUBLIC_VAPID_PUBLIC_KEY` env var in `src/lib/env.ts`
-- **Added:** Server actions `subscribePush`, `unsubscribePush`, `getPushSubscriptionStatus` in `src/app/actions/push-subscriptions.ts`
-- **Added:** Edge Function `supabase/functions/send-push-notification/index.ts` — sends Web Push to subscribed devices using VAPID (RFC 8030 / RFC 8291)
-- **Added:** `/settings/push-notifications` page with subscribe/unsubscribe button
+### Added
+- **T421:** Weekly email digest — opted-in users receive a Monday morning summary of upcoming high-impact economic releases for the next 7 days
+  - New Supabase Edge Function `send-weekly-digest` sends grouped HTML + plain-text digest emails via Resend API
+  - Migration 023 adds `digest_weekly` opt-in column to `alert_preferences` and `importance` level (`low`/`medium`/`high`) to `indicators`
+  - `RESEND_API_KEY` documented in `src/lib/env.ts` as an optional server env var
+  - Cron schedule: every Monday at 06:00 UTC (configure via pg_cron + pg_net, see migration 023 comments)
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
