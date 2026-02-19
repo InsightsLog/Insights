@@ -2,29 +2,17 @@
 
 ## [Unreleased]
 
-### L4 Data Acquisition (T407)
-- **Added:** Data import edge function for automated economic data fetching
-  - Created `import-release-data` Supabase Edge Function that fetches actual values from FRED/BLS/ECB APIs
-  - Accepts POST requests with `indicator_id` and `release_id`
-  - Updates `releases.actual` in database
-  - Triggers webhooks and email alerts after successful import
-  - Logs all sync operations to `sync_logs` table
-  - Graceful error handling and retry logic
-- **Added:** Database tables for data acquisition (Migration 023)
-  - `data_sources` table for API/scraper configuration
-  - `sync_logs` table for audit trail of data synchronization
-  - `indicators.series_id` and `indicators.data_source_name` columns for mapping to external APIs
-- **Added:** Data source integration modules
-  - `src/lib/data-sources/fred.ts` - FRED (Federal Reserve Economic Data) API integration
-  - `src/lib/data-sources/bls.ts` - BLS (Bureau of Labor Statistics) API integration
-  - `src/lib/data-sources/ecb.ts` - ECB (European Central Bank) API integration
-  - Comprehensive test coverage for all three modules (14 new tests)
-- **Added:** Environment variable support for data source API keys
-  - `getDataSourceEnv()` function in `env.ts`
-  - Support for `FRED_API_KEY` and `BLS_API_KEY` environment variables
-- **Added:** Documentation
-  - Comprehensive README for `import-release-data` edge function
-  - Manual testing guide (TESTING_T407.md)
+### L4 Data Acquisition - T408
+- **Added:** Data source admin UI at `/admin/data-sources` (T408)
+  - Migration: `023_create_data_sources.sql` - Creates `data_sources` and `sync_logs` tables
+  - Server actions: `getDataSources()`, `getSyncLogs()`, `toggleDataSource()`, `createSyncLog()`, `updateSyncLog()`, `updateLastSyncAt()`
+  - Admin page displays all data sources with type (api/scraper), enabled status, and last sync timestamp
+  - Toggle enable/disable button per data source
+  - Manual sync button to trigger `sync-release-schedules` edge function
+  - Sync logs table showing recent sync attempts with status, records processed, and error messages
+  - Dark theme styling: `bg-[#0b0e11]`, `border-[#1e2530]`
+  - Link added to admin dashboard
+  - API endpoint: `POST /api/admin/sync-data-source`
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
