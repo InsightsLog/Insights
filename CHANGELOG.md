@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- **T461:** API key management UI at `/settings/api-keys` — list keys (name, created_at, last_used_at, masked prefix), create new key with name input (server action), show full key once in a modal dialog on creation, revoke active keys, delete revoked keys, and enforce per-plan key limits (Free: 1, Plus: 3, Pro: 10, Enterprise: 50). Migration `025_add_api_keys_limit.sql` adds `api_keys_limit` column to the `plans` table.
+- **T460:** Alert preferences page at `/settings/alerts` — per-indicator toggles for email alerts and push notifications, impact-threshold filter (high / medium+ / all), mobile-friendly card layout with dark theme support.
 - **T450:** First-run onboarding wizard at `/onboarding` — 3-step flow (pick countries → pick impact levels → pick indicators), saves selections to watchlist and alert preferences, marks `profiles.onboarding_complete`, and redirects to `/` on completion. New users are automatically redirected to `/onboarding` by middleware.
 - **T440:** Indicator detail page enhancements — historical trend line chart (last 12 releases, using Recharts), upcoming releases section (next 3), and full dark theme redesign for `/indicator/[id]`
 
