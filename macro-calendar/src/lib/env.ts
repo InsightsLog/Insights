@@ -214,3 +214,30 @@ export function getStripePriceEnv(): StripePriceConfig {
     },
   };
 }
+
+/**
+ * Data source API keys environment variables schema.
+ * Optional: External data source API integrations (T404-T406).
+ * BLS_API_KEY: Bureau of Labor Statistics API key for employment data
+ */
+const dataSourceEnvSchema = z.object({
+  BLS_API_KEY: z.string().optional(),
+});
+
+/**
+ * Get data source API keys from environment variables.
+ * Returns null if data source API keys are not configured.
+ */
+export function getDataSourceEnv(): { blsApiKey?: string } | null {
+  const result = dataSourceEnvSchema.safeParse({
+    BLS_API_KEY: process.env.BLS_API_KEY,
+  });
+
+  if (!result.success) {
+    return null;
+  }
+
+  return {
+    blsApiKey: result.data.BLS_API_KEY,
+  };
+}
