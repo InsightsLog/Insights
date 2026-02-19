@@ -16,6 +16,12 @@ import { logRequest, createLogEntry } from "@/lib/request-logger";
 const SKIP_SESSION_REFRESH_ROUTES = ["/unsubscribe", "/auth/callback"];
 
 /**
+ * Routes where the onboarding redirect check is skipped.
+ * API routes, auth callbacks, and the onboarding page itself are excluded.
+ */
+const SKIP_ONBOARDING_CHECK_ROUTES = ["/api/", "/auth/", "/unsubscribe"];
+
+/**
  * Routes that have stricter rate limits (30 requests/minute).
  * These are user actions that modify data and should be protected from abuse.
  */
@@ -95,6 +101,18 @@ function shouldSkipSessionRefresh(pathname: string): boolean {
  */
 function shouldUseStrictRateLimit(pathname: string): boolean {
   return STRICT_RATE_LIMIT_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+}
+
+/**
+ * Check if the onboarding redirect should be evaluated for this route.
+ * Skips API routes, auth callbacks, and unsubscribe. All other routes
+ * (including /onboarding itself) need a profile check so we can redirect
+ * new users to /onboarding and redirect completed users away from it.
+ */
+function shouldCheckOnboarding(pathname: string): boolean {
+  return !SKIP_ONBOARDING_CHECK_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
 }
@@ -267,11 +285,24 @@ export async function middleware(request: NextRequest, context: NextFetchEvent) 
   // See: https://supabase.com/docs/guides/auth/server-side/creating-a-client
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Redirect authenticated users from the landing page to the calendar
-  if (user && pathname === "/") {
-    const calendarUrl = request.nextUrl.clone();
-    calendarUrl.pathname = "/calendar";
-    return NextResponse.redirect(calendarUrl);
+  // --- Onboarding redirect (T450) ---
+  // For authenticated users, check if they have completed onboarding.
+  // If not, redirect them to /onboarding. If they revisit /onboarding after
+  // completing it, redirect them back to /.
+  if (user && shouldCheckOnboarding(pathname)) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_complete")
+      .eq("id", user.id)
+      .single();
+
+    if (profile && !profile.onboarding_complete && pathname !== "/onboarding") {
+      return NextResponse.redirect(new URL("/onboarding", request.url));
+    }
+
+    if (profile?.onboarding_complete && pathname === "/onboarding") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   // --- Request Logging (T222) ---
