@@ -2,16 +2,29 @@
 
 ## [Unreleased]
 
-### L4 Data Acquisition
-- **Added (T400):** Database tables for data acquisition infrastructure
-  - `data_sources` table: stores configuration for data scrapers and API sources
-  - `sync_logs` table: tracks sync history and errors
-  - RLS enabled with admin-only access via service role
-- **Added (T403):** Schedule sync cron job
-  - Daily cron job at 02:00 UTC to sync release schedules
-  - API endpoint: `/api/cron/sync-release-schedules` with CRON_SECRET authentication
-  - Sync service module: fetches from data sources, updates releases table, logs results
-  - Scaffolding for future scraper implementations (T401, T402, T404-T406)
+### L4 Data Acquisition (T407)
+- **Added:** Data import edge function for automated economic data fetching
+  - Created `import-release-data` Supabase Edge Function that fetches actual values from FRED/BLS/ECB APIs
+  - Accepts POST requests with `indicator_id` and `release_id`
+  - Updates `releases.actual` in database
+  - Triggers webhooks and email alerts after successful import
+  - Logs all sync operations to `sync_logs` table
+  - Graceful error handling and retry logic
+- **Added:** Database tables for data acquisition (Migration 023)
+  - `data_sources` table for API/scraper configuration
+  - `sync_logs` table for audit trail of data synchronization
+  - `indicators.series_id` and `indicators.data_source_name` columns for mapping to external APIs
+- **Added:** Data source integration modules
+  - `src/lib/data-sources/fred.ts` - FRED (Federal Reserve Economic Data) API integration
+  - `src/lib/data-sources/bls.ts` - BLS (Bureau of Labor Statistics) API integration
+  - `src/lib/data-sources/ecb.ts` - ECB (European Central Bank) API integration
+  - Comprehensive test coverage for all three modules (14 new tests)
+- **Added:** Environment variable support for data source API keys
+  - `getDataSourceEnv()` function in `env.ts`
+  - Support for `FRED_API_KEY` and `BLS_API_KEY` environment variables
+- **Added:** Documentation
+  - Comprehensive README for `import-release-data` edge function
+  - Manual testing guide (TESTING_T407.md)
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress

@@ -132,28 +132,35 @@ export function getStripeEnv(): { secretKey: string; webhookSecret: string } | n
 }
 
 /**
- * FRED API environment variables schema.
- * Optional: API key for Federal Reserve Economic Data (FRED) integration.
+ * Data source API key environment variables schema.
+ * Optional: API keys for external data sources (FRED, BLS, ECB).
+ * These are used by the import-release-data edge function (T407).
  */
-const fredEnvSchema = z.object({
+const dataSourceEnvSchema = z.object({
   FRED_API_KEY: z.string().optional(),
+  BLS_API_KEY: z.string().optional(),
+  // ECB API doesn't require a key
 });
 
 /**
- * Get FRED API environment variables.
- * Returns null if FRED API is not configured.
+ * Get data source API keys.
+ * Returns null if data source APIs are not configured.
+ * Used by edge functions for fetching economic data.
  */
-export function getFredEnv(): { apiKey: string } | null {
-  const result = fredEnvSchema.safeParse({
+export function getDataSourceEnv(): { fredApiKey?: string; blsApiKey?: string } | null {
+  const parsed = dataSourceEnvSchema.parse({
     FRED_API_KEY: process.env.FRED_API_KEY,
+    BLS_API_KEY: process.env.BLS_API_KEY,
   });
 
-  if (!result.success || !result.data.FRED_API_KEY) {
+  // Return null if no API keys are configured
+  if (!parsed.FRED_API_KEY && !parsed.BLS_API_KEY) {
     return null;
   }
 
   return {
-    apiKey: result.data.FRED_API_KEY,
+    fredApiKey: parsed.FRED_API_KEY,
+    blsApiKey: parsed.BLS_API_KEY,
   };
 }
 
