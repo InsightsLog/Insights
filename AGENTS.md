@@ -1,56 +1,50 @@
-# Agent Rules
+# Agent Rules — Macro Calendar
 
-You are working in a production-bound repo. Follow these rules:
+You are working in a production-bound repo. Read `.github/copilot-instructions.md` first for full context.
 
 ## Scope
+- Current milestone: **L4** — data acquisition, mobile app, calendar integrations, historical data API, advanced analytics.
 - If asked to do something outside L4, stop and propose an issue for L5 instead.
-- L4 scope: data acquisition, mobile app, calendar integrations, historical data API, advanced analytics
 
 ## Workflow
-- Small changes only: one task per PR.
-- Before coding: restate acceptance criteria + test steps.
+- One task per PR. Small and focused.
+- Before coding: restate the acceptance criteria from the issue.
 - After coding: list files changed + how to test + risks/edge cases.
-- Update CHANGELOG.md for every user-visible change.
-- When you identify an L4 improvement during work, append it to BACKLOG.md under the appropriate section.
+- Update `CHANGELOG.md` for every user-visible change.
+- Link PRs to issues: "Closes #N" in the PR body.
 
-## GitHub Issues & PRs
-- Use issue templates when creating issues (Bug, Feature, Task)
-- Apply appropriate labels to issues and PRs
-- Link PRs to issues with "Closes #123" or "Fixes #123"
-- Assign issues to milestones (L3, L4) based on scope
-
-## MCP Tools
-
-Use MCP (Model Context Protocol) tools when available for these operations:
+## MCP Tools (use these — don't guess)
 
 ### GitHub MCP
-- **CI failures**: Use `list_workflow_runs` and `get_job_logs` to investigate build/test failures instead of guessing.
-- **PRs and issues**: Use `list_pull_requests`, `search_issues`, or `pull_request_read` to understand context.
-- **Code search**: Use `search_code` for finding patterns across the codebase.
+- `list_workflow_runs` / `get_job_logs` — investigate CI failures before guessing at fixes.
+- `list_pull_requests` / `search_issues` / `pull_request_read` — understand context.
+- `search_code` — find patterns across the codebase without grepping locally.
 
 ### Supabase MCP
-- **Schema changes**: Use `list_tables` and `execute_sql` to verify table structure before writing migrations.
-- **Documentation**: Use `search_docs` to look up Supabase features (auth, RLS, functions, etc.) before implementing.
-- **Debugging**: Use `get_logs` to investigate auth, storage, or edge function errors.
-- **Edge Functions**: Use for email alert triggers and webhook handling (L2 feature).
+- `list_tables` / `execute_sql` — verify schema before writing migrations.
+- `search_docs` — look up Supabase features (auth, RLS, edge functions) before implementing.
+- `get_logs` — debug auth, storage, or edge function errors.
 
 ### Vercel MCP
-- **Deployments**: Use `list_deployments` and `get_deployment` to check deployment status.
-- **Environment**: Use `list_environment_variables` to verify env vars are configured.
-- **Domains**: Use `list_project_domains` to check domain configuration.
+- `list_deployments` / `get_deployment` — check deployment status after pushing.
+- `list_environment_variables` — verify env vars are configured.
 
-## Coding standards
-- TypeScript everywhere.
-- Validate external inputs with zod.
-- No "magic" environment variable usage: centralize in src/lib/env.ts.
-- No direct DB calls in React components; use server actions or route handlers.
-- Prefer simple, boring dependencies.
+## Coding Standards
+- TypeScript everywhere. No `any`. Strict mode.
+- Validate external inputs with Zod.
+- **Env vars**: always centralize in `src/lib/env.ts`. Never use `process.env.*` inline.
+- No direct DB calls in React components — use server actions or route handlers.
+- Prefer boring, stable dependencies.
 
-## Safety / correctness
-- Never invent data sources or claim "real-time" unless implemented.
+## Safety
+- Never invent data sources or claim real-time unless actually implemented.
 - If uncertain, choose the simplest safe default and document it.
+- RLS must be enforced for all user-facing tables.
+- Service_role only for: `audit_log`, `request_logs`, `data_sources`, `sync_logs`.
 
 ## Definition of Done
-- Lint passes
-- Build passes
-- Manual test steps written and verified
+- [ ] `npm run lint` passes
+- [ ] `npm run build` passes
+- [ ] `npm run test` passes (or new tests added)
+- [ ] Manual test steps written in PR description
+- [ ] `CHANGELOG.md` updated (if user-visible)
