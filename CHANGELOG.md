@@ -2,15 +2,29 @@
 
 ## [Unreleased]
 
-### Added
-- **T405:** BLS API integration module (L4 Data Acquisition)
-  - Created `src/lib/data-sources/bls.ts` — typed module for fetching employment/economic data from Bureau of Labor Statistics API
-  - Exports `fetchBlsSeries(seriesIds: string[], params?: BlsParams)` with support for batch requests (up to 50 series)
-  - Zod-validated request/response schemas for type safety
-  - Exponential backoff retry logic (max 3 retries) for transient errors
-  - `BLS_SERIES_MAP` constant mapping BLS series IDs to indicator names (e.g., CES0000000001 → Non-Farm Payrolls, LNS14000000 → Unemployment Rate)
-  - Added `BLS_API_KEY` support in `src/lib/env.ts` via `getDataSourceEnv()` function
-  - Comprehensive unit tests with mocked fetch in `src/lib/data-sources/bls.test.ts`
+### L4 Data Acquisition (T407)
+- **Added:** Data import edge function for automated economic data fetching
+  - Created `import-release-data` Supabase Edge Function that fetches actual values from FRED/BLS/ECB APIs
+  - Accepts POST requests with `indicator_id` and `release_id`
+  - Updates `releases.actual` in database
+  - Triggers webhooks and email alerts after successful import
+  - Logs all sync operations to `sync_logs` table
+  - Graceful error handling and retry logic
+- **Added:** Database tables for data acquisition (Migration 023)
+  - `data_sources` table for API/scraper configuration
+  - `sync_logs` table for audit trail of data synchronization
+  - `indicators.series_id` and `indicators.data_source_name` columns for mapping to external APIs
+- **Added:** Data source integration modules
+  - `src/lib/data-sources/fred.ts` - FRED (Federal Reserve Economic Data) API integration
+  - `src/lib/data-sources/bls.ts` - BLS (Bureau of Labor Statistics) API integration
+  - `src/lib/data-sources/ecb.ts` - ECB (European Central Bank) API integration
+  - Comprehensive test coverage for all three modules (14 new tests)
+- **Added:** Environment variable support for data source API keys
+  - `getDataSourceEnv()` function in `env.ts`
+  - Support for `FRED_API_KEY` and `BLS_API_KEY` environment variables
+- **Added:** Documentation
+  - Comprehensive README for `import-release-data` edge function
+  - Manual testing guide (TESTING_T407.md)
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
