@@ -3,8 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- **T451:** Public landing page at `/` — headline, feature bullets, and sign-up CTA for unauthenticated visitors. Authenticated users are automatically redirected to `/calendar`.
-- **T451:** Calendar view moved to `/calendar` route; `/` now serves the marketing landing page.
+- **T450:** First-run onboarding wizard at `/onboarding` — 3-step flow (pick countries → pick impact levels → pick indicators), saves selections to watchlist and alert preferences, marks `profiles.onboarding_complete`, and redirects to `/` on completion. New users are automatically redirected to `/onboarding` by middleware.
 - **T440:** Indicator detail page enhancements — historical trend line chart (last 12 releases, using Recharts), upcoming releases section (next 3), and full dark theme redesign for `/indicator/[id]`
 
 ### Fixed
