@@ -24,7 +24,7 @@ export function Header({ initialUser }: HeaderProps) {
     <header className="border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900 sm:px-6 sm:py-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex-1">
-          <Link href="/" className="hover:opacity-80">
+          <Link href="/calendar" className="hover:opacity-80">
             <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 sm:text-xl">
               Macro Calendar
             </h1>

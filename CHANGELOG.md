@@ -3,7 +3,8 @@
 ## [Unreleased]
 
 ### Added
-- **T452:** Stripe billing integration — `/api/billing/checkout` route creates a Stripe Checkout session for the Pro plan and returns a redirect URL; `/api/billing/webhook` route handles `checkout.session.completed` and `customer.subscription.deleted` events and updates the `subscriptions` table with signature validation. Added `STRIPE_PRO_PRICE_ID` env var support in `src/lib/env.ts`.
+- **T451:** Public landing page at `/` — headline, feature bullets, and sign-up CTA for unauthenticated visitors. Authenticated users are automatically redirected to `/calendar`.
+- **T451:** Calendar view moved to `/calendar` route; `/` now serves the marketing landing page.
 - **T440:** Indicator detail page enhancements — historical trend line chart (last 12 releases, using Recharts), upcoming releases section (next 3), and full dark theme redesign for `/indicator/[id]`
 
 ### Fixed
