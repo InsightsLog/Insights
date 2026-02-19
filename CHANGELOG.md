@@ -3,14 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- **T405:** BLS API integration module (L4 Data Acquisition)
-  - Created `src/lib/data-sources/bls.ts` — typed module for fetching employment/economic data from Bureau of Labor Statistics API
-  - Exports `fetchBlsSeries(seriesIds: string[], params?: BlsParams)` with support for batch requests (up to 50 series)
-  - Zod-validated request/response schemas for type safety
-  - Exponential backoff retry logic (max 3 retries) for transient errors
-  - `BLS_SERIES_MAP` constant mapping BLS series IDs to indicator names (e.g., CES0000000001 → Non-Farm Payrolls, LNS14000000 → Unemployment Rate)
-  - Added `BLS_API_KEY` support in `src/lib/env.ts` via `getDataSourceEnv()` function
-  - Comprehensive unit tests with mocked fetch in `src/lib/data-sources/bls.test.ts`
+- **T440:** Indicator detail page enhancements — historical trend line chart (last 12 releases, using Recharts), upcoming releases section (next 3), and full dark theme redesign for `/indicator/[id]`
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
