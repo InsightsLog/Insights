@@ -21,6 +21,7 @@ const serverEnvSchema = z.object({
   UNSUBSCRIBE_TOKEN_SECRET: z.string().min(1, "UNSUBSCRIBE_TOKEN_SECRET is required"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
   CRON_SECRET: z.string().optional(), // Used by Vercel Cron for authentication
+  RESEND_API_KEY: z.string().optional(), // Used by email-sending edge functions (T421)
 });
 
 /**
@@ -42,6 +43,7 @@ export function getServerEnv() {
     UNSUBSCRIBE_TOKEN_SECRET: process.env.UNSUBSCRIBE_TOKEN_SECRET,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     CRON_SECRET: process.env.CRON_SECRET,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
   });
 }
 
