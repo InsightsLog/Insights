@@ -112,6 +112,7 @@ export function isRequestLoggingEnabled(): boolean {
 const stripeEnvSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1, "STRIPE_SECRET_KEY is required"),
   STRIPE_WEBHOOK_SECRET: z.string().min(1, "STRIPE_WEBHOOK_SECRET is required"),
+  STRIPE_PRO_PRICE_ID: z.string().optional(),
 });
 
 /**
@@ -119,10 +120,15 @@ const stripeEnvSchema = z.object({
  * Returns null if Stripe is not configured.
  * Both keys must be set for Stripe integration to be enabled.
  */
-export function getStripeEnv(): { secretKey: string; webhookSecret: string } | null {
+export function getStripeEnv(): {
+  secretKey: string;
+  webhookSecret: string;
+  proPriceId?: string;
+} | null {
   const result = stripeEnvSchema.safeParse({
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    STRIPE_PRO_PRICE_ID: process.env.STRIPE_PRO_PRICE_ID,
   });
 
   if (!result.success) {
@@ -132,6 +138,7 @@ export function getStripeEnv(): { secretKey: string; webhookSecret: string } | n
   return {
     secretKey: result.data.STRIPE_SECRET_KEY,
     webhookSecret: result.data.STRIPE_WEBHOOK_SECRET,
+    proPriceId: result.data.STRIPE_PRO_PRICE_ID,
   };
 }
 
@@ -226,29 +233,4 @@ export function getStripePriceEnv(): StripePriceConfig {
   };
 }
 
-/**
- * Data source API keys environment variables schema.
- * Optional: External data source API integrations (T404-T406).
- * BLS_API_KEY: Bureau of Labor Statistics API key for employment data
- */
-const dataSourceEnvSchema = z.object({
-  BLS_API_KEY: z.string().optional(),
-});
 
-/**
- * Get data source API keys from environment variables.
- * Returns null if data source API keys are not configured.
- */
-export function getDataSourceEnv(): { blsApiKey?: string } | null {
-  const result = dataSourceEnvSchema.safeParse({
-    BLS_API_KEY: process.env.BLS_API_KEY,
-  });
-
-  if (!result.success) {
-    return null;
-  }
-
-  return {
-    blsApiKey: result.data.BLS_API_KEY,
-  };
-}
