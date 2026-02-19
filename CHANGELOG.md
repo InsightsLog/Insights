@@ -2,17 +2,14 @@
 
 ## [Unreleased]
 
-### L4 Data Acquisition - T408
-- **Added:** Data source admin UI at `/admin/data-sources` (T408)
-  - Migration: `023_create_data_sources.sql` - Creates `data_sources` and `sync_logs` tables
-  - Server actions: `getDataSources()`, `getSyncLogs()`, `toggleDataSource()`, `createSyncLog()`, `updateSyncLog()`, `updateLastSyncAt()`
-  - Admin page displays all data sources with type (api/scraper), enabled status, and last sync timestamp
-  - Toggle enable/disable button per data source
-  - Manual sync button to trigger `sync-release-schedules` edge function
-  - Sync logs table showing recent sync attempts with status, records processed, and error messages
-  - Dark theme styling: `bg-[#0b0e11]`, `border-[#1e2530]`
-  - Link added to admin dashboard
-  - API endpoint: `POST /api/admin/sync-data-source`
+### Mobile App (L4)
+- **Added:** React Native mobile app with Expo (T410)
+  - Initialized `mobile/` directory at repo root with Expo TypeScript template
+  - React Navigation setup with Bottom Tab Navigator
+  - Placeholder screens: Calendar, Watchlist, Settings
+  - Project configuration in `app.json` (bundle IDs, app name)
+  - Comprehensive setup documentation in `mobile/README.md`
+  - App successfully compiles for both iOS and Android platforms
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
