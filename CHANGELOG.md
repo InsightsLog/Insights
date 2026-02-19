@@ -3,8 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- **T462:** Mobile CalendarScreen now fetches real release data from `/api/v1/releases` — displays releases grouped by date with indicator name, release time, country code, and colour-coded impact badge (low/medium/high). Supports pull-to-refresh, loading spinner, and error state. New shared API client at `mobile/src/lib/api.ts`.
-- **T462:** `/api/v1/releases` response now includes `importance` (`low`|`medium`|`high`) on each indicator object.
+- **T461:** API key management UI at `/settings/api-keys` — list keys (name, created_at, last_used_at, masked prefix), create new key with name input (server action), show full key once in a modal dialog on creation, revoke active keys, delete revoked keys, and enforce per-plan key limits (Free: 1, Plus: 3, Pro: 10, Enterprise: 50). Migration `025_add_api_keys_limit.sql` adds `api_keys_limit` column to the `plans` table.
 - **T450:** First-run onboarding wizard at `/onboarding` — 3-step flow (pick countries → pick impact levels → pick indicators), saves selections to watchlist and alert preferences, marks `profiles.onboarding_complete`, and redirects to `/` on completion. New users are automatically redirected to `/onboarding` by middleware.
 - **T440:** Indicator detail page enhancements — historical trend line chart (last 12 releases, using Recharts), upcoming releases section (next 3), and full dark theme redesign for `/indicator/[id]`
 

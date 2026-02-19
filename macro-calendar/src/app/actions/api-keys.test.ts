@@ -179,19 +179,57 @@ describe("createApiKey", () => {
     });
   });
 
-  it("successfully creates API key", async () => {
-    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
-    const mockCreatedKey = {
-      id: mockKeyId,
-      name: "Test Key",
-      created_at: "2026-01-11T00:00:00Z",
-    };
-    const mockSingle = vi
-      .fn()
-      .mockResolvedValue({ data: mockCreatedKey, error: null });
+  /**
+   * Helper to set up mocks for a successful createApiKey call.
+   * Mocks: subscriptions (no plan), api_keys count (0 active), api_keys insert.
+   */
+  function setupCreateKeyMocks(
+    mockSupabase: ReturnType<typeof createMockSupabase>,
+    options: {
+      subscriptionPlan?: { name: string; api_keys_limit: number } | null;
+      activeKeyCount?: number;
+      insertResult?: { data: { id: string; name: string; created_at: string } | null; error: { code?: string; message: string } | null };
+    } = {}
+  ) {
+    const {
+      subscriptionPlan = null,
+      activeKeyCount = 0,
+      insertResult = {
+        data: { id: mockKeyId, name: "Test Key", created_at: "2026-01-11T00:00:00Z" },
+        error: null,
+      },
+    } = options;
+
+    // Mock: subscriptions query for plan lookup
+    const mockSubSingle = vi.fn().mockResolvedValue({
+      data: subscriptionPlan ? { plans: subscriptionPlan } : null,
+      error: subscriptionPlan ? null : { code: "PGRST116" },
+    });
+    const mockSubEq2 = vi.fn().mockReturnValue({ single: mockSubSingle });
+    const mockSubEq1 = vi.fn().mockReturnValue({ eq: mockSubEq2 });
+    const mockSubSelect = vi.fn().mockReturnValue({ eq: mockSubEq1 });
+
+    // Mock: api_keys count query (.select().eq().is() → resolves)
+    const mockCountIs = vi.fn().mockResolvedValue({ count: activeKeyCount, error: null });
+    const mockCountEq = vi.fn().mockReturnValue({ is: mockCountIs });
+    const mockCountSelect = vi.fn().mockReturnValue({ eq: mockCountEq });
+
+    // Mock: api_keys insert
+    const mockSingle = vi.fn().mockResolvedValue(insertResult);
     const mockSelectReturn = vi.fn().mockReturnValue({ single: mockSingle });
     const mockInsert = vi.fn().mockReturnValue({ select: mockSelectReturn });
-    mockSupabase.from.mockReturnValue({ insert: mockInsert });
+
+    mockSupabase.from
+      .mockReturnValueOnce({ select: mockSubSelect })   // subscriptions
+      .mockReturnValueOnce({ select: mockCountSelect }) // api_keys count
+      .mockReturnValueOnce({ insert: mockInsert });     // api_keys insert
+
+    return { mockInsert };
+  }
+
+  it("successfully creates API key", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+    const { mockInsert } = setupCreateKeyMocks(mockSupabase);
     mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
 
     const result = await createApiKey("Test Key");
@@ -212,14 +250,52 @@ describe("createApiKey", () => {
     );
   });
 
+  it("returns error when plan key limit is reached (free tier default)", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+    // No subscription = free tier = 1 key limit
+    setupCreateKeyMocks(mockSupabase, { activeKeyCount: 1 });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await createApiKey("Test Key");
+
+    expect(result).toEqual({
+      success: false,
+      error: "API key limit reached. Your plan allows 1 active key. Revoke an existing key or upgrade your plan.",
+    });
+  });
+
+  it("respects plan limit from subscription (Pro = 10 keys)", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+    const plan = { name: "Pro", api_keys_limit: 10 };
+    // 10 active keys = at limit
+    setupCreateKeyMocks(mockSupabase, { subscriptionPlan: plan, activeKeyCount: 10 });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await createApiKey("Test Key");
+
+    expect(result).toEqual({
+      success: false,
+      error: "API key limit reached. Your plan allows 10 active keys. Revoke an existing key or upgrade your plan.",
+    });
+  });
+
+  it("allows creating key when under plan limit", async () => {
+    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
+    const plan = { name: "Pro", api_keys_limit: 10 };
+    // 9 active keys = under limit
+    setupCreateKeyMocks(mockSupabase, { subscriptionPlan: plan, activeKeyCount: 9 });
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
+
+    const result = await createApiKey("Test Key");
+
+    expect(result.success).toBe(true);
+  });
+
   it("returns error on database failure", async () => {
     const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
-    const mockSingle = vi
-      .fn()
-      .mockResolvedValue({ data: null, error: { code: "50000", message: "DB error" } });
-    const mockSelectReturn = vi.fn().mockReturnValue({ single: mockSingle });
-    const mockInsert = vi.fn().mockReturnValue({ select: mockSelectReturn });
-    mockSupabase.from.mockReturnValue({ insert: mockInsert });
+    setupCreateKeyMocks(mockSupabase, {
+      insertResult: { data: null, error: { code: "50000", message: "DB error" } },
+    });
     mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
 
     const result = await createApiKey("Test Key");
@@ -232,12 +308,9 @@ describe("createApiKey", () => {
 
   it("returns retry error on unique constraint violation", async () => {
     const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
-    const mockSingle = vi
-      .fn()
-      .mockResolvedValue({ data: null, error: { code: "23505", message: "Unique violation" } });
-    const mockSelectReturn = vi.fn().mockReturnValue({ single: mockSingle });
-    const mockInsert = vi.fn().mockReturnValue({ select: mockSelectReturn });
-    mockSupabase.from.mockReturnValue({ insert: mockInsert });
+    setupCreateKeyMocks(mockSupabase, {
+      insertResult: { data: null, error: { code: "23505", message: "Unique violation" } },
+    });
     mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
 
     const result = await createApiKey("Test Key");

@@ -25,6 +25,7 @@ export type Plan = {
   price_yearly: number | null;
   api_calls_limit: number;
   webhook_limit: number;
+  api_keys_limit: number;
   features: Record<string, unknown>;
   is_team_plan?: boolean;
   seat_price_monthly?: number;
@@ -122,6 +123,7 @@ export async function getCurrentSubscription(): Promise<
         price_yearly,
         api_calls_limit,
         webhook_limit,
+        api_keys_limit,
         features
       )
     `
@@ -790,6 +792,7 @@ export async function getOrgSubscription(
         price_yearly,
         api_calls_limit,
         webhook_limit,
+        api_keys_limit,
         features,
         is_team_plan,
         seat_price_monthly,
