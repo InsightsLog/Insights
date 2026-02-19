@@ -267,6 +267,13 @@ export async function middleware(request: NextRequest, context: NextFetchEvent) 
   // See: https://supabase.com/docs/guides/auth/server-side/creating-a-client
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Redirect authenticated users from the landing page to the calendar
+  if (user && pathname === "/") {
+    const calendarUrl = request.nextUrl.clone();
+    calendarUrl.pathname = "/calendar";
+    return NextResponse.redirect(calendarUrl);
+  }
+
   // --- Request Logging (T222) ---
   // Log request with user ID if authenticated
   if (isRequestLoggingEnabled()) {
