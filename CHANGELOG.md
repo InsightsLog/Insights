@@ -2,15 +2,22 @@
 
 ## [Unreleased]
 
-### Added
-- **T405:** BLS API integration module (L4 Data Acquisition)
-  - Created `src/lib/data-sources/bls.ts` — typed module for fetching employment/economic data from Bureau of Labor Statistics API
-  - Exports `fetchBlsSeries(seriesIds: string[], params?: BlsParams)` with support for batch requests (up to 50 series)
-  - Zod-validated request/response schemas for type safety
-  - Exponential backoff retry logic (max 3 retries) for transient errors
-  - `BLS_SERIES_MAP` constant mapping BLS series IDs to indicator names (e.g., CES0000000001 → Non-Farm Payrolls, LNS14000000 → Unemployment Rate)
-  - Added `BLS_API_KEY` support in `src/lib/env.ts` via `getDataSourceEnv()` function
-  - Comprehensive unit tests with mocked fetch in `src/lib/data-sources/bls.test.ts`
+### L4 Development
+
+#### Historical Data API (T430)
+- **Added:** `GET /api/v1/historical/[indicatorId]` endpoint for paginated historical release data
+  - Query parameters: `from_date` (ISO 8601), `to_date` (ISO 8601), `limit` (1-1000, default 100), `offset` (default 0)
+  - Returns paginated time series data with `{ data: Release[], pagination: { total, limit, offset } }` format
+  - Validates all query parameters with Zod
+  - Requires valid API key authentication
+  - Logs API usage to `request_logs` for monitoring
+  - Supports backtesting and historical analysis use cases
+- **Added:** Full test coverage for historical data endpoint (9 tests)
+  - Authentication tests (401 for missing/invalid API key)
+  - Parameter validation tests (UUID format, date formats, limit/offset ranges)
+  - Indicator validation (404 for non-existent indicators)
+  - Successful pagination and date filtering
+  - Default parameter handling
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
