@@ -2,15 +2,12 @@
 
 ## [Unreleased]
 
-### Added
-- **T405:** BLS API integration module (L4 Data Acquisition)
-  - Created `src/lib/data-sources/bls.ts` — typed module for fetching employment/economic data from Bureau of Labor Statistics API
-  - Exports `fetchBlsSeries(seriesIds: string[], params?: BlsParams)` with support for batch requests (up to 50 series)
-  - Zod-validated request/response schemas for type safety
-  - Exponential backoff retry logic (max 3 retries) for transient errors
-  - `BLS_SERIES_MAP` constant mapping BLS series IDs to indicator names (e.g., CES0000000001 → Non-Farm Payrolls, LNS14000000 → Unemployment Rate)
-  - Added `BLS_API_KEY` support in `src/lib/env.ts` via `getDataSourceEnv()` function
-  - Comprehensive unit tests with mocked fetch in `src/lib/data-sources/bls.test.ts`
+### T420 – Web Push Notifications
+- **Added:** `push_subscriptions` table (migration `023_push_subscriptions.sql`) with RLS (users see own rows only)
+- **Added:** `NEXT_PUBLIC_VAPID_PUBLIC_KEY` env var in `src/lib/env.ts`
+- **Added:** Server actions `subscribePush`, `unsubscribePush`, `getPushSubscriptionStatus` in `src/app/actions/push-subscriptions.ts`
+- **Added:** Edge Function `supabase/functions/send-push-notification/index.ts` — sends Web Push to subscribed devices using VAPID (RFC 8030 / RFC 8291)
+- **Added:** `/settings/push-notifications` page with subscribe/unsubscribe button
 
 ### L4 Kickoff
 - **Milestone:** L3 marked as shipped; L4 development now in progress
