@@ -54,6 +54,7 @@ interface Indicator {
   name: string;
   country_code: string;
   category: string;
+  importance: "low" | "medium" | "high";
   source_name: string;
   source_url: string | null;
   created_at: string;
@@ -152,7 +153,7 @@ export async function GET(
       .select(
         `
         id, indicator_id, release_at, period, actual, forecast, previous, revised, unit, revision_history, created_at,
-        indicators!inner(id, name, country_code, category, source_name, source_url, created_at)
+        indicators!inner(id, name, country_code, category, importance, source_name, source_url, created_at)
       `,
         { count: "exact" }
       );
@@ -219,6 +220,7 @@ export async function GET(
             name: indicatorData.name,
             country_code: indicatorData.country_code,
             category: indicatorData.category,
+            importance: indicatorData.importance as "low" | "medium" | "high",
             source_name: indicatorData.source_name,
             source_url: indicatorData.source_url,
             created_at: indicatorData.created_at,
