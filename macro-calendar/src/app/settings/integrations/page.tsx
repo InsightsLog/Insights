@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Integrations",
-  description: "Connect Slack and other services to receive release alerts",
+  description: "Connect Slack, Discord, and other services to receive release alerts",
   robots: {
     index: false,
     follow: false,
