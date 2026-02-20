@@ -7,12 +7,14 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
 
 type ChartDataPoint = {
   date: string;
   value: number;
+  consensus?: number | null;
   period: string;
 };
 
@@ -25,6 +27,7 @@ type IndicatorChartProps = {
 
 /**
  * Renders a line chart of historical indicator values using Recharts.
+ * Shows actual values and consensus forecast when available.
  * Must be a client component because Recharts relies on browser APIs.
  */
 export function IndicatorChart({ data, unit }: IndicatorChartProps) {
@@ -35,6 +38,8 @@ export function IndicatorChart({ data, unit }: IndicatorChartProps) {
       </p>
     );
   }
+
+  const hasConsensus = data.some((d) => d.consensus != null);
 
   const formatTooltip = (value: number | undefined) =>
     value === undefined ? "" : unit ? `${value} ${unit}` : String(value);
@@ -73,14 +78,28 @@ export function IndicatorChart({ data, unit }: IndicatorChartProps) {
           }}
           formatter={formatTooltip}
         />
+        {hasConsensus && <Legend wrapperStyle={{ fontSize: "12px", color: "#71717a" }} />}
         <Line
           type="monotone"
           dataKey="value"
+          name="Actual"
           stroke="#3b82f6"
           strokeWidth={2}
           dot={{ fill: "#3b82f6", r: 3 }}
           activeDot={{ r: 5, fill: "#60a5fa" }}
         />
+        {hasConsensus && (
+          <Line
+            type="monotone"
+            dataKey="consensus"
+            name="Consensus"
+            stroke="#f59e0b"
+            strokeWidth={1.5}
+            strokeDasharray="4 2"
+            dot={false}
+            connectNulls
+          />
+        )}
       </LineChart>
     </ResponsiveContainer>
   );

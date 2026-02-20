@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- **T481:** CSV/JSON data export API — `GET /api/v1/historical/[indicatorId]/export?format=csv|json` returns historical release data as a downloadable file; requires a valid API key; CSV headers are `date, actual, consensus, previous, revised`; capped at 5,000 rows per request.
+- **T480:** Consensus/forecast display — `consensus` column added to `releases` table (migration 027); calendar page shows Previous | Consensus | Actual with color-coding (green = beat, red = missed); indicator detail page shows Consensus column and dashed amber line on the historical chart; new `/admin/releases` page lets admins enter analyst consensus values with inline editing.
 - **T470:** Organization/team support — `/settings/organization` page to create organizations and invite members by email; invite flow creates a token-based record in new `organization_invites` table and sends an accept link via Resend; `/invite/accept` page for accepting invitations; new server actions `createOrg`, `acceptInvite`, `listUserOrganizations`; updated `inviteMember` to use email invite flow instead of direct membership; migration 026 adds `organization_invites` table with RLS policies.
 - **T460:** Alert preferences page at `/settings/alerts` — per-indicator toggles for email alerts and push notifications, impact-threshold filter (high / medium+ / all), mobile-friendly card layout with dark theme support.
 - **T450:** First-run onboarding wizard at `/onboarding` — 3-step flow (pick countries → pick impact levels → pick indicators), saves selections to watchlist and alert preferences, marks `profiles.onboarding_complete`, and redirects to `/` on completion. New users are automatically redirected to `/onboarding` by middleware.

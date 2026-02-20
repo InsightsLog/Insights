@@ -48,6 +48,7 @@ const releaseWithIndicatorSchema = z.object({
   period: z.string(),
   actual: z.string().nullable(),
   forecast: z.string().nullable(),
+  consensus: z.string().nullable(),
   previous: z.string().nullable(),
   revised: z.string().nullable(),
   // .catch([]) handles null, undefined, or invalid data gracefully.
@@ -166,6 +167,7 @@ async function getUpcomingReleases(filters: {
       period,
       actual,
       forecast,
+      consensus,
       previous,
       revised,
       revision_history,
@@ -228,6 +230,23 @@ async function getUpcomingReleases(filters: {
  */
 function getReleaseStatus(actual: string | null): "released" | "scheduled" {
   return actual ? "released" : "scheduled";
+}
+
+/**
+ * Compares actual vs consensus numerically.
+ * Returns 'beat' if actual > consensus, 'missed' if actual < consensus, null otherwise.
+ */
+function getActualVsConsensus(
+  actual: string | null,
+  consensus: string | null
+): "beat" | "missed" | null {
+  if (!actual || !consensus) return null;
+  const a = parseFloat(actual);
+  const c = parseFloat(consensus);
+  if (isNaN(a) || isNaN(c)) return null;
+  if (a > c) return "beat";
+  if (a < c) return "missed";
+  return null;
 }
 
 /**
@@ -333,7 +352,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                       Actual
                     </th>
                     <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
-                      Forecast
+                      Consensus
                     </th>
                     <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sm:px-4 sm:py-3">
                       Previous
@@ -379,6 +398,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                   ) : (
                     releases.map((release) => {
                       const status = getReleaseStatus(release.actual);
+                      const vsConsensus = getActualVsConsensus(release.actual, release.consensus);
 
                       return (
                         <tr
@@ -411,7 +431,15 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                           </td>
                           <td className="whitespace-nowrap px-2 py-2 text-xs sm:px-4 sm:py-3 sm:text-sm">
                             {release.actual ? (
-                              <span className="font-semibold text-green-700 dark:text-green-400">
+                              <span
+                                className={`font-semibold ${
+                                  vsConsensus === "beat"
+                                    ? "text-green-700 dark:text-green-400"
+                                    : vsConsensus === "missed"
+                                    ? "text-red-700 dark:text-red-400"
+                                    : "text-green-700 dark:text-green-400"
+                                }`}
+                              >
                                 {release.actual}
                               </span>
                             ) : (
@@ -419,7 +447,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
                             )}
                           </td>
                           <td className="whitespace-nowrap px-2 py-2 text-xs text-zinc-600 dark:text-zinc-400 sm:px-4 sm:py-3 sm:text-sm">
-                            {release.forecast ?? "—"}
+                            {release.consensus ?? "—"}
                           </td>
                           <td className="whitespace-nowrap px-2 py-2 text-xs text-zinc-600 dark:text-zinc-400 sm:px-4 sm:py-3 sm:text-sm">
                             {release.previous ?? "—"}
