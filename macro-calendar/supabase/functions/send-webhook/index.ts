@@ -56,6 +56,7 @@ interface WebhookEndpoint {
   secret: string;
   events: string[];
   enabled: boolean;
+  type?: string;
 }
 
 // Webhook event types
@@ -121,6 +122,19 @@ function isDiscordWebhook(url: string): boolean {
       (hostname === "discord.com" || hostname === "discordapp.com") &&
       parsed.pathname.startsWith("/api/webhooks/")
     );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if a URL is a Slack incoming webhook.
+ * Slack webhooks have the format: https://hooks.slack.com/...
+ */
+function isSlackWebhook(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.toLowerCase() === "hooks.slack.com";
   } catch {
     return false;
   }
@@ -297,6 +311,51 @@ function createDiscordPayload(
 }
 
 /**
+ * Create Slack-formatted payload for release events.
+ * Uses the legacy incoming webhook format with `text` and `attachments`.
+ */
+function createSlackPayload(
+  eventType: WebhookEventType,
+  indicator: Indicator,
+  release: Release
+): object {
+  const eventTitle =
+    eventType === "release.published"
+      ? "📊 New Release Published"
+      : "📝 Release Revised";
+
+  const actualValue = release.actual
+    ? `${release.actual}${release.unit ? ` ${release.unit}` : ""}`
+    : "Pending";
+  const forecastValue = release.forecast
+    ? `${release.forecast}${release.unit ? ` ${release.unit}` : ""}`
+    : "N/A";
+  const previousValue = release.previous
+    ? `${release.previous}${release.unit ? ` ${release.unit}` : ""}`
+    : "N/A";
+
+  return {
+    text: `🔔 *${eventTitle}*`,
+    attachments: [
+      {
+        color: eventType === "release.published" ? "#2EB67D" : "#ECB22E",
+        title: indicator.name,
+        title_link: `${APP_URL}/indicator/${indicator.id}`,
+        text: `${indicator.country_code} • ${indicator.category}`,
+        fields: [
+          { title: "Period", value: release.period, short: true },
+          { title: "Actual", value: actualValue, short: true },
+          { title: "Forecast", value: forecastValue, short: true },
+          { title: "Previous", value: previousValue, short: true },
+        ],
+        footer: "Macro Calendar",
+        ts: Math.floor(new Date(release.release_at).getTime() / 1000),
+      },
+    ],
+  };
+}
+
+/**
  * Deliver webhook to a single endpoint with retry logic.
  * Returns delivery result with status and attempt count.
  * Logs delivery attempt to webhook_deliveries table.
@@ -314,20 +373,23 @@ async function deliverWebhook(
   error?: string;
 }> {
   const isDiscord = isDiscordWebhook(endpoint.url);
+  const isSlack = endpoint.type === "slack" || isSlackWebhook(endpoint.url);
 
   // Create appropriate payload based on webhook type
   const payload = isDiscord
     ? createDiscordPayload(eventType, indicator, release)
+    : isSlack
+    ? createSlackPayload(eventType, indicator, release)
     : createStandardPayload(eventType, indicator, release);
 
   const payloadString = JSON.stringify(payload);
 
-  // Build headers - Discord doesn't use custom webhook headers
+  // Build headers - Discord and Slack don't use custom webhook headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  if (!isDiscord) {
+  if (!isDiscord && !isSlack) {
     const signature = await createSignature(payloadString, endpoint.secret);
     headers["X-Webhook-Signature"] = `sha256=${signature}`;
     headers["X-Webhook-Event"] = eventType;
@@ -450,7 +512,7 @@ async function getWebhookEndpoints(
   // because the PostgREST array containment operator can have edge cases
   const { data, error } = await supabase
     .from("webhook_endpoints")
-    .select("id, user_id, url, secret, events, enabled")
+    .select("id, user_id, url, secret, events, enabled, type")
     .eq("enabled", true);
 
   if (error) {
