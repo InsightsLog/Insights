@@ -67,13 +67,26 @@ export const metadata: Metadata = {
  * and calling getCurrentUser() could potentially interfere with the user's
  * existing session due to cookie manipulation during token refresh.
  */
-const SKIP_AUTH_ROUTES = ["/unsubscribe"];
+const SKIP_AUTH_ROUTES = ["/unsubscribe", "/widget"];
+
+/**
+ * Routes that should render without the global chrome (Header, UsageBanner).
+ * Widget pages are embedded in iframes and need a clean, minimal layout.
+ */
+const NO_CHROME_ROUTES = ["/widget"];
 
 /**
  * Check if a route should skip auth.
  */
 function shouldSkipAuth(pathname: string): boolean {
   return SKIP_AUTH_ROUTES.some((route) => pathname.startsWith(route));
+}
+
+/**
+ * Check if a route should omit the global header and usage banner.
+ */
+function shouldShowChrome(pathname: string): boolean {
+  return !NO_CHROME_ROUTES.some((route) => pathname.startsWith(route));
 }
 
 export default async function RootLayout({
@@ -89,6 +102,7 @@ export default async function RootLayout({
   // The unsubscribe page uses a signed token for authorization and
   // a service role Supabase client, so no user authentication is needed
   const user = shouldSkipAuth(pathname) ? null : await getCurrentUser();
+  const showChrome = shouldShowChrome(pathname);
   
   return (
     <html lang="en" suppressHydrationWarning>
@@ -96,9 +110,9 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Header initialUser={user} />
+          {showChrome && <Header initialUser={user} />}
           {/* Usage warning banner - only shown for authenticated users approaching limits */}
-          {user && <UsageBanner />}
+          {showChrome && user && <UsageBanner />}
           {children}
         </ThemeProvider>
       </body>

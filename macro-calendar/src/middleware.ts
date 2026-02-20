@@ -13,13 +13,13 @@ import { logRequest, createLogEntry } from "@/lib/request-logger";
  * - Need to establish a session first (e.g., auth callback)
  * and should not trigger cookie manipulation that could interfere.
  */
-const SKIP_SESSION_REFRESH_ROUTES = ["/unsubscribe", "/auth/callback"];
+const SKIP_SESSION_REFRESH_ROUTES = ["/unsubscribe", "/auth/callback", "/widget"];
 
 /**
  * Routes where the onboarding redirect check is skipped.
  * API routes, auth callbacks, and the onboarding page itself are excluded.
  */
-const SKIP_ONBOARDING_CHECK_ROUTES = ["/api/", "/auth/", "/unsubscribe"];
+const SKIP_ONBOARDING_CHECK_ROUTES = ["/api/", "/auth/", "/unsubscribe", "/widget"];
 
 /**
  * Routes that have stricter rate limits (30 requests/minute).
