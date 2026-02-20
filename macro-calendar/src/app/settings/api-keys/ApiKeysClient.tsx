@@ -95,7 +95,7 @@ function NewKeyModal({
  * API Keys management client component.
  * Displays list of API keys and allows creation/revocation.
  */
-export function ApiKeysClient() {
+export function ApiKeysClient({ userId }: { userId: string }) {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -423,6 +423,26 @@ export function ApiKeysClient() {
               Authorization: Bearer mc_your_api_key_here
             </code>
           </pre>
+        </div>
+
+        {/* Calendar Feed */}
+        <div className="mt-8 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            📅 Calendar Feed (iCal / .ics)
+          </h2>
+          <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+            Subscribe to your watchlist releases in Google Calendar, Apple Calendar, or Outlook.
+            Use your API key as the token to authenticate.
+          </p>
+          <pre className="overflow-x-auto rounded-md bg-zinc-100 p-3 text-sm dark:bg-zinc-800">
+            <code className="break-all text-zinc-800 dark:text-zinc-200">
+              {`${typeof window !== "undefined" ? window.location.origin : ""}/api/v1/calendar/${userId}/feed.ics?token=mc_your_api_key_here`}
+            </code>
+          </pre>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+            Replace <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">mc_your_api_key_here</code> with one of your active API keys above.
+            The feed includes your watchlisted indicators for the next 90 days.
+          </p>
         </div>
       </main>
     </div>

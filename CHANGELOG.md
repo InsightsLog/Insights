@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- **T492:** iCal feed at `GET /api/v1/calendar/[userId]/feed.ics?token=<api_key>` — returns a valid `.ics` file of the user's watchlisted releases for the next 90 days; authenticated via API key token query param; `Content-Type: text/calendar`. Subscribe button added to `/settings/api-keys` with the feed URL pre-filled.
 - **T482:** Admin users page at `/admin/users` — paginated table (50/page) showing all users with email, plan, subscription status, API key count, join date, and role; searchable by email; role change (admin ↔ user) via inline `RoleManager`; linked from admin dashboard. New `getAdminUsers` server action in `admin-users.ts`.
 - **T470:** Organization/team support — `/settings/organization` page to create organizations and invite members by email; invite flow creates a token-based record in new `organization_invites` table and sends an accept link via Resend; `/invite/accept` page for accepting invitations; new server actions `createOrg`, `acceptInvite`, `listUserOrganizations`; updated `inviteMember` to use email invite flow instead of direct membership; migration 026 adds `organization_invites` table with RLS policies.
 - **T460:** Alert preferences page at `/settings/alerts` — per-indicator toggles for email alerts and push notifications, impact-threshold filter (high / medium+ / all), mobile-friendly card layout with dark theme support.
