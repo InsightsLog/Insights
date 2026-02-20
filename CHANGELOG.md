@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- **T472:** SEO metadata and sitemap — added `metadataBase`, OG image, and Twitter card images to root layout; created `/sitemap.xml` listing static and indicator pages; created `/robots.txt` allowing public pages and disallowing `/admin`, `/settings`, `/api`; added `metadata` export to calendar page.
 - **T460:** Alert preferences page at `/settings/alerts` — per-indicator toggles for email alerts and push notifications, impact-threshold filter (high / medium+ / all), mobile-friendly card layout with dark theme support.
 - **T450:** First-run onboarding wizard at `/onboarding` — 3-step flow (pick countries → pick impact levels → pick indicators), saves selections to watchlist and alert preferences, marks `profiles.onboarding_complete`, and redirects to `/` on completion. New users are automatically redirected to `/onboarding` by middleware.
 - **T440:** Indicator detail page enhancements — historical trend line chart (last 12 releases, using Recharts), upcoming releases section (next 3), and full dark theme redesign for `/indicator/[id]`
