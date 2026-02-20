@@ -1,6 +1,9 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
+import { getServerEnv } from "@/lib/env";
+import { randomBytes } from "crypto";
 import { z } from "zod";
 
 // Valid roles for organization members
@@ -23,10 +26,19 @@ const userIdSchema = z.string().uuid("Invalid user ID");
 // Schema for validating role
 const roleSchema = z.enum(VALID_ROLES);
 
+// Schema for creating an organization
+const createOrgSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Organization name is required")
+    .max(100, "Organization name must be 100 characters or less"),
+  slug: orgSlugSchema,
+});
+
 // Schema for inviting a member
 const inviteMemberSchema = z.object({
   email: z.string().email("Invalid email address"),
-  role: roleSchema.optional().default("member"),
+  role: z.enum(["admin", "member"]).optional().default("member"),
 });
 
 /**
@@ -53,6 +65,21 @@ export type OrganizationMember = {
   /** Profile information (joined from profiles table) */
   email?: string;
   display_name?: string;
+};
+
+/**
+ * Organization invite record from the database.
+ */
+export type OrganizationInvite = {
+  id: string;
+  org_id: string;
+  invited_email: string;
+  role: "admin" | "member";
+  token: string;
+  invited_by: string;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
 };
 
 /**
@@ -228,17 +255,18 @@ export async function listOrganizationMembers(
 }
 
 /**
- * Invite a new member to an organization.
+ * Invite a new member to an organization via email.
+ * Creates an invite record and sends an email with an accept link.
  * Requires admin or owner role.
  *
  * @param orgId - The organization ID
  * @param input - The invitation details (email, role)
- * @returns The created member record or error
+ * @returns The created invite record or error
  */
 export async function inviteMember(
   orgId: string,
-  input: { email: string; role?: OrgMemberRole }
-): Promise<OrgActionResult<OrganizationMember>> {
+  input: { email: string; role?: "admin" | "member" }
+): Promise<OrgActionResult<OrganizationInvite>> {
   // Validate org ID
   const orgIdParseResult = z.string().uuid("Invalid organization ID").safeParse(orgId);
   if (!orgIdParseResult.success) {
@@ -254,11 +282,6 @@ export async function inviteMember(
     };
   }
 
-  // Cannot invite as owner - ownership can only be transferred
-  if (inputParseResult.data.role === "owner") {
-    return { success: false, error: "Cannot invite as owner. Use transfer ownership instead." };
-  }
-
   const supabase = await createSupabaseServerClient();
 
   // Get authenticated user
@@ -271,62 +294,115 @@ export async function inviteMember(
     return { success: false, error: "Not authenticated" };
   }
 
-  // Find the user to invite by email
-  const { data: inviteeProfile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, email, display_name")
-    .eq("email", inputParseResult.data.email)
-    .single();
-
-  if (profileError) {
-    if (profileError.code === "PGRST116") {
-      return { success: false, error: "User not found with that email address" };
-    }
-    return { success: false, error: "Failed to find user" };
-  }
-
-  // Check if user is already a member
+  // Check if email is already a member
   const { data: existingMember } = await supabase
-    .from("organization_members")
+    .from("profiles")
     .select("id")
-    .eq("org_id", orgId)
-    .eq("user_id", inviteeProfile.id)
-    .single();
+    .eq("email", inputParseResult.data.email)
+    .maybeSingle();
 
   if (existingMember) {
-    return { success: false, error: "User is already a member of this organization" };
+    const { data: alreadyMember } = await supabase
+      .from("organization_members")
+      .select("id")
+      .eq("org_id", orgId)
+      .eq("user_id", existingMember.id)
+      .maybeSingle();
+
+    if (alreadyMember) {
+      return { success: false, error: "User is already a member of this organization" };
+    }
   }
 
-  // Insert new member (RLS will check if current user is admin/owner)
-  const { data: newMember, error: insertError } = await supabase
-    .from("organization_members")
+  // Check for an existing pending invite for this email
+  const { data: existingInvite } = await supabase
+    .from("organization_invites")
+    .select("id")
+    .eq("org_id", orgId)
+    .eq("invited_email", inputParseResult.data.email)
+    .is("accepted_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (existingInvite) {
+    return { success: false, error: "A pending invite already exists for this email" };
+  }
+
+  // Generate a secure random token
+  const token = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+
+  // Insert invite record (RLS will check if current user is admin/owner)
+  const { data: invite, error: insertError } = await supabase
+    .from("organization_invites")
     .insert({
       org_id: orgId,
-      user_id: inviteeProfile.id,
+      invited_email: inputParseResult.data.email,
       role: inputParseResult.data.role,
-      joined_at: new Date().toISOString(), // Auto-join for now (no invitation flow)
+      token,
+      invited_by: user.id,
+      expires_at: expiresAt,
     })
-    .select("id, org_id, user_id, role, invited_at, joined_at")
+    .select("id, org_id, invited_email, role, token, invited_by, expires_at, accepted_at, created_at")
     .single();
 
   if (insertError) {
     if (insertError.code === "42501") {
       return { success: false, error: "Not authorized to invite members" };
     }
-    return { success: false, error: "Failed to invite member" };
+    return { success: false, error: "Failed to create invite" };
+  }
+
+  // Get organization name for the email
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", orgId)
+    .single();
+
+  // Send invite email via Resend HTTP API
+  const serverEnv = getServerEnv();
+  if (serverEnv.RESEND_API_KEY) {
+    const appUrl =
+      serverEnv.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const acceptUrl = `${appUrl}/invite/accept?token=${token}`;
+    const orgName = org?.name ?? "an organization";
+
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serverEnv.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Insights <noreply@insightsecon.com>",
+        to: inputParseResult.data.email,
+        subject: `You've been invited to join ${orgName} on Insights`,
+        html: `
+          <p>You've been invited to join <strong>${orgName}</strong> on Insights as a <strong>${inputParseResult.data.role}</strong>.</p>
+          <p><a href="${acceptUrl}">Accept Invitation</a></p>
+          <p>This invite expires in 7 days.</p>
+          <p>If you did not expect this invitation, you can safely ignore this email.</p>
+        `.trim(),
+      }),
+    }).catch(() => {
+      // Email sending failures are non-fatal — the invite record is already created
+    });
   }
 
   return {
     success: true,
     data: {
-      id: newMember.id,
-      org_id: newMember.org_id,
-      user_id: newMember.user_id,
-      role: newMember.role as OrgMemberRole,
-      invited_at: newMember.invited_at,
-      joined_at: newMember.joined_at,
-      email: inviteeProfile.email,
-      display_name: inviteeProfile.display_name,
+      id: invite.id,
+      org_id: invite.org_id,
+      invited_email: invite.invited_email,
+      role: invite.role as "admin" | "member",
+      token: invite.token,
+      invited_by: invite.invited_by,
+      expires_at: invite.expires_at,
+      accepted_at: invite.accepted_at,
+      created_at: invite.created_at,
     },
   };
 }
@@ -702,4 +778,237 @@ export async function leaveOrganization(orgId: string): Promise<OrgActionResult<
   }
 
   return { success: true, data: undefined };
+}
+
+/**
+ * Create a new organization and add the creator as the owner.
+ *
+ * @param input - The organization details (name, slug)
+ * @returns The created organization or error
+ */
+export async function createOrg(input: {
+  name: string;
+  slug: string;
+}): Promise<OrgActionResult<Organization>> {
+  // Validate input
+  const parseResult = createOrgSchema.safeParse(input);
+  if (!parseResult.success) {
+    return {
+      success: false,
+      error: parseResult.error.issues[0]?.message ?? "Invalid input",
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Insert the organization (owner_id = current user)
+  const { data: org, error: insertOrgError } = await supabase
+    .from("organizations")
+    .insert({
+      name: parseResult.data.name,
+      slug: parseResult.data.slug,
+      owner_id: user.id,
+    })
+    .select("id, name, slug, owner_id, created_at")
+    .single();
+
+  if (insertOrgError) {
+    if (insertOrgError.code === "23505") {
+      return { success: false, error: "An organization with that slug already exists" };
+    }
+    return { success: false, error: "Failed to create organization" };
+  }
+
+  // Add the creator as owner in organization_members
+  const { error: insertMemberError } = await supabase
+    .from("organization_members")
+    .insert({
+      org_id: org.id,
+      user_id: user.id,
+      role: "owner",
+      joined_at: new Date().toISOString(),
+    });
+
+  if (insertMemberError) {
+    // Best-effort cleanup of the org if member insert fails
+    await supabase.from("organizations").delete().eq("id", org.id);
+    return { success: false, error: "Failed to create organization membership" };
+  }
+
+  return {
+    success: true,
+    data: {
+      id: org.id,
+      name: org.name,
+      slug: org.slug,
+      owner_id: org.owner_id,
+      created_at: org.created_at,
+    },
+  };
+}
+
+/**
+ * Accept an organization invite by token.
+ * Adds the current user as a member of the organization.
+ *
+ * @param token - The invite token from the accept link
+ * @returns The organization the user joined, or error
+ */
+export async function acceptInvite(token: string): Promise<OrgActionResult<Organization>> {
+  // Basic validation
+  if (!token || typeof token !== "string" || token.length < 32) {
+    return { success: false, error: "Invalid invite token" };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Use service client to read the invite regardless of RLS
+  const serviceClient = createSupabaseServiceClient();
+
+  // Find the invite by token
+  const { data: invite, error: inviteError } = await serviceClient
+    .from("organization_invites")
+    .select("id, org_id, invited_email, role, expires_at, accepted_at")
+    .eq("token", token)
+    .single();
+
+  if (inviteError || !invite) {
+    return { success: false, error: "Invite not found or invalid" };
+  }
+
+  // Check invite has not already been accepted
+  if (invite.accepted_at) {
+    return { success: false, error: "This invite has already been accepted" };
+  }
+
+  // Check invite has not expired
+  if (new Date(invite.expires_at) < new Date()) {
+    return { success: false, error: "This invite has expired" };
+  }
+
+  // Get the user's email to validate against invited_email
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.email) {
+    return { success: false, error: "Could not verify your email address" };
+  }
+
+  if (profile.email.toLowerCase() !== invite.invited_email.toLowerCase()) {
+    return { success: false, error: "This invite was sent to a different email address" };
+  }
+
+  // Check if already a member
+  const { data: existingMembership } = await serviceClient
+    .from("organization_members")
+    .select("id")
+    .eq("org_id", invite.org_id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existingMembership) {
+    return { success: false, error: "You are already a member of this organization" };
+  }
+
+  // Add as organization member (using service client to bypass RLS)
+  const { error: memberInsertError } = await serviceClient
+    .from("organization_members")
+    .insert({
+      org_id: invite.org_id,
+      user_id: user.id,
+      role: invite.role,
+      joined_at: new Date().toISOString(),
+    });
+
+  if (memberInsertError) {
+    return { success: false, error: "Failed to join organization" };
+  }
+
+  // Mark invite as accepted
+  await serviceClient
+    .from("organization_invites")
+    .update({ accepted_at: new Date().toISOString() })
+    .eq("id", invite.id);
+
+  // Fetch and return the organization
+  const { data: org, error: orgError } = await supabase
+    .from("organizations")
+    .select("id, name, slug, owner_id, created_at")
+    .eq("id", invite.org_id)
+    .single();
+
+  if (orgError || !org) {
+    return { success: false, error: "Joined organization but failed to fetch details" };
+  }
+
+  return {
+    success: true,
+    data: {
+      id: org.id,
+      name: org.name,
+      slug: org.slug,
+      owner_id: org.owner_id,
+      created_at: org.created_at,
+    },
+  };
+}
+
+/**
+ * Get all organizations the current user is a member of.
+ *
+ * @returns List of organizations the user belongs to
+ */
+export async function listUserOrganizations(): Promise<OrgActionResult<Organization[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select("organizations:org_id (id, name, slug, owner_id, created_at)")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { success: false, error: "Failed to fetch organizations" };
+  }
+
+  const orgs: Organization[] = (data ?? [])
+    .map((row) => {
+      const org = row.organizations as unknown as Organization | null;
+      return org;
+    })
+    .filter((org): org is Organization => org !== null);
+
+  return { success: true, data: orgs };
 }
