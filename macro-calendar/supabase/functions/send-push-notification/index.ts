@@ -1,9 +1,13 @@
 /**
  * Edge Function: send-push-notification
- * Task: T420
+ * Task: T420, T512
  *
- * Sends Web Push notifications to all subscribed devices for a given user
+ * Sends push notifications to all subscribed devices for a given user
  * when a watched indicator releases.
+ *
+ * Supports two subscription types:
+ *   - 'web'  — Web Push Protocol (RFC 8030) with VAPID authentication
+ *   - 'expo' — Expo Push API (https://exp.host/--/api/v2/push/send)
  *
  * Expects a POST body:
  * {
@@ -13,8 +17,7 @@
  *   url?: string
  * }
  *
- * Uses VAPID authentication as per the Web Push Protocol (RFC 8030).
- * VAPID keys must be set as environment variables:
+ * For web push, VAPID keys must be set as environment variables:
  *   VAPID_PUBLIC_KEY  – base64url-encoded uncompressed EC public key
  *   VAPID_PRIVATE_KEY – base64url-encoded EC private key scalar
  *   VAPID_SUBJECT     – mailto: or https: URI identifying the sender
@@ -365,6 +368,84 @@ async function sendPushToSubscription(
 }
 
 // ---------------------------------------------------------------------------
+// Expo Push API helper (T512)
+// ---------------------------------------------------------------------------
+
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+
+interface ExpoMessage {
+  to: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  sound?: "default" | null;
+}
+
+interface ExpoPushTicket {
+  status: "ok" | "error";
+  id?: string;
+  message?: string;
+  details?: { error?: string; expoPushToken?: string };
+}
+
+/**
+ * Send notifications to one or more Expo push tokens via the Expo Push API.
+ * Returns the tickets array from the API response.
+ */
+async function sendExpoNotifications(
+  tokens: string[],
+  payload: { title: string; body: string; data?: Record<string, unknown> }
+): Promise<{ token: string; ticket: ExpoPushTicket }[]> {
+  if (tokens.length === 0) return [];
+
+  const messages: ExpoMessage[] = tokens.map((token) => ({
+    to: token,
+    title: payload.title,
+    body: payload.body,
+    sound: "default",
+    ...(payload.data ? { data: payload.data } : {}),
+  }));
+
+  try {
+    const response = await fetch(EXPO_PUSH_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(messages),
+    });
+
+    if (!response.ok) {
+      console.error("Expo Push API error:", response.status, await response.text());
+      return tokens.map((token) => ({
+        token,
+        ticket: { status: "error" as const, message: `HTTP ${response.status}` },
+      }));
+    }
+
+    const json = await response.json() as { data?: ExpoPushTicket[] };
+    if (!Array.isArray(json.data)) {
+      console.error("Unexpected Expo Push API response shape:", JSON.stringify(json));
+      return tokens.map((token) => ({
+        token,
+        ticket: { status: "error" as const, message: "Unexpected response shape" },
+      }));
+    }
+    return tokens.map((token, i) => ({
+      token,
+      ticket: json.data![i] ?? { status: "error" as const, message: "No ticket returned" },
+    }));
+  } catch (err) {
+    console.error("Failed to call Expo Push API:", err);
+    return tokens.map((token) => ({
+      token,
+      ticket: { status: "error" as const, message: String(err) },
+    }));
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Edge Function handler
 // ---------------------------------------------------------------------------
 
@@ -379,14 +460,6 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-    console.error("VAPID keys not configured");
-    return new Response(JSON.stringify({ error: "Push notifications not configured" }), {
-      status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -410,10 +483,10 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Fetch all push subscriptions for the user
+  // Fetch all push subscriptions for the user (web and expo)
   const { data: subscriptions, error: dbError } = await supabase
     .from("push_subscriptions")
-    .select("id, endpoint, keys")
+    .select("id, token_type, endpoint, keys, expo_token")
     .eq("user_id", user_id);
 
   if (dbError) {
@@ -431,29 +504,73 @@ Deno.serve(async (req) => {
     );
   }
 
-  const results = await Promise.all(
-    subscriptions.map(async (sub) => {
-      const result = await sendPushToSubscription(
-        { endpoint: sub.endpoint, keys: sub.keys as PushKeys },
-        { title, body: notifBody, url }
-      );
+  // Split subscriptions by type
+  const webSubs = subscriptions.filter((s) => (s.token_type ?? "web") === "web");
+  const expoSubs = subscriptions.filter((s) => s.token_type === "expo");
 
-      // Remove expired/invalid subscriptions automatically
-      if (result.error === "subscription_expired") {
-        await supabase.from("push_subscriptions").delete().eq("id", sub.id);
-      }
+  // --- Web push ---
+  const webResults = VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY
+    ? await Promise.all(
+        webSubs.map(async (sub) => {
+          const result = await sendPushToSubscription(
+            { endpoint: sub.endpoint as string, keys: sub.keys as PushKeys },
+            { title, body: notifBody, url }
+          );
 
-      return { id: sub.id, ...result };
-    })
+          // Remove expired/invalid subscriptions automatically
+          if (result.error === "subscription_expired") {
+            await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+          }
+
+          return { id: sub.id, type: "web", ...result };
+        })
+      )
+    : webSubs.map((sub) => ({
+        id: sub.id,
+        type: "web",
+        success: false,
+        error: "VAPID keys not configured",
+      }));
+
+  // --- Expo push ---
+  const expoTokens = expoSubs
+    .map((s) => s.expo_token as string)
+    .filter(Boolean);
+
+  const expoTickets = await sendExpoNotifications(expoTokens, {
+    title,
+    body: notifBody,
+    data: url ? { url } : undefined,
+  });
+
+  // Remove invalid Expo tokens (DeviceNotRegistered error)
+  await Promise.all(
+    expoTickets
+      .filter((t) => t.ticket.details?.error === "DeviceNotRegistered")
+      .map(async ({ token }) => {
+        await supabase
+          .from("push_subscriptions")
+          .delete()
+          .eq("user_id", user_id)
+          .eq("expo_token", token);
+      })
   );
 
-  const sent = results.filter((r) => r.success).length;
-  const failed = results.filter((r) => !r.success).length;
+  const expoResults = expoTickets.map(({ token, ticket }) => ({
+    id: expoSubs.find((s) => s.expo_token === token)?.id ?? token,
+    type: "expo",
+    success: ticket.status === "ok",
+    error: ticket.status === "error" ? ticket.message : undefined,
+  }));
+
+  const allResults = [...webResults, ...expoResults];
+  const sent = allResults.filter((r) => r.success).length;
+  const failed = allResults.filter((r) => !r.success).length;
 
   console.log(`Push notifications sent: ${sent}, failed: ${failed}`);
 
   return new Response(
-    JSON.stringify({ message: "Push notifications processed", sent, failed, results }),
+    JSON.stringify({ message: "Push notifications processed", sent, failed, results: allResults }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );
 });

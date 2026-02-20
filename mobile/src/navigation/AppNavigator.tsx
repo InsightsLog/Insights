@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import CalendarScreen from '../screens/CalendarScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
@@ -8,9 +8,13 @@ import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
-export default function AppNavigator() {
+interface AppNavigatorProps {
+  navigationRef?: React.RefObject<NavigationContainerRef<Record<string, object | undefined>> | null>;
+}
+
+export default function AppNavigator({ navigationRef }: AppNavigatorProps) {
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Tab.Navigator
         screenOptions={{
           headerShown: true,
