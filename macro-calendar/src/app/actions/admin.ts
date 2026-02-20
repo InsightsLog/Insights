@@ -657,7 +657,7 @@ const adminReleaseRowSchema = z.object({
 
 /**
  * Get recent releases for admin consensus editing.
- * Returns the 50 most recent releases (by release_at) across all indicators.
+ * Returns up to `limit` releases (by release_at desc) across all indicators.
  * Requires admin role.
  */
 export async function getReleasesForAdmin(

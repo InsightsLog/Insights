@@ -229,7 +229,7 @@ function buildChartData(
       const num = parseFloat(r.actual!);
       if (isNaN(num)) return [];
       const consensusNum = r.consensus ? parseFloat(r.consensus) : null;
-      return [{ date: formatChartDate(r.release_at), value: num, consensus: isNaN(consensusNum!) ? null : consensusNum, period: r.period }];
+      return [{ date: formatChartDate(r.release_at), value: num, consensus: consensusNum !== null && !isNaN(consensusNum) ? consensusNum : null, period: r.period }];
     });
 }
 
