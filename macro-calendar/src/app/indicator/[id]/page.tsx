@@ -32,6 +32,7 @@ const releaseSchema = z.object({
   period: z.string(),
   actual: z.string().nullable(),
   forecast: z.string().nullable(),
+  consensus: z.string().nullable(),
   previous: z.string().nullable(),
   revised: z.string().nullable(),
   unit: z.string().nullable(),
@@ -101,7 +102,7 @@ async function getHistoricalReleases(indicatorId: string): Promise<DataResult<Re
 
   const { data, error } = await supabase
     .from("releases")
-    .select("id, release_at, period, actual, forecast, previous, revised, unit, revision_history")
+    .select("id, release_at, period, actual, forecast, consensus, previous, revised, unit, revision_history")
     .eq("indicator_id", indicatorId)
     .order("release_at", { ascending: false })
     .limit(200);
@@ -174,6 +175,23 @@ async function getUpcomingReleases(indicatorId: string): Promise<DataResult<Upco
 }
 
 /**
+ * Compares actual vs consensus numerically.
+ * Returns 'beat' if actual > consensus, 'missed' if actual < consensus, null otherwise.
+ */
+function getActualVsConsensus(
+  actual: string | null,
+  consensus: string | null
+): "beat" | "missed" | null {
+  if (!actual || !consensus) return null;
+  const a = parseFloat(actual);
+  const c = parseFloat(consensus);
+  if (isNaN(a) || isNaN(c)) return null;
+  if (a > c) return "beat";
+  if (a < c) return "missed";
+  return null;
+}
+
+/**
  * Formats a release date/time for display.
  * Shows date and time in a readable format.
  */
@@ -202,7 +220,7 @@ function formatChartDate(isoString: string): string {
  */
 function buildChartData(
   releases: Release[]
-): { date: string; value: number; period: string }[] {
+): { date: string; value: number; consensus: number | null; period: string }[] {
   return releases
     .filter((r) => r.actual !== null)
     .slice(0, 12)
@@ -210,7 +228,8 @@ function buildChartData(
     .flatMap((r) => {
       const num = parseFloat(r.actual!);
       if (isNaN(num)) return [];
-      return [{ date: formatChartDate(r.release_at), value: num, period: r.period }];
+      const consensusNum = r.consensus ? parseFloat(r.consensus) : null;
+      return [{ date: formatChartDate(r.release_at), value: num, consensus: consensusNum !== null && !isNaN(consensusNum) ? consensusNum : null, period: r.period }];
     });
 }
 
@@ -407,13 +426,15 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
                     <th className="px-4 py-3 sm:px-0 sm:pr-4">Date</th>
                     <th className="px-4 py-3 sm:px-0 sm:pr-4">Period</th>
                     <th className="px-4 py-3 text-right sm:px-0 sm:pr-4">Actual</th>
-                    <th className="px-4 py-3 text-right sm:px-0 sm:pr-4">Forecast</th>
+                    <th className="px-4 py-3 text-right sm:px-0 sm:pr-4">Consensus</th>
                     <th className="px-4 py-3 text-right sm:px-0 sm:pr-4">Previous</th>
                     <th className="px-4 py-3 text-right sm:px-0">Revised</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1e2530]">
-                  {releasesResult.data.map((release) => (
+                  {releasesResult.data.map((release) => {
+                    const vsConsensus = getActualVsConsensus(release.actual, release.consensus);
+                    return (
                     <tr
                       key={release.id}
                       className="hover:bg-[#0b0e11]/60"
@@ -426,7 +447,15 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
                       </td>
                       <td className="px-4 py-3 text-right sm:px-0 sm:pr-4">
                         {release.actual ? (
-                          <span className="font-semibold text-green-400">
+                          <span
+                            className={`font-semibold ${
+                              vsConsensus === "beat"
+                                ? "text-green-400"
+                                : vsConsensus === "missed"
+                                ? "text-red-400"
+                                : "text-green-400"
+                            }`}
+                          >
                             {release.actual}
                             {release.unit && (
                               <span className="ml-1 font-normal text-zinc-500">
@@ -439,7 +468,7 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
                         )}
                       </td>
                       <td className="px-4 py-3 text-right text-zinc-400 sm:px-0 sm:pr-4">
-                        {release.forecast ?? "—"}
+                        {release.consensus ?? "—"}
                       </td>
                       <td className="px-4 py-3 text-right text-zinc-400 sm:px-0 sm:pr-4">
                         {release.previous ?? "—"}
@@ -448,7 +477,8 @@ export default async function IndicatorDetailPage({ params }: PageProps) {
                         {release.revised ?? "—"}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
               {releasesResult.data.length >= 200 && (

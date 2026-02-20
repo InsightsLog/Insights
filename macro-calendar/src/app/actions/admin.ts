@@ -628,3 +628,126 @@ export async function clearHistoricalData(
     };
   }
 }
+
+/**
+ * Release row for admin consensus editing.
+ */
+export type AdminReleaseRow = {
+  id: string;
+  release_at: string;
+  period: string;
+  actual: string | null;
+  consensus: string | null;
+  previous: string | null;
+  indicator_id: string;
+  indicator_name: string;
+};
+
+// Zod schema for admin release rows
+const adminReleaseRowSchema = z.object({
+  id: z.string().uuid(),
+  release_at: z.string(),
+  period: z.string(),
+  actual: z.string().nullable(),
+  consensus: z.string().nullable(),
+  previous: z.string().nullable(),
+  indicator_id: z.string().uuid(),
+  indicator_name: z.string(),
+});
+
+/**
+ * Get recent releases for admin consensus editing.
+ * Returns up to `limit` releases (by release_at desc) across all indicators.
+ * Requires admin role.
+ */
+export async function getReleasesForAdmin(
+  limit: number = 50
+): Promise<AdminActionResult<AdminReleaseRow[]>> {
+  const adminCheck = await checkAdminRole();
+  if (!adminCheck.isAdmin) {
+    return { success: false, error: "Access denied: Admin role required" };
+  }
+
+  const supabase = createSupabaseServiceClient();
+
+  const { data, error } = await supabase
+    .from("releases")
+    .select(
+      "id, release_at, period, actual, consensus, previous, indicator_id, indicators!inner(name)"
+    )
+    .order("release_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Failed to fetch releases for admin:", error);
+    return { success: false, error: "Failed to fetch releases" };
+  }
+
+  try {
+    const rows: AdminReleaseRow[] = (data ?? []).map((row) => {
+      const indicatorRaw = Array.isArray(row.indicators)
+        ? row.indicators[0]
+        : row.indicators;
+      return adminReleaseRowSchema.parse({
+        id: row.id,
+        release_at: row.release_at,
+        period: row.period,
+        actual: row.actual,
+        consensus: row.consensus,
+        previous: row.previous,
+        indicator_id: row.indicator_id,
+        indicator_name: (indicatorRaw as { name: string } | null)?.name ?? "",
+      });
+    });
+    return { success: true, data: rows };
+  } catch (zodError) {
+    console.error("Admin releases validation failed:", zodError);
+    return { success: false, error: "Invalid data format from database" };
+  }
+}
+
+// Zod schema for updateReleaseConsensus input validation
+const updateReleaseConsensusInputSchema = z.object({
+  releaseId: z.string().uuid("Invalid release ID format"),
+  consensus: z.string().max(50).nullable(),
+});
+
+/**
+ * Update the consensus value for a release.
+ * Requires admin role.
+ *
+ * @param releaseId - The ID of the release to update
+ * @param consensus - The new consensus value (null to clear)
+ */
+export async function updateReleaseConsensus(
+  releaseId: string,
+  consensus: string | null
+): Promise<AdminActionResult<void>> {
+  const parseResult = updateReleaseConsensusInputSchema.safeParse({
+    releaseId,
+    consensus,
+  });
+  if (!parseResult.success) {
+    const firstError = parseResult.error.issues[0];
+    return { success: false, error: firstError?.message ?? "Invalid input" };
+  }
+
+  const adminCheck = await checkAdminRole();
+  if (!adminCheck.isAdmin) {
+    return { success: false, error: "Access denied: Admin role required" };
+  }
+
+  const supabase = createSupabaseServiceClient();
+
+  const { error } = await supabase
+    .from("releases")
+    .update({ consensus: parseResult.data.consensus })
+    .eq("id", parseResult.data.releaseId);
+
+  if (error) {
+    console.error("Failed to update consensus:", error);
+    return { success: false, error: "Failed to update consensus value" };
+  }
+
+  return { success: true, data: undefined };
+}
