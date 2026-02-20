@@ -46,6 +46,7 @@ interface Indicator {
   country_code: string;
   category: string;
   source_name: string;
+  importance?: string;
 }
 
 // Type for webhook endpoint from database
@@ -87,8 +88,13 @@ const INITIAL_BACKOFF_MS = 1000; // 1 second
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 const MAX_RESPONSE_BODY_LENGTH = 1024; // Truncate response body for storage
 
-// Discord embed color - 0x58C7FF (blue) in decimal = 5818367
-const DISCORD_EMBED_COLOR = 5818367;
+// Discord embed colors by impact level (decimal values of hex colors)
+const DISCORD_COLORS: Record<string, number> = {
+  high: 15023678,   // 0xE53E3E — red
+  medium: 16160085, // 0xF6AD55 — amber
+  low: 4766584,     // 0x48BB78 — green
+  default: 5818367, // 0x58C7FF — blue
+};
 
 /**
  * Determine if a request should be retried based on status code.
@@ -278,7 +284,7 @@ function createDiscordPayload(
         title: indicator.name,
         description: `${indicator.country_code} • ${indicator.category}`,
         url: `${APP_URL}/indicator/${indicator.id}`,
-        color: DISCORD_EMBED_COLOR,
+        color: DISCORD_COLORS[indicator.importance ?? "default"] ?? DISCORD_COLORS.default,
         fields: [
           {
             name: "📅 Period",
@@ -372,7 +378,7 @@ async function deliverWebhook(
   attempts: number;
   error?: string;
 }> {
-  const isDiscord = isDiscordWebhook(endpoint.url);
+  const isDiscord = endpoint.type === "discord" || isDiscordWebhook(endpoint.url);
   const isSlack = endpoint.type === "slack" || isSlackWebhook(endpoint.url);
 
   // Create appropriate payload based on webhook type
@@ -612,7 +618,7 @@ Deno.serve(async (req) => {
     // Fetch indicator details
     const { data: indicator, error: indicatorError } = await supabase
       .from("indicators")
-      .select("id, name, country_code, category, source_name")
+      .select("id, name, country_code, category, source_name, importance")
       .eq("id", release.indicator_id)
       .single();
 
