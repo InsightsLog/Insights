@@ -30,5 +30,5 @@ export default async function ApiKeysPage() {
     redirect("/");
   }
 
-  return <ApiKeysClient />;
+  return <ApiKeysClient userId={user.id} />;
 }
