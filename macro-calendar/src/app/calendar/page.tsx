@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { CalendarFilters } from "@/app/components/CalendarFilters";
 import { RevisionBadge } from "@/app/components/RevisionBadge";
+import { ReleaseCountdown } from "@/app/components/ReleaseCountdown";
 import { z } from "zod";
 import Link from "next/link";
 
@@ -23,6 +24,7 @@ const indicatorSchema = z.object({
   name: z.string(),
   country_code: z.string(),
   category: z.string(),
+  importance: z.string(),
 });
 
 // Supabase returns embedded relations as arrays even for many-to-one relationships.
@@ -171,7 +173,8 @@ async function getUpcomingReleases(filters: {
         id,
         name,
         country_code,
-        category
+        category,
+        importance
       )
     `
     )
@@ -282,6 +285,9 @@ export default async function CalendarPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <main className="mx-auto max-w-5xl px-2 py-4 sm:px-4 sm:py-6">
+        {/* Countdown to next high-impact release — T471 */}
+        <ReleaseCountdown releases={releases} />
+
         {/* Filters — T022 */}
         <CalendarFilters
           countries={filterOptions.countries}
