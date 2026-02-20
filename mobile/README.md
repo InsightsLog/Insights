@@ -50,10 +50,14 @@ mobile/
 ├── src/
 │   ├── navigation/
 │   │   └── AppNavigator.tsx    # Bottom tab navigation
-│   └── screens/
-│       ├── CalendarScreen.tsx  # Upcoming releases calendar
-│       ├── WatchlistScreen.tsx # User's saved indicators
-│       └── SettingsScreen.tsx  # App settings
+│   ├── screens/
+│   │   ├── CalendarScreen.tsx  # Upcoming releases calendar
+│   │   ├── WatchlistScreen.tsx # User's saved indicators (auth-gated)
+│   │   ├── AlertsScreen.tsx    # 7-day watchlist releases grouped by day (auth-gated)
+│   │   └── SettingsScreen.tsx  # App settings
+│   └── lib/
+│       ├── api.ts              # REST API + Supabase query helpers
+│       └── supabase.ts         # Supabase client (anon key)
 ├── assets/                     # Images and fonts
 ├── App.tsx                     # Root component
 ├── app.json                    # Expo configuration
@@ -63,8 +67,9 @@ mobile/
 
 ## Available Screens
 
-- **Calendar**: Displays upcoming economic releases (placeholder)
-- **Watchlist**: Shows user's saved indicators (placeholder)
+- **Calendar**: Displays upcoming economic releases with pull-to-refresh
+- **Watchlist**: Shows the signed-in user's saved indicators with next release time; auth-gated
+- **Alerts**: Shows releases in the next 7 days for watchlisted indicators, grouped by day; auth-gated
 - **Settings**: App settings and preferences (placeholder)
 
 ## Navigation

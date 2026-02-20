@@ -1,69 +1,116 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   RefreshControl,
+  SectionList,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { fetchWatchlist, type WatchlistEntry } from '../lib/api';
+import { fetchWatchlistAlerts, type Release } from '../lib/api';
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Helpers  (mirrors CalendarScreen)
 // ---------------------------------------------------------------------------
 
-/** Format an ISO datetime string as a short datetime, e.g. "Feb 20, 08:30 AM". */
-function formatNextRelease(iso: string): string {
-  return new Date(iso).toLocaleString('en-US', {
+/** Format an ISO datetime string as a display date, e.g. "Thu, Feb 20 2026". */
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    weekday: 'short',
     month: 'short',
     day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+/** Format an ISO datetime string as a short time, e.g. "08:30 AM". */
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
 }
 
-// ---------------------------------------------------------------------------
-// WatchlistRow
-// ---------------------------------------------------------------------------
+/** Return a stable YYYY-MM-DD string for grouping. */
+function dateKey(iso: string): string {
+  return iso.slice(0, 10);
+}
 
-function WatchlistRow({
-  item,
-  onPress,
-}: {
-  item: WatchlistEntry;
-  onPress: (entry: WatchlistEntry) => void;
-}) {
-  return (
-    <TouchableOpacity style={styles.row} onPress={() => onPress(item)} activeOpacity={0.7}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.indicatorName}>{item.indicator.name}</Text>
-        <Text style={styles.meta}>
-          {item.indicator.country_code} · {item.indicator.category}
-        </Text>
-      </View>
-      <View style={styles.rowRight}>
-        {item.next_release ? (
-          <>
-            <Text style={styles.nextLabel}>Next</Text>
-            <Text style={styles.nextTime}>{formatNextRelease(item.next_release.release_at)}</Text>
-          </>
-        ) : (
-          <Text style={styles.noRelease}>No upcoming</Text>
-        )}
-      </View>
-    </TouchableOpacity>
+interface Section {
+  title: string;
+  dateKey: string;
+  data: Release[];
+}
+
+/** Group a flat list of releases into sections ordered by date ascending. */
+function groupByDate(releases: Release[]): Section[] {
+  const map = new Map<string, Section>();
+
+  for (const release of releases) {
+    const key = dateKey(release.release_at);
+    if (!map.has(key)) {
+      map.set(key, {
+        title: formatDate(release.release_at),
+        dateKey: key,
+        data: [],
+      });
+    }
+    map.get(key)!.data.push(release);
+  }
+
+  return Array.from(map.values()).sort((a, b) =>
+    a.dateKey.localeCompare(b.dateKey)
   );
 }
 
 // ---------------------------------------------------------------------------
-// WatchlistScreen
+// Impact badge  (mirrors CalendarScreen)
 // ---------------------------------------------------------------------------
 
-export default function WatchlistScreen() {
-  const [entries, setEntries] = useState<WatchlistEntry[]>([]);
+const IMPACT_COLORS: Record<string, string> = {
+  high: '#d9534f',
+  medium: '#f0ad4e',
+  low: '#5cb85c',
+};
+
+function ImpactBadge({ importance }: { importance: 'low' | 'medium' | 'high' }) {
+  return (
+    <View
+      style={[
+        styles.badge,
+        { backgroundColor: IMPACT_COLORS[importance] ?? '#999' },
+      ]}
+    >
+      <Text style={styles.badgeText}>{importance.toUpperCase()}</Text>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Release row
+// ---------------------------------------------------------------------------
+
+function ReleaseRow({ item }: { item: Release }) {
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.indicatorName}>{item.indicator.name}</Text>
+        <Text style={styles.meta}>
+          {item.indicator.country_code} · {formatTime(item.release_at)}
+        </Text>
+      </View>
+      <ImpactBadge importance={item.indicator.importance} />
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AlertsScreen
+// ---------------------------------------------------------------------------
+
+export default function AlertsScreen() {
+  const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,14 +132,14 @@ export default function WatchlistScreen() {
       setIsSignedIn(!!user);
 
       if (!user) {
-        setEntries([]);
+        setSections([]);
         return;
       }
 
-      const data = await fetchWatchlist();
-      setEntries(data);
+      const releases = await fetchWatchlistAlerts(7);
+      setSections(groupByDate(releases));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load watchlist');
+      setError(err instanceof Error ? err.message : 'Failed to load alerts');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -103,16 +150,11 @@ export default function WatchlistScreen() {
     void load(false);
   }, [load]);
 
-  // Placeholder handler — detail screen navigation wired in AppNavigator
-  const handleRowPress = (_entry: WatchlistEntry) => {
-    // TODO: navigate to indicator detail screen (T415)
-  };
-
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading watchlist…</Text>
+        <Text style={styles.loadingText}>Loading alerts…</Text>
       </View>
     );
   }
@@ -122,7 +164,7 @@ export default function WatchlistScreen() {
       <View style={styles.center}>
         <Text style={styles.gateTitle}>Sign in required</Text>
         <Text style={styles.gateSubtitle}>
-          Sign in to see your saved indicators and upcoming releases.
+          Sign in to see upcoming releases for your watchlisted indicators.
         </Text>
       </View>
     );
@@ -137,15 +179,18 @@ export default function WatchlistScreen() {
   }
 
   return (
-    <FlatList
-      data={entries}
+    <SectionList
+      sections={sections}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <WatchlistRow item={item} onPress={handleRowPress} />}
+      renderItem={({ item }) => <ReleaseRow item={item} />}
+      renderSectionHeader={({ section }) => (
+        <Text style={styles.sectionHeader}>{section.title}</Text>
+      )}
       ListEmptyComponent={
         <View style={styles.center}>
-          <Text style={styles.emptyTitle}>No indicators saved</Text>
+          <Text style={styles.emptyTitle}>No upcoming releases</Text>
           <Text style={styles.emptySubtitle}>
-            Add indicators to your watchlist on the web app to see them here.
+            No releases scheduled in the next 7 days for your watchlisted indicators.
           </Text>
         </View>
       }
@@ -156,7 +201,8 @@ export default function WatchlistScreen() {
           tintColor="#007AFF"
         />
       }
-      contentContainerStyle={entries.length === 0 ? styles.emptyContent : undefined}
+      contentContainerStyle={sections.length === 0 ? styles.emptyContent : undefined}
+      stickySectionHeadersEnabled
     />
   );
 }
@@ -209,21 +255,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#555',
+    backgroundColor: '#f0f0f5',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
     backgroundColor: '#fff',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e0e0e0',
   },
   rowLeft: {
     flex: 1,
-  },
-  rowRight: {
-    alignItems: 'flex-end',
-    marginLeft: 12,
   },
   indicatorName: {
     fontSize: 15,
@@ -235,22 +287,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#777',
   },
-  nextLabel: {
+  badge: {
+    borderRadius: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    marginLeft: 10,
+  },
+  badgeText: {
     fontSize: 11,
-    color: '#007AFF',
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    color: '#fff',
     letterSpacing: 0.3,
-    marginBottom: 1,
-  },
-  nextTime: {
-    fontSize: 13,
-    color: '#333',
-    fontWeight: '500',
-  },
-  noRelease: {
-    fontSize: 12,
-    color: '#aaa',
   },
 });
-
