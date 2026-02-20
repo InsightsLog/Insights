@@ -68,7 +68,7 @@ describe("GET /api/v1/releases", () => {
   describe("parameter validation", () => {
     beforeEach(() => {
       // Mock successful authentication
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns 400 when limit is invalid", async () => {
@@ -147,7 +147,7 @@ describe("GET /api/v1/releases", () => {
   describe("successful responses", () => {
     beforeEach(() => {
       // Mock successful authentication
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns paginated releases list with indicators", async () => {
@@ -509,7 +509,7 @@ describe("GET /api/v1/releases", () => {
 
   describe("error handling", () => {
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns 500 when database query fails", async () => {

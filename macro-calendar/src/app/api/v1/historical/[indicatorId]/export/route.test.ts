@@ -60,6 +60,7 @@ describe("GET /api/v1/historical/[indicatorId]/export", () => {
       mockAuthenticateApiRequest.mockResolvedValue({
         userId: "user-123",
         apiKeyId: "key-123",
+        rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 },
       });
     });
 
@@ -99,6 +100,7 @@ describe("GET /api/v1/historical/[indicatorId]/export", () => {
       mockAuthenticateApiRequest.mockResolvedValue({
         userId: "user-123",
         apiKeyId: "key-123",
+        rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 },
       });
     });
 
@@ -134,6 +136,7 @@ describe("GET /api/v1/historical/[indicatorId]/export", () => {
       mockAuthenticateApiRequest.mockResolvedValue({
         userId: "user-123",
         apiKeyId: "key-123",
+        rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 },
       });
 
       const mockReleases = [
@@ -253,6 +256,7 @@ describe("GET /api/v1/historical/[indicatorId]/export", () => {
       mockAuthenticateApiRequest.mockResolvedValue({
         userId: "user-123",
         apiKeyId: "key-123",
+        rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 },
       });
 
       const mockReleases = [

@@ -53,7 +53,7 @@ describe("GET /api/v1/releases/:id", () => {
 
   describe("parameter validation", () => {
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns 400 when release ID is not a valid UUID", async () => {
@@ -74,7 +74,7 @@ describe("GET /api/v1/releases/:id", () => {
     const validUuid = "123e4567-e89b-12d3-a456-426614174000";
 
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns release with indicator", async () => {
@@ -297,7 +297,7 @@ describe("GET /api/v1/releases/:id", () => {
     const validUuid = "123e4567-e89b-12d3-a456-426614174000";
 
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns 404 when release is not found", async () => {

@@ -22,6 +22,7 @@ import {
   createApiErrorResponse,
 } from "@/lib/api/auth";
 import { logApiUsage } from "@/lib/api/usage-logger";
+import { applyRateLimitHeaders } from "@/lib/rate-limit";
 
 /**
  * Maximum number of rows returned per export request.
@@ -98,7 +99,7 @@ export async function GET(
     return authResult;
   }
 
-  const { userId, apiKeyId } = authResult;
+  const { userId, apiKeyId, rateLimit } = authResult;
 
   // Validate path parameter
   const resolvedParams = await params;
@@ -112,7 +113,7 @@ export async function GET(
       400
     );
     void logApiUsage(request, 400, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 
   const { indicatorId } = pathParseResult.data;
@@ -129,7 +130,7 @@ export async function GET(
       400
     );
     void logApiUsage(request, 400, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 
   const { format } = queryParseResult.data;
@@ -152,7 +153,7 @@ export async function GET(
           404
         );
         void logApiUsage(request, 404, userId, apiKeyId, startTime);
-        return response;
+        return applyRateLimitHeaders(response, rateLimit);
       }
       console.error("Failed to fetch indicator:", indicatorError);
       const response = createApiErrorResponse(
@@ -161,7 +162,7 @@ export async function GET(
         500
       );
       void logApiUsage(request, 500, userId, apiKeyId, startTime);
-      return response;
+      return applyRateLimitHeaders(response, rateLimit);
     }
 
     // Fetch releases, capped at MAX_EXPORT_ROWS
@@ -180,7 +181,7 @@ export async function GET(
         500
       );
       void logApiUsage(request, 500, userId, apiKeyId, startTime);
-      return response;
+      return applyRateLimitHeaders(response, rateLimit);
     }
 
     // Map DB rows to export shape (forecast → consensus in CSV)
@@ -198,22 +199,28 @@ export async function GET(
     void logApiUsage(request, 200, userId, apiKeyId, startTime);
 
     if (format === "json") {
-      return new NextResponse(JSON.stringify(rows), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Disposition": `attachment; filename="${filename}.json"`,
-        },
-      });
+      return applyRateLimitHeaders(
+        new NextResponse(JSON.stringify(rows), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Disposition": `attachment; filename="${filename}.json"`,
+          },
+        }),
+        rateLimit
+      );
     }
 
-    return new NextResponse(toCSV(rows), {
-      status: 200,
-      headers: {
-        "Content-Type": "text/csv",
-        "Content-Disposition": `attachment; filename="${filename}.csv"`,
-      },
-    });
+    return applyRateLimitHeaders(
+      new NextResponse(toCSV(rows), {
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv",
+          "Content-Disposition": `attachment; filename="${filename}.csv"`,
+        },
+      }),
+      rateLimit
+    );
   } catch (err) {
     console.error("Unexpected error during export:", err);
     const response = createApiErrorResponse(
@@ -222,6 +229,6 @@ export async function GET(
       500
     );
     void logApiUsage(request, 500, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 }
