@@ -148,10 +148,10 @@ export default async function AdminDashboardPage() {
             Data Sources
           </Link>
           <Link
-            href="/admin/releases"
-            className="inline-flex items-center rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            href="/admin/users"
+            className="inline-flex items-center rounded-md bg-zinc-700 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2"
           >
-            Releases
+            Manage Users
           </Link>
         </div>
 
