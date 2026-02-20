@@ -15,6 +15,19 @@ vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 
+// Mock the createSupabaseServiceClient function
+vi.mock("@/lib/supabase/service-role", () => ({
+  createSupabaseServiceClient: vi.fn(),
+}));
+
+// Mock env to avoid requiring real env vars in tests
+vi.mock("@/lib/env", () => ({
+  getServerEnv: vi.fn().mockReturnValue({
+    RESEND_API_KEY: undefined,
+    NEXT_PUBLIC_APP_URL: undefined,
+  }),
+}));
+
 // Import the mocked function to control its behavior
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 const mockCreateSupabaseServerClient = vi.mocked(createSupabaseServerClient);
@@ -260,18 +273,6 @@ describe("inviteMember", () => {
     });
   });
 
-  it("returns error when trying to invite as owner", async () => {
-    const result = await inviteMember(mockOrgId, {
-      email: "test@example.com",
-      role: "owner",
-    });
-
-    expect(result).toEqual({
-      success: false,
-      error: "Cannot invite as owner. Use transfer ownership instead.",
-    });
-  });
-
   it("returns error when not authenticated", async () => {
     const mockSupabase = createMockSupabase({ user: null });
     mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
@@ -284,46 +285,27 @@ describe("inviteMember", () => {
     });
   });
 
-  it("returns error when user not found", async () => {
-    const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
-    const mockSingle = vi.fn().mockResolvedValue({
-      data: null,
-      error: { code: "PGRST116", message: "No rows" },
-    });
-    const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
-    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
-    mockSupabase.from.mockReturnValue({ select: mockSelect });
-    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
-
-    const result = await inviteMember(mockOrgId, { email: "notfound@example.com" });
-
-    expect(result).toEqual({
-      success: false,
-      error: "User not found with that email address",
-    });
-  });
-
   it("returns error when user is already a member", async () => {
     const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
 
-    // First call: find user by email
-    const mockProfileSingle = vi.fn().mockResolvedValue({
-      data: { id: mockOtherUserId, email: "test@example.com", display_name: "Test" },
+    // profiles.maybeSingle() - user exists
+    const mockMaybeSingle = vi.fn().mockResolvedValue({
+      data: { id: mockOtherUserId },
       error: null,
     });
-    const mockProfileEq = vi.fn().mockReturnValue({ single: mockProfileSingle });
-    const mockProfileSelect = vi.fn().mockReturnValue({ eq: mockProfileEq });
+    const mockEq = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
 
-    // Second call: check existing membership
-    const mockMemberSingle = vi.fn().mockResolvedValue({
+    // organization_members.maybeSingle() - already a member
+    const mockMemberMaybeSingle = vi.fn().mockResolvedValue({
       data: { id: mockMemberId },
       error: null,
     });
-    const mockMemberEqUser = vi.fn().mockReturnValue({ single: mockMemberSingle });
+    const mockMemberEqUser = vi.fn().mockReturnValue({ maybeSingle: mockMemberMaybeSingle });
     const mockMemberEqOrg = vi.fn().mockReturnValue({ eq: mockMemberEqUser });
     const mockMemberSelect = vi.fn().mockReturnValue({ eq: mockMemberEqOrg });
 
-    mockSupabase.from.mockReturnValueOnce({ select: mockProfileSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockSelect });
     mockSupabase.from.mockReturnValueOnce({ select: mockMemberSelect });
     mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
 
@@ -335,51 +317,55 @@ describe("inviteMember", () => {
     });
   });
 
-  it("successfully invites a new member", async () => {
+  it("successfully creates an invite for a new email", async () => {
     const mockSupabase = createMockSupabase({ user: { id: mockUserId } });
 
-    // First call: find user by email
-    const mockProfileSingle = vi.fn().mockResolvedValue({
-      data: { id: mockOtherUserId, email: "newmember@example.com", display_name: "New Member" },
-      error: null,
-    });
-    const mockProfileEq = vi.fn().mockReturnValue({ single: mockProfileSingle });
+    // profiles.maybeSingle() - user not found (email not yet registered)
+    const mockProfileMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockProfileEq = vi.fn().mockReturnValue({ maybeSingle: mockProfileMaybeSingle });
     const mockProfileSelect = vi.fn().mockReturnValue({ eq: mockProfileEq });
 
-    // Second call: check existing membership (not found)
-    const mockMemberSingle = vi.fn().mockResolvedValue({
-      data: null,
-      error: { code: "PGRST116", message: "No rows" },
-    });
-    const mockMemberEqUser = vi.fn().mockReturnValue({ single: mockMemberSingle });
-    const mockMemberEqOrg = vi.fn().mockReturnValue({ eq: mockMemberEqUser });
-    const mockMemberSelect = vi.fn().mockReturnValue({ eq: mockMemberEqOrg });
+    // organization_invites check (existing invite) - none found
+    const mockInviteMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockInviteGt = vi.fn().mockReturnValue({ maybeSingle: mockInviteMaybeSingle });
+    const mockInviteIsNull = vi.fn().mockReturnValue({ gt: mockInviteGt });
+    const mockInviteEqEmail = vi.fn().mockReturnValue({ is: mockInviteIsNull });
+    const mockInviteEqOrg = vi.fn().mockReturnValue({ eq: mockInviteEqEmail });
+    const mockInviteSelect = vi.fn().mockReturnValue({ eq: mockInviteEqOrg });
 
-    // Third call: insert new member
-    const newMember = {
-      id: mockMemberId,
+    // insert invite
+    const newInvite = {
+      id: "invite-uuid-1234",
       org_id: mockOrgId,
-      user_id: mockOtherUserId,
+      invited_email: "newmember@example.com",
       role: "member",
-      invited_at: "2026-01-14T00:00:00Z",
-      joined_at: "2026-01-14T00:00:00Z",
+      token: "a".repeat(64),
+      invited_by: mockUserId,
+      expires_at: "2026-02-26T00:00:00Z",
+      accepted_at: null,
+      created_at: "2026-02-19T00:00:00Z",
     };
-    const mockInsertSingle = vi.fn().mockResolvedValue({ data: newMember, error: null });
+    const mockInsertSingle = vi.fn().mockResolvedValue({ data: newInvite, error: null });
     const mockInsertSelect = vi.fn().mockReturnValue({ single: mockInsertSingle });
     const mockInsert = vi.fn().mockReturnValue({ select: mockInsertSelect });
 
+    // org name lookup
+    const mockOrgSingle = vi.fn().mockResolvedValue({ data: { name: "Test Org" }, error: null });
+    const mockOrgEq = vi.fn().mockReturnValue({ single: mockOrgSingle });
+    const mockOrgSelect = vi.fn().mockReturnValue({ eq: mockOrgEq });
+
     mockSupabase.from.mockReturnValueOnce({ select: mockProfileSelect });
-    mockSupabase.from.mockReturnValueOnce({ select: mockMemberSelect });
+    mockSupabase.from.mockReturnValueOnce({ select: mockInviteSelect });
     mockSupabase.from.mockReturnValueOnce({ insert: mockInsert });
+    mockSupabase.from.mockReturnValueOnce({ select: mockOrgSelect });
     mockCreateSupabaseServerClient.mockResolvedValue(mockSupabase as never);
 
     const result = await inviteMember(mockOrgId, { email: "newmember@example.com" });
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.user_id).toBe(mockOtherUserId);
+      expect(result.data.invited_email).toBe("newmember@example.com");
       expect(result.data.role).toBe("member");
-      expect(result.data.email).toBe("newmember@example.com");
     }
   });
 });

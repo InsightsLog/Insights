@@ -65,7 +65,7 @@ export function OrganizationSettingsClient({
 
   // Invite form state
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<OrgMemberRole>("member");
+  const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [inviting, setInviting] = useState(false);
 
   // Role edit state
@@ -146,7 +146,7 @@ export function OrganizationSettingsClient({
     if (result.success) {
       setInviteEmail("");
       setInviteRole("member");
-      showSuccess(`Successfully invited ${result.data.email || "member"}`);
+      showSuccess(`Invite sent to ${result.data.invited_email}`);
       refreshMembers();
     } else {
       setError(result.error);
@@ -335,12 +335,11 @@ export function OrganizationSettingsClient({
                   <select
                     id="inviteRole"
                     value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as OrgMemberRole)}
+                    onChange={(e) => setInviteRole(e.target.value as "admin" | "member")}
                     className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
                     disabled={inviting}
                   >
                     <option value="member">Member</option>
-                    <option value="billing_admin">Billing Admin</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
