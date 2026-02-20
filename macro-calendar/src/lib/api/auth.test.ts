@@ -17,6 +17,12 @@ vi.mock("@/lib/api/quota", () => ({
   formatQuotaExceededMessage: vi.fn(),
 }));
 
+// Mock the rate limit module (T501)
+vi.mock("@/lib/rate-limit", () => ({
+  checkApiRateLimit: vi.fn(),
+  applyRateLimitHeaders: vi.fn((response) => response),
+}));
+
 // Import the mocked function to control its behavior
 import { createSupabaseServiceClient } from "@/lib/supabase/service-role";
 const mockCreateSupabaseServiceClient = vi.mocked(createSupabaseServiceClient);
@@ -24,6 +30,9 @@ const mockCreateSupabaseServiceClient = vi.mocked(createSupabaseServiceClient);
 import { checkApiQuota, formatQuotaExceededMessage } from "@/lib/api/quota";
 const mockCheckApiQuota = vi.mocked(checkApiQuota);
 const mockFormatQuotaExceededMessage = vi.mocked(formatQuotaExceededMessage);
+
+import { checkApiRateLimit } from "@/lib/rate-limit";
+const mockCheckApiRateLimit = vi.mocked(checkApiRateLimit);
 
 describe("API Authentication", () => {
   beforeEach(() => {
@@ -318,15 +327,28 @@ describe("API Authentication", () => {
         planName: "Free",
       });
 
+      // Mock rate limit check to allow the request (T501)
+      mockCheckApiRateLimit.mockResolvedValue({
+        allowed: true,
+        limit: 60,
+        remaining: 59,
+        resetAt: 9999999999,
+      });
+
       const request = new NextRequest("http://localhost/api/v1/indicators", {
         headers: { Authorization: "Bearer mc_valid_api_key_here" },
       });
 
       const result = await authenticateApiRequest(request);
 
-      // Should return object with userId and apiKeyId
-      expect(result).toEqual({ userId: "user-789", apiKeyId: "key-123" });
+      // Should return object with userId, apiKeyId, and rateLimit
+      expect(result).toEqual({
+        userId: "user-789",
+        apiKeyId: "key-123",
+        rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 },
+      });
       expect(mockCheckApiQuota).toHaveBeenCalledWith("user-789");
+      expect(mockCheckApiRateLimit).toHaveBeenCalledWith("key-123", "Free");
     });
 
     it("returns 429 error when quota is exceeded (T324)", async () => {
@@ -388,6 +410,69 @@ describe("API Authentication", () => {
           reset_at: "2026-02-01T00:00:00.000Z",
           plan: "Free",
         });
+      }
+    });
+    it("returns 429 with Retry-After when rate limit is exceeded (T501)", async () => {
+      const mockUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+      });
+      const mockFrom = vi.fn().mockImplementation((table) => {
+        if (table === "api_keys") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: "key-rate-limited",
+                    user_id: "user-rate-limited",
+                    revoked_at: null,
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+            update: mockUpdate,
+          };
+        }
+        return {};
+      });
+      mockCreateSupabaseServiceClient.mockReturnValue({
+        from: mockFrom,
+      } as never);
+
+      // Quota is fine
+      mockCheckApiQuota.mockResolvedValue({
+        allowed: true,
+        currentUsage: 50,
+        limit: 100,
+        resetAt: "2026-02-01T00:00:00.000Z",
+        planName: "Free",
+      });
+
+      // Rate limit is exceeded
+      mockCheckApiRateLimit.mockResolvedValue({
+        allowed: false,
+        limit: 60,
+        remaining: 0,
+        resetAt: 9999999999,
+      });
+
+      const request = new NextRequest("http://localhost/api/v1/indicators", {
+        headers: { Authorization: "Bearer mc_valid_api_key_here" },
+      });
+
+      const result = await authenticateApiRequest(request);
+
+      expect(result).toHaveProperty("status");
+      if ("status" in result && typeof result.status === "number") {
+        expect(result.status).toBe(429);
+        const body = await (result as Response).json();
+        expect(body.code).toBe("RATE_LIMIT_EXCEEDED");
+        // Retry-After is set directly in auth.ts as seconds to wait (not via applyRateLimitHeaders)
+        const headers = (result as Response).headers;
+        const retryAfter = Number(headers.get("Retry-After"));
+        // Should be positive seconds to wait (difference between resetAt and now)
+        expect(retryAfter).toBeGreaterThan(0);
       }
     });
   });

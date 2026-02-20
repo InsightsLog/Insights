@@ -18,6 +18,7 @@ import {
   type ApiErrorResponse,
 } from "@/lib/api/auth";
 import { logApiUsage } from "@/lib/api/usage-logger";
+import { applyRateLimitHeaders } from "@/lib/rate-limit";
 
 /**
  * Zod schema for path parameter validation.
@@ -80,7 +81,7 @@ export async function GET(
     return authResult;
   }
 
-  const { userId, apiKeyId } = authResult;
+  const { userId, apiKeyId, rateLimit } = authResult;
 
   // Validate path parameter
   const resolvedParams = await params;
@@ -92,7 +93,7 @@ export async function GET(
       400
     );
     void logApiUsage(request, 400, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 
   const { id } = pathParseResult.data;
@@ -117,7 +118,7 @@ export async function GET(
       if (releaseError.code === "PGRST116") {
         const response = createApiErrorResponse("Release not found", "NOT_FOUND", 404);
         void logApiUsage(request, 404, userId, apiKeyId, startTime);
-        return response;
+        return applyRateLimitHeaders(response, rateLimit);
       }
       console.error("Failed to fetch release:", releaseError);
       const response = createApiErrorResponse(
@@ -126,7 +127,7 @@ export async function GET(
         500
       );
       void logApiUsage(request, 500, userId, apiKeyId, startTime);
-      return response;
+      return applyRateLimitHeaders(response, rateLimit);
     }
 
     // Supabase returns embedded relations as arrays or single objects
@@ -143,7 +144,7 @@ export async function GET(
         500
       );
       void logApiUsage(request, 500, userId, apiKeyId, startTime);
-      return response;
+      return applyRateLimitHeaders(response, rateLimit);
     }
 
     const responseData: ReleaseWithIndicator = {
@@ -172,7 +173,7 @@ export async function GET(
     // Log successful API request (T314 - API usage tracking)
     void logApiUsage(request, 200, userId, apiKeyId, startTime);
 
-    return NextResponse.json(responseData);
+    return applyRateLimitHeaders(NextResponse.json(responseData), rateLimit);
   } catch (error) {
     console.error("Unexpected error fetching release:", error);
     const response = createApiErrorResponse(
@@ -181,6 +182,6 @@ export async function GET(
       500
     );
     void logApiUsage(request, 500, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 }

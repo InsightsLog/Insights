@@ -16,6 +16,11 @@ import {
   formatQuotaExceededMessage,
   type QuotaCheckResult,
 } from "@/lib/api/quota";
+import {
+  checkApiRateLimit,
+  applyRateLimitHeaders,
+  type RateLimitResult,
+} from "@/lib/rate-limit";
 
 /**
  * Result of API key validation.
@@ -208,7 +213,10 @@ export function createApiErrorResponse(
  */
 export async function authenticateApiRequest(
   request: NextRequest
-): Promise<NextResponse<ApiErrorResponse> | { userId: string; apiKeyId: string }> {
+): Promise<
+  | NextResponse<ApiErrorResponse>
+  | { userId: string; apiKeyId: string; rateLimit: RateLimitResult }
+> {
   const authResult = await validateApiKeyFromHeader(request);
 
   if (!authResult.valid || !authResult.userId || !authResult.apiKeyId) {
@@ -233,5 +241,19 @@ export async function authenticateApiRequest(
     );
   }
 
-  return { userId, apiKeyId };
+  // Check per-minute rate limit (T501)
+  const rateLimit = await checkApiRateLimit(apiKeyId, quotaResult.planName);
+  if (!rateLimit.allowed) {
+    const response = createApiErrorResponse(
+      "Rate limit exceeded. Too many requests in the last 60 seconds.",
+      "RATE_LIMIT_EXCEEDED",
+      429
+    );
+    const retryAfterSeconds = Math.max(1, rateLimit.resetAt - Math.floor(Date.now() / 1000));
+    response.headers.set("Retry-After", String(retryAfterSeconds));
+    applyRateLimitHeaders(response, rateLimit);
+    return response;
+  }
+
+  return { userId, apiKeyId, rateLimit };
 }

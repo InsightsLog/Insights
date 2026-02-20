@@ -75,7 +75,7 @@ describe("GET /api/v1/calendar", () => {
   describe("parameter validation", () => {
     beforeEach(() => {
       // Mock successful authentication
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns 400 when days is invalid", async () => {
@@ -118,7 +118,7 @@ describe("GET /api/v1/calendar", () => {
   describe("successful responses", () => {
     beforeEach(() => {
       // Mock successful authentication
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns calendar events with default 7 days", async () => {
@@ -424,7 +424,7 @@ describe("GET /api/v1/calendar", () => {
 
   describe("error handling", () => {
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns 500 when database query fails", async () => {

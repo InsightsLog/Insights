@@ -56,7 +56,7 @@ describe("GET /api/v1/historical/[indicatorId]", () => {
   describe("parameter validation", () => {
     beforeEach(() => {
       // Mock successful authentication
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns 400 when indicator ID is not a valid UUID", async () => {
@@ -128,7 +128,7 @@ describe("GET /api/v1/historical/[indicatorId]", () => {
 
   describe("indicator validation", () => {
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns 404 when indicator does not exist", async () => {
@@ -160,7 +160,7 @@ describe("GET /api/v1/historical/[indicatorId]", () => {
 
   describe("successful responses", () => {
     beforeEach(() => {
-      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123" });
+      mockAuthenticateApiRequest.mockResolvedValue({ userId: "user-123", apiKeyId: "key-123", rateLimit: { allowed: true, limit: 60, remaining: 59, resetAt: 9999999999 } });
     });
 
     it("returns paginated historical releases", async () => {

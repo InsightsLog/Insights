@@ -24,6 +24,7 @@ import {
   type ApiErrorResponse,
 } from "@/lib/api/auth";
 import { logApiUsage } from "@/lib/api/usage-logger";
+import { applyRateLimitHeaders } from "@/lib/rate-limit";
 
 /**
  * Zod schema for path parameter validation.
@@ -105,7 +106,7 @@ export async function GET(
     return authResult;
   }
 
-  const { userId, apiKeyId } = authResult;
+  const { userId, apiKeyId, rateLimit } = authResult;
 
   // Validate path parameter
   const resolvedParams = await params;
@@ -119,7 +120,7 @@ export async function GET(
       400
     );
     void logApiUsage(request, 400, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 
   const { indicatorId } = pathParseResult.data;
@@ -142,7 +143,7 @@ export async function GET(
       400
     );
     void logApiUsage(request, 400, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 
   const { from_date, to_date, limit, offset } = queryParseResult.data;
@@ -166,7 +167,7 @@ export async function GET(
           404
         );
         void logApiUsage(request, 404, userId, apiKeyId, startTime);
-        return response;
+        return applyRateLimitHeaders(response, rateLimit);
       }
       console.error("Failed to fetch indicator:", indicatorError);
       const response = createApiErrorResponse(
@@ -175,7 +176,7 @@ export async function GET(
         500
       );
       void logApiUsage(request, 500, userId, apiKeyId, startTime);
-      return response;
+      return applyRateLimitHeaders(response, rateLimit);
     }
 
     // Build the query for releases
@@ -211,7 +212,7 @@ export async function GET(
         500
       );
       void logApiUsage(request, 500, userId, apiKeyId, startTime);
-      return response;
+      return applyRateLimitHeaders(response, rateLimit);
     }
 
     // Map data to Release type
@@ -241,7 +242,7 @@ export async function GET(
     // Log successful API request
     void logApiUsage(request, 200, userId, apiKeyId, startTime);
 
-    return NextResponse.json(responseData);
+    return applyRateLimitHeaders(NextResponse.json(responseData), rateLimit);
   } catch (error) {
     console.error("Unexpected error fetching historical releases:", error);
     const response = createApiErrorResponse(
@@ -250,6 +251,6 @@ export async function GET(
       500
     );
     void logApiUsage(request, 500, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 }

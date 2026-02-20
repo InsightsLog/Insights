@@ -20,6 +20,7 @@ import {
   type ApiErrorResponse,
 } from "@/lib/api/auth";
 import { logApiUsage } from "@/lib/api/usage-logger";
+import { applyRateLimitHeaders } from "@/lib/rate-limit";
 
 /**
  * Zod schema for query parameters validation.
@@ -82,7 +83,7 @@ export async function GET(
     return authResult;
   }
 
-  const { userId, apiKeyId } = authResult;
+  const { userId, apiKeyId, rateLimit } = authResult;
 
   // Parse and validate query parameters
   const { searchParams } = new URL(request.url);
@@ -101,7 +102,7 @@ export async function GET(
       400
     );
     void logApiUsage(request, 400, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 
   const { days, country, category } = parseResult.data;
@@ -151,7 +152,7 @@ export async function GET(
         500
       );
       void logApiUsage(request, 500, userId, apiKeyId, startTime);
-      return response;
+      return applyRateLimitHeaders(response, rateLimit);
     }
 
     // Helper to extract indicator data from Supabase embedded relation response
@@ -202,7 +203,7 @@ export async function GET(
     // Log successful API request (T314 - API usage tracking)
     void logApiUsage(request, 200, userId, apiKeyId, startTime);
 
-    return NextResponse.json(responseData);
+    return applyRateLimitHeaders(NextResponse.json(responseData), rateLimit);
   } catch (error) {
     console.error("Unexpected error fetching calendar:", error);
     const response = createApiErrorResponse(
@@ -211,6 +212,6 @@ export async function GET(
       500
     );
     void logApiUsage(request, 500, userId, apiKeyId, startTime);
-    return response;
+    return applyRateLimitHeaders(response, rateLimit);
   }
 }

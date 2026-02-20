@@ -3,7 +3,9 @@
 ## [Unreleased]
 
 ### Added
-- **T502:** Dark/light mode toggle — sun/moon icon button in the header; uses `next-themes` with `defaultTheme="system"` so the initial theme respects the OS preference; user preference persisted in `localStorage`; class-based dark mode configured via Tailwind v4 `@custom-variant dark`; `suppressHydrationWarning` on `<html>` prevents flash of wrong theme.
+- **T501:** Per-minute rate limiting for all `/api/v1/` endpoints — Free tier 60 req/min, paid tiers 600 req/min. Rate limit is enforced by counting recent requests in `request_logs` for the authenticated API key. Returns `429 Too Many Requests` with `Retry-After` header when exceeded. All authenticated responses now include `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. New `src/lib/rate-limit.ts` module with `checkApiRateLimit` and `applyRateLimitHeaders` helpers.
+
+### Added
 - **T490:** Admin analytics dashboard at `/admin/analytics` — metric cards (total users, active subscriptions, API calls last 30d, webhooks delivered), bar charts for daily signups and API calls per day over the last 30 days (Recharts), top 10 most-watched indicators table. New `getAnalyticsData` server action in `actions/analytics.ts`. Analytics link added to admin dashboard quick links.
 - **T482:** Admin users page at `/admin/users` — paginated table (50/page) showing all users with email, plan, subscription status, API key count, join date, and role; searchable by email; role change (admin ↔ user) via inline `RoleManager`; linked from admin dashboard. New `getAdminUsers` server action in `admin-users.ts`.
 - **T470:** Organization/team support — `/settings/organization` page to create organizations and invite members by email; invite flow creates a token-based record in new `organization_invites` table and sends an accept link via Resend; `/invite/accept` page for accepting invitations; new server actions `createOrg`, `acceptInvite`, `listUserOrganizations`; updated `inviteMember` to use email invite flow instead of direct membership; migration 026 adds `organization_invites` table with RLS policies.
