@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import localFont from "next/font/local";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Header } from "./components/Header";
 import { UsageBanner } from "./components/UsageBanner";
@@ -90,14 +91,16 @@ export default async function RootLayout({
   const user = shouldSkipAuth(pathname) ? null : await getCurrentUser();
   
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Header initialUser={user} />
-        {/* Usage warning banner - only shown for authenticated users approaching limits */}
-        {user && <UsageBanner />}
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Header initialUser={user} />
+          {/* Usage warning banner - only shown for authenticated users approaching limits */}
+          {user && <UsageBanner />}
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UserMenu } from "./UserMenu";
+import { ThemeToggle } from "./ThemeToggle";
 import type { UserProfile } from "@/lib/supabase/auth";
 
 type HeaderProps = {
@@ -33,7 +34,8 @@ export function Header({ initialUser }: HeaderProps) {
             Upcoming economic releases — next 7 days
           </p>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <ThemeToggle />
           <UserMenu initialUser={initialUser} />
         </div>
       </div>
