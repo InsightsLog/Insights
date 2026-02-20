@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import CalendarScreen from '../screens/CalendarScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
+import AlertsScreen from '../screens/AlertsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -29,6 +30,13 @@ export default function AppNavigator() {
           component={WatchlistScreen}
           options={{
             title: 'Watchlist',
+          }}
+        />
+        <Tab.Screen
+          name="Alerts"
+          component={AlertsScreen}
+          options={{
+            title: 'Alerts',
           }}
         />
         <Tab.Screen 
