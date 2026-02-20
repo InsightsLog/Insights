@@ -24,6 +24,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://insights-econ-watchs-projects.vercel.app"
+  ),
   title: {
     default: "Macro Calendar",
     template: "%s | Macro Calendar",
@@ -47,11 +50,13 @@ export const metadata: Metadata = {
     description: "Public macroeconomic release calendar with searchable historical data",
     type: "website",
     siteName: "Macro Calendar",
+    images: [{ url: "/icons/icon-192.png", width: 192, height: 192, alt: "Macro Calendar" }],
   },
   twitter: {
     card: "summary",
     title: "Macro Calendar",
     description: "Public macroeconomic release calendar with searchable historical data",
+    images: ["/icons/icon-192.png"],
   },
 };
 

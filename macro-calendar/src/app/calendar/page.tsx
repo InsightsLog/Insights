@@ -1,9 +1,21 @@
+import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { CalendarFilters } from "@/app/components/CalendarFilters";
 import { RevisionBadge } from "@/app/components/RevisionBadge";
 import { z } from "zod";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Economic Release Calendar",
+  description:
+    "Upcoming economic releases — CPI, NFP, GDP, and 100+ indicators with forecast, previous, and actual values.",
+  openGraph: {
+    title: "Economic Release Calendar | Macro Calendar",
+    description:
+      "Upcoming economic releases — CPI, NFP, GDP, and 100+ indicators with forecast, previous, and actual values.",
+  },
+};
 
 // Zod schemas for Supabase response validation
 const indicatorSchema = z.object({
